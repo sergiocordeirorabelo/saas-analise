@@ -453,6 +453,7 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 const WORKER_URL = "https://saas-faturas-production.up.railway.app";
 const RAILWAY_URL = "https://saas-faturas-production.up.railway.app";
+const MESES_ABREV = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
 
 function downloadPDF(faturaId, nome, mes) {
   if (!faturaId) { alert('Fatura não encontrada.'); return; }

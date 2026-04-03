@@ -406,16 +406,17 @@
     <div class="section">
       <div class="section-header">
         <div class="section-title">faturas individuais analisadas</div>
-        <div style="font-size:11px;color:var(--hint)">clique numa fatura para ver a análise individual</div>
+        <div style="font-size:11px;color:var(--hint)">↕ expandir inline · ↗ abrir análise completa</div>
       </div>
       <div class="table">
-        <div class="thead" style="grid-template-columns:1fr 1fr 1fr 80px 80px 90px">
+        <div class="thead" style="grid-template-columns:1fr 1fr 1fr 80px 80px 90px 100px">
           <div class="th">mês referência</div>
           <div class="th r">valor total</div>
           <div class="th r">consumo kWh</div>
           <div class="th r">demanda</div>
           <div class="th r">score</div>
           <div class="th r">situação</div>
+          <div class="th r">ação</div>
         </div>
         <div id="faturasIndividuais"></div>
       </div>
@@ -425,6 +426,26 @@
 
 </div><!-- /main -->
 </div><!-- /shell -->
+
+<!-- ══ FATURA DETAIL VIEW (nível 3) ══ -->
+<div id="faturaDetailOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:100;overflow:auto;padding:24px">
+  <div style="max-width:900px;margin:0 auto;background:var(--bg2);border-radius:16px;border:1px solid var(--border);overflow:hidden">
+    <!-- Header -->
+    <div style="background:var(--accent);padding:16px 24px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:4px" id="fdOverlayBreadcrumb"></div>
+        <div style="font-size:16px;font-weight:600;color:#fff" id="fdOverlayTitle"></div>
+      </div>
+      <button onclick="closeFaturaDetail()" style="background:rgba(255,255,255,.15);border:none;color:#fff;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px">✕ fechar</button>
+    </div>
+    <!-- Métricas -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:20px 24px" id="fdMetrics"></div>
+    <!-- Grid principal -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 24px 12px" id="fdGrid"></div>
+    <!-- Alertas + IA -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding:0 24px 24px" id="fdBottom"></div>
+  </div>
+</div>
 
 <script>
 const SUPABASE_URL = "https://shaihalexolocjjkkpoh.supabase.co";
@@ -793,15 +814,12 @@ function showUC(id) {
       const situBadge = f.situacao === 'ABER'
         ? `<span class="badge a" style="font-size:9px">em aberto</span>`
         : `<span class="badge ok" style="font-size:9px">paga</span>`;
-
-      // Score e alertas da fatura individual (usa os da análise da fatura mais recente como base)
-      // Quando tivermos análise por fatura individual, substituir aqui
       const fScore = d.score;
       const fAlertas = d.alertas;
 
       return `
         <div>
-          <div class="trow" style="grid-template-columns:1fr 1fr 1fr 80px 80px 90px"
+          <div class="trow" style="grid-template-columns:1fr 1fr 1fr 80px 80px 90px 100px"
                onclick="toggleFaturaDetalhe('fd_${i}', this)">
             <div>
               <div style="font-size:13px;font-weight:500;color:var(--text)">${f.mes}</div>
@@ -817,6 +835,12 @@ function showUC(id) {
               </div>
             </div>
             <div class="td r">${situBadge}</div>
+            <div class="td r" onclick="event.stopPropagation()">
+              <button onclick="openFaturaDetail('${d.id}', ${i})"
+                style="font-size:11px;padding:4px 10px;border:1px solid var(--border2);border-radius:6px;background:transparent;cursor:pointer;color:var(--blue)">
+                ver detalhes ↗
+              </button>
+            </div>
           </div>
           <div id="fd_${i}" style="display:none;padding:14px 16px;background:var(--bg3);border-bottom:1px solid var(--border)">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -865,6 +889,144 @@ function showUC(id) {
   } else {
     fi.innerHTML = '<div class="empty">Nenhuma fatura individual disponível.</div>';
   }
+}
+
+function openFaturaDetail(clienteId, faturaIdx) {
+  const d = CLIENTES.find(c => String(c.id) === String(clienteId));
+  if (!d) return;
+
+  const faturas = d.faturasList.slice().reverse();
+  const f = faturas[faturaIdx];
+  if (!f) return;
+
+  const dem = d.dem;
+  const score = d.score;
+  const economiaM = Math.round(d.eco / 12);
+
+  // Breadcrumb e título
+  document.getElementById('fdOverlayBreadcrumb').textContent =
+    `${d.nome} › UC ${d.uc}`;
+  document.getElementById('fdOverlayTitle').textContent =
+    `Fatura ${f.mes} — análise completa`;
+
+  // Métricas
+  document.getElementById('fdMetrics').innerHTML = `
+    <div class="metric"><div class="metric-label">valor da fatura</div>
+      <div class="metric-val">R$ ${(f.total||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+      <div class="metric-sub">${f.mes}</div></div>
+    <div class="metric"><div class="metric-label">consumo total</div>
+      <div class="metric-val">${(f.consumo||0).toLocaleString('pt-BR')} kWh</div>
+      <div class="metric-sub">mês de referência</div></div>
+    <div class="metric"><div class="metric-label">economia potencial / ano</div>
+      <div class="metric-val green">R$ ${d.eco.toLocaleString('pt-BR')}</div>
+      <div class="metric-sub">R$ ${economiaM.toLocaleString('pt-BR')}/mês</div></div>
+    <div class="metric"><div class="metric-label">score de eficiência</div>
+      <div class="metric-val" style="color:${scoreColor(score)}">${score}/100</div>
+      <div class="metric-sub">${d.alertas.length} alerta(s)</div></div>
+  `;
+
+  // Grid: demanda + barras
+  const util = dem.ctda > 0 ? Math.round(dem.medi / dem.ctda * 100) : 0;
+  const utilColor = util < 70 ? 'var(--red)' : util < 85 ? 'var(--amber)' : 'var(--green)';
+  document.getElementById('fdGrid').innerHTML = `
+    <div class="card">
+      <div class="card-title">demanda contratada vs medida</div>
+      <div class="dem-row">
+        <div class="dem-label">contratada</div>
+        <div class="dem-track"><div class="dem-fill" style="width:100%;background:rgba(220,38,38,.5)"></div></div>
+        <div class="dem-val">${dem.ctda} kW</div>
+      </div>
+      <div class="dem-row">
+        <div class="dem-label">medida (este mês)</div>
+        <div class="dem-track"><div class="dem-fill" style="width:${util}%;background:var(--blue)"></div></div>
+        <div class="dem-val">${dem.medi} kW</div>
+      </div>
+      <div class="dem-row">
+        <div class="dem-label">pico histórico</div>
+        <div class="dem-track"><div class="dem-fill" style="width:${Math.round(dem.pico/dem.ctda*100)}%;background:var(--amber);opacity:.7"></div></div>
+        <div class="dem-val">${dem.pico} kW</div>
+      </div>
+      <div class="dem-note">
+        Utilização: <strong style="color:${utilColor}">${util}%</strong> ·
+        Redução segura: <strong>${Math.round(dem.pico*1.1)} kW</strong>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">dados financeiros</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
+        <div style="display:flex;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid var(--border)">
+          <span style="font-size:12px;color:var(--muted)">Total da fatura</span>
+          <span style="font-size:14px;font-weight:600;color:var(--text)">R$ ${(f.total||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="font-size:12px;color:var(--muted)">Economia potencial / mês</span>
+          <span style="font-size:13px;font-weight:500;color:var(--green)">R$ ${economiaM.toLocaleString('pt-BR')}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="font-size:12px;color:var(--muted)">Economia potencial / ano</span>
+          <span style="font-size:13px;font-weight:500;color:var(--green)">R$ ${d.eco.toLocaleString('pt-BR')}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="font-size:12px;color:var(--muted)">Seu honorário (25%)</span>
+          <span style="font-size:13px;font-weight:500;color:var(--amber)">R$ ${d.honorario.toLocaleString('pt-BR')}/ano</span>
+        </div>
+        <div style="margin-top:4px;padding:10px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:4px">MODELO RECOMENDADO</div>
+          <span class="modelo ${d.modelo}">${d.modelo==='consul'?'consultoria':d.modelo==='assin'?'assinatura':'mercado livre'}</span>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Bottom: alertas + IA + proposta
+  const alertasHtml = d.alertas.length
+    ? d.alertas.map(a => `
+        <div class="alert-item">
+          <div class="alert-header">
+            <span class="badge ${a.sev}" style="font-size:9px;padding:1px 6px">${a.sev==='c'?'crítico':a.sev==='a'?'atenção':'info'}</span>
+            <span class="alert-title">${a.t}</span>
+          </div>
+          ${a.e ? `<div class="alert-eco">${a.e}</div>` : ''}
+          ${a.a ? `<div class="alert-action">${a.a}</div>` : ''}
+        </div>`).join('')
+    : '<div style="font-size:12px;color:var(--green);padding:8px 0">Nenhum alerta.</div>';
+
+  document.getElementById('fdBottom').innerHTML = `
+    <div class="card">
+      <div class="card-title">alertas identificados</div>
+      ${alertasHtml}
+    </div>
+    <div class="card">
+      <div class="card-title">análise executiva (IA)</div>
+      ${d.ai
+        ? `<div class="ai-box">"${d.ai}"</div>
+           <div style="font-size:10px;color:var(--hint)">gerado por GPT-4o mini</div>`
+        : '<div style="font-size:12px;color:var(--hint)">Análise IA não disponível para esta fatura.</div>'}
+    </div>
+    <div class="card">
+      <div class="card-title">proposta comercial</div>
+      <div class="proposta">
+        <div class="proposta-title">proposta para ${d.nome.split(' ').slice(0,2).join(' ')}</div>
+        <div class="proposta-row"><span class="proposta-label">economia / mês</span><span class="proposta-val">R$ ${economiaM.toLocaleString('pt-BR')}</span></div>
+        <div class="proposta-row"><span class="proposta-label">economia / ano</span><span class="proposta-val">R$ ${d.eco.toLocaleString('pt-BR')}</span></div>
+        <hr class="proposta-divider">
+        <div class="proposta-row"><span class="proposta-label">honorário (25%)</span><span class="proposta-val green">R$ ${d.honorario.toLocaleString('pt-BR')}</span></div>
+        <hr class="proposta-divider">
+        <div style="font-size:11px;color:var(--hint)">Cliente paga somente se economizar.</div>
+      </div>
+      <button class="btn primary" style="width:100%;margin-top:12px;text-align:center" onclick="alert('Relatório PDF em breve!')">
+        ⬇ gerar relatório PDF
+      </button>
+    </div>
+  `;
+
+  document.getElementById('faturaDetailOverlay').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeFaturaDetail() {
+  document.getElementById('faturaDetailOverlay').style.display = 'none';
+  document.body.style.overflow = '';
 }
 
 function toggleFaturaDetalhe(id, row) {

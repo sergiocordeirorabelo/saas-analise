@@ -789,30 +789,96 @@ function showUC(id) {
   // ── Faturas individuais ──
   const fi = document.getElementById('faturasIndividuais');
   if (d.faturasList && d.faturasList.length > 0) {
-    fi.innerHTML = d.faturasList.slice().reverse().map(f => {
+    fi.innerHTML = d.faturasList.slice().reverse().map((f, i) => {
       const situBadge = f.situacao === 'ABER'
         ? `<span class="badge a" style="font-size:9px">em aberto</span>`
         : `<span class="badge ok" style="font-size:9px">paga</span>`;
+
+      // Score e alertas da fatura individual (usa os da análise da fatura mais recente como base)
+      // Quando tivermos análise por fatura individual, substituir aqui
+      const fScore = d.score;
+      const fAlertas = d.alertas;
+
       return `
-        <div class="trow" style="grid-template-columns:1fr 1fr 1fr 80px 80px 90px;cursor:default">
-          <div>
-            <div style="font-size:13px;font-weight:500;color:var(--text)">${f.mes}</div>
-            <div style="font-size:10px;color:var(--hint)">UC ${d.uc}</div>
+        <div>
+          <div class="trow" style="grid-template-columns:1fr 1fr 1fr 80px 80px 90px"
+               onclick="toggleFaturaDetalhe('fd_${i}', this)">
+            <div>
+              <div style="font-size:13px;font-weight:500;color:var(--text)">${f.mes}</div>
+              <div style="font-size:10px;color:var(--hint)">UC ${d.uc}</div>
+            </div>
+            <div class="td r" style="font-weight:500">R$ ${(f.total||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+            <div class="td r">${(f.consumo||0).toLocaleString('pt-BR')} kWh</div>
+            <div class="td r">${dem.medi > 0 ? dem.medi+' kW' : '—'}</div>
+            <div class="td r">
+              <div class="score-cell">
+                <span class="score-num" style="color:${scoreColor(fScore)}">${fScore}/100</span>
+                <div class="score-bar"><div class="score-fill" style="width:${fScore}%;background:${scoreColor(fScore)}"></div></div>
+              </div>
+            </div>
+            <div class="td r">${situBadge}</div>
           </div>
-          <div class="td r" style="font-weight:500">R$ ${(f.total||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
-          <div class="td r">${(f.consumo||0).toLocaleString('pt-BR')} kWh</div>
-          <div class="td r">${dem.medi > 0 ? dem.medi+' kW' : '—'}</div>
-          <div class="td r">
-            <div class="score-cell">
-              <span class="score-num" style="color:${scoreColor(d.score)}">${d.score}/100</span>
-              <div class="score-bar"><div class="score-fill" style="width:${d.score}%;background:${scoreColor(d.score)}"></div></div>
+          <div id="fd_${i}" style="display:none;padding:14px 16px;background:var(--bg3);border-bottom:1px solid var(--border)">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div>
+                <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">alertas desta fatura</div>
+                ${fAlertas.length ? fAlertas.map(a => `
+                  <div style="padding:7px 0;border-bottom:1px solid var(--border)">
+                    <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+                      <span class="badge ${a.sev}" style="font-size:9px;padding:1px 6px">${a.sev==='c'?'crítico':a.sev==='a'?'atenção':'info'}</span>
+                      <span style="font-size:12px;color:var(--text)">${a.t}</span>
+                    </div>
+                    ${a.e ? `<div style="font-size:11px;color:var(--green)">${a.e}</div>` : ''}
+                    ${a.a ? `<div style="font-size:11px;color:var(--muted);margin-top:2px">${a.a}</div>` : ''}
+                  </div>`).join('')
+                : '<div style="font-size:12px;color:var(--green);padding:8px 0">Nenhum alerta nesta fatura.</div>'}
+              </div>
+              <div>
+                <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">resumo desta fatura</div>
+                <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px">
+                  <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+                    <span style="font-size:12px;color:var(--muted)">Valor total</span>
+                    <span style="font-size:12px;font-weight:500">R$ ${(f.total||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+                    <span style="font-size:12px;color:var(--muted)">Consumo total</span>
+                    <span style="font-size:12px;font-weight:500">${(f.consumo||0).toLocaleString('pt-BR')} kWh</span>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+                    <span style="font-size:12px;color:var(--muted)">Demanda medida</span>
+                    <span style="font-size:12px;font-weight:500">${dem.medi} kW de ${dem.ctda} kW</span>
+                  </div>
+                  <div style="display:flex;justify-content:space-between">
+                    <span style="font-size:12px;color:var(--muted)">Score</span>
+                    <span style="font-size:12px;font-weight:500;color:${scoreColor(fScore)}">${fScore}/100</span>
+                  </div>
+                </div>
+                ${d.ai ? `
+                  <div style="margin-top:10px;font-size:11px;color:var(--muted);font-style:italic;line-height:1.6;background:var(--bg3);padding:10px;border-radius:6px;border:1px solid var(--border)">
+                    "${d.ai.slice(0,200)}${d.ai.length>200?'...':''}"
+                  </div>` : ''}
+              </div>
             </div>
           </div>
-          <div class="td r">${situBadge}</div>
         </div>`;
     }).join('');
   } else {
     fi.innerHTML = '<div class="empty">Nenhuma fatura individual disponível.</div>';
+  }
+}
+
+function toggleFaturaDetalhe(id, row) {
+  const el = document.getElementById(id);
+  const isOpen = el.style.display !== 'none';
+  // Fecha todos
+  document.querySelectorAll('[id^="fd_"]').forEach(e => e.style.display = 'none');
+  document.querySelectorAll('.trow-ativo').forEach(r => r.classList.remove('trow-ativo'));
+  // Abre o clicado (se estava fechado)
+  if (!isOpen) {
+    el.style.display = 'block';
+    row.style.background = 'var(--bg3)';
+  } else {
+    row.style.background = '';
   }
 }
 

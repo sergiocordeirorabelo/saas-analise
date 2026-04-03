@@ -435,15 +435,15 @@ async function carregarDados() {
     '<div class="empty" style="padding:32px">Carregando dados...</div>';
 
   try {
-    // Busca faturas_parsed com faturas_analise via join
+    // Busca todas as faturas_parsed com join em faturas_analise
     const rows = await sbGet(
       "faturas_parsed?select=id,uc,mes_referencia,cliente_nome,subgrupo,modalidade," +
       "total_a_pagar,consumo_total_kwh,media_12_meses_kwh,historico_kwh," +
       "demanda_contratada_fora_ponta_kw,demanda_medida_fora_ponta_kw," +
       "tarifa_demanda,parsed_at," +
-      "faturas_analise(score_eficiencia,potencial_economia_mensal," +
+      "faturas_analise(id,score_eficiencia,potencial_economia_mensal," +
       "potencial_economia_anual,resumo_executivo,alertas,analise_claude)" +
-      "&order=parsed_at.desc"
+      "&order=parsed_at.desc&limit=500"
     );
 
     if (!Array.isArray(rows) || rows.length === 0) {
@@ -452,16 +452,24 @@ async function carregarDados() {
       return;
     }
 
-    // Agrupa por UC — pega só a fatura mais recente de cada UC
+    // Agrupa por UC — pega a fatura mais recente de cada UC
     const porUC = {};
     for (const row of rows) {
       if (!porUC[row.uc]) porUC[row.uc] = row;
     }
 
+    // Monta lista de todas as faturas por UC (para histórico)
+    const todasPorUC = {};
+    for (const row of rows) {
+      if (!todasPorUC[row.uc]) todasPorUC[row.uc] = [];
+      todasPorUC[row.uc].push(row);
+    }
+
     CLIENTES = Object.values(porUC).map((row, idx) => {
+      // faturas_analise vem como array no join do Supabase
       const analise = Array.isArray(row.faturas_analise)
-        ? row.faturas_analise[0]
-        : row.faturas_analise || {};
+        ? (row.faturas_analise[0] || {})
+        : (row.faturas_analise || {});
 
       const score   = analise.score_eficiencia ?? 100;
       const eco_m   = analise.potencial_economia_mensal ?? 0;
@@ -469,12 +477,20 @@ async function carregarDados() {
       const alertas = analise.alertas ?? [];
       const ctda    = row.demanda_contratada_fora_ponta_kw ?? 0;
       const medi    = row.demanda_medida_fora_ponta_kw ?? 0;
-      const hist    = row.historico_kwh ?? [];
-      const cons    = row.consumo_total_kwh ?? 1;
 
-      // Estima pico de demanda via ratio
-      const ratio   = cons > 0 ? medi / cons : 0;
-      const pico    = hist.length ? Math.round(ratio * Math.max(...hist)) : medi;
+      // Usa histórico do próprio campo historico_kwh da fatura mais recente
+      // Se não tiver, constrói a partir das múltiplas faturas
+      let hist = row.historico_kwh ?? [];
+      if (hist.length === 0 && todasPorUC[row.uc]) {
+        hist = todasPorUC[row.uc]
+          .slice().reverse()
+          .map(f => f.consumo_total_kwh || 0)
+          .filter(v => v > 0);
+      }
+
+      const cons = row.consumo_total_kwh ?? 1;
+      const ratio = cons > 0 ? medi / cons : 0;
+      const pico  = hist.length ? Math.round(ratio * Math.max(...hist)) : medi;
 
       // Score → status
       const status = score < 60 ? 'c' : score < 80 ? 'a' : 'ok';

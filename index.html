@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SaaS Análise — Energia</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --bg2: #111318;
+    --bg3: #181c22;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8eaed;
+    --muted: #7a8494;
+    --hint: #444c5a;
+    --green: #22c97a;
+    --green-bg: rgba(34,201,122,0.08);
+    --amber: #f5a623;
+    --amber-bg: rgba(245,166,35,0.08);
+    --red: #ef4545;
+    --red-bg: rgba(239,69,69,0.08);
+    --blue: #4d9ef7;
+    --blue-bg: rgba(77,158,247,0.08);
+    --teal: #2dd4bf;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* ── LAYOUT ── */
+  .shell { display: flex; min-height: 100vh; }
+  .sidebar {
+    width: 220px; flex-shrink: 0;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    padding: 0;
+  }
+  .main { flex: 1; overflow: auto; }
+
+  /* ── SIDEBAR ── */
+  .sb-logo {
+    padding: 20px 18px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .sb-icon {
+    width: 30px; height: 30px;
+    background: var(--green);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; color: #000; flex-shrink: 0;
+  }
+  .sb-title { font-size: 13px; font-weight: 600; color: var(--text); }
+  .sb-sub { font-size: 10px; color: var(--muted); margin-top: 1px; }
+  .sb-section { font-size: 10px; color: var(--hint); text-transform: uppercase; letter-spacing: .06em; padding: 16px 18px 6px; }
+  .sb-item {
+    display: flex; align-items: center; gap: 9px;
+    padding: 8px 18px; font-size: 12px; color: var(--muted);
+    cursor: pointer; border-left: 2px solid transparent; transition: all .15s;
+  }
+  .sb-item:hover { color: var(--text); background: rgba(255,255,255,.03); }
+  .sb-item.active { color: var(--text); border-left-color: var(--green); background: rgba(34,201,122,.05); }
+  .sb-item svg { width: 14px; height: 14px; flex-shrink: 0; opacity: .7; }
+  .sb-bottom { margin-top: auto; padding: 16px 18px; border-top: 1px solid var(--border); }
+  .sb-badge {
+    font-size: 10px; padding: 2px 7px; border-radius: 20px;
+    background: var(--green-bg); color: var(--green); float: right;
+  }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--bg);
+    position: sticky; top: 0; z-index: 10;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 10px; }
+  .back-btn {
+    display: none; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--muted); cursor: pointer;
+    padding: 5px 10px; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); transition: all .15s;
+  }
+  .back-btn:hover { color: var(--text); border-color: var(--border2); }
+  .back-btn.show { display: flex; }
+  .page-title { font-size: 15px; font-weight: 500; }
+  .page-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .topbar-right { display: flex; gap: 8px; align-items: center; }
+  .btn {
+    font-size: 12px; padding: 7px 14px;
+    border: 1px solid var(--border2); border-radius: var(--radius-sm);
+    cursor: pointer; color: var(--muted); background: transparent;
+    font-family: inherit; transition: all .15s;
+  }
+  .btn:hover { color: var(--text); border-color: rgba(255,255,255,.2); }
+  .btn.primary {
+    background: var(--green); color: #000;
+    border-color: var(--green); font-weight: 600;
+  }
+  .btn.primary:hover { opacity: .88; }
+
+  /* ── MÉTRICAS ── */
+  .metrics-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; padding: 20px 24px; }
+  .metric {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px;
+  }
+  .metric-label { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+  .metric-val { font-size: 22px; font-weight: 500; line-height: 1; }
+  .metric-sub { font-size: 11px; color: var(--hint); margin-top: 6px; }
+  .metric-val.green { color: var(--green); }
+  .metric-val.amber { color: var(--amber); }
+  .metric-val.red { color: var(--red); }
+
+  /* ── TABELA PORTFÓLIO ── */
+  .section { padding: 0 24px 24px; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .section-title { font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .filters { display: flex; gap: 6px; }
+  .chip {
+    font-size: 11px; padding: 4px 11px;
+    border: 1px solid var(--border); border-radius: 20px;
+    cursor: pointer; color: var(--muted); transition: all .15s;
+  }
+  .chip:hover { border-color: var(--border2); color: var(--text); }
+  .chip.on { border-color: var(--green); color: var(--green); background: var(--green-bg); }
+
+  .table { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .thead {
+    display: grid; grid-template-columns: 2fr 1fr 1fr 70px 90px 110px;
+    padding: 10px 16px; background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+  }
+  .th { font-size: 10px; color: var(--hint); text-transform: uppercase; letter-spacing: .05em; }
+  .th.r { text-align: right; }
+  .trow {
+    display: grid; grid-template-columns: 2fr 1fr 1fr 70px 90px 110px;
+    padding: 12px 16px; border-bottom: 1px solid var(--border);
+    align-items: center; cursor: pointer; transition: background .12s;
+  }
+  .trow:hover { background: rgba(255,255,255,.02); }
+  .trow:last-child { border-bottom: none; }
+  .td { font-size: 12px; color: var(--text); }
+  .td.r { text-align: right; }
+  .td.muted { color: var(--muted); font-size: 11px; }
+  .td.green { color: var(--green); font-weight: 500; }
+  .cname { font-size: 13px; font-weight: 500; color: var(--text); }
+  .cuc { font-size: 10px; color: var(--hint); margin-top: 2px; font-family: 'DM Mono', monospace; }
+
+  .score-cell { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
+  .score-num { font-size: 12px; font-weight: 500; font-family: 'DM Mono', monospace; }
+  .score-bar { width: 50px; height: 3px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
+  .score-fill { height: 100%; border-radius: 2px; }
+
+  .badge { font-size: 10px; padding: 3px 9px; border-radius: 20px; font-weight: 500; text-align: center; }
+  .badge.c { background: var(--red-bg); color: var(--red); }
+  .badge.a { background: var(--amber-bg); color: var(--amber); }
+  .badge.ok { background: var(--green-bg); color: var(--green); }
+
+  .modelo { font-size: 10px; padding: 3px 9px; border-radius: 20px; text-align: center; font-weight: 500; }
+  .modelo.consul { background: var(--amber-bg); color: var(--amber); }
+  .modelo.assin { background: var(--blue-bg); color: var(--blue); }
+  .modelo.mercado { background: rgba(45,212,191,.08); color: var(--teal); }
+
+  /* ── VIEW UC ── */
+  .uc-view { display: none; }
+  .uc-view.show { display: block; }
+  .portfolio-view.hide { display: none; }
+
+  .uc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 24px 12px; }
+  .uc-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; padding: 0 24px 24px; }
+  .card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px;
+  }
+  .card-title { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 12px; }
+
+  /* demanda bars */
+  .dem-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .dem-label { font-size: 11px; color: var(--muted); width: 110px; flex-shrink: 0; }
+  .dem-track { flex: 1; height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+  .dem-fill { height: 100%; border-radius: 3px; }
+  .dem-val { font-size: 11px; color: var(--text); width: 55px; text-align: right; font-family: 'DM Mono', monospace; }
+  .dem-note { font-size: 11px; color: var(--amber); margin-top: 8px; padding: 8px 10px; background: var(--amber-bg); border-radius: var(--radius-sm); }
+
+  /* alertas */
+  .alert-item { padding: 9px 0; border-bottom: 1px solid var(--border); }
+  .alert-item:last-child { border-bottom: none; }
+  .alert-header { display: flex; align-items: center; gap: 7px; margin-bottom: 3px; }
+  .alert-title { font-size: 12px; color: var(--text); }
+  .alert-eco { font-size: 11px; color: var(--green); }
+  .alert-action { font-size: 11px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+
+  /* AI text */
+  .ai-box {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 14px;
+    font-size: 13px; color: var(--muted); line-height: 1.7;
+    font-style: italic; margin-bottom: 12px;
+  }
+
+  /* hist chart */
+  .chart-wrap { position: relative; height: 120px; margin-top: 4px; }
+
+  /* proposta */
+  .proposta {
+    background: linear-gradient(135deg, rgba(34,201,122,.06), rgba(34,201,122,.02));
+    border: 1px solid rgba(34,201,122,.2);
+    border-radius: var(--radius); padding: 16px;
+  }
+  .proposta-title { font-size: 13px; font-weight: 600; color: var(--green); margin-bottom: 10px; }
+  .proposta-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .proposta-label { font-size: 12px; color: var(--muted); }
+  .proposta-val { font-size: 13px; font-weight: 500; color: var(--text); font-family: 'DM Mono', monospace; }
+  .proposta-val.green { color: var(--green); }
+  .proposta-divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
+
+  /* score ring */
+  .score-big { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
+  .score-circle {
+    width: 64px; height: 64px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 600; font-family: 'DM Mono', monospace;
+    flex-shrink: 0;
+  }
+  .score-info { flex: 1; }
+  .score-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+  /* tags */
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .tag { font-size: 10px; padding: 3px 9px; border-radius: 20px; border: 1px solid var(--border); color: var(--muted); }
+
+  /* empty */
+  .empty { padding: 40px; text-align: center; color: var(--hint); font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-icon">⚡</div>
+    <div>
+      <div class="sb-title">SaaS Análise</div>
+      <div class="sb-sub">painel interno</div>
+    </div>
+  </div>
+  <div class="sb-section">Portfólio</div>
+  <div class="sb-item active">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+    Clientes
+    <span class="sb-badge">12</span>
+  </div>
+  <div class="sb-item">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12L6 7l3 3 3-4 2 2"/></svg>
+    Tendências
+  </div>
+  <div class="sb-section">Análise</div>
+  <div class="sb-item">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
+    Alertas ativos
+    <span class="sb-badge" style="background:rgba(239,69,69,.1);color:var(--red)">4</span>
+  </div>
+  <div class="sb-item">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="10" rx="1"/><path d="M5 7h6M5 10h4"/></svg>
+    Relatórios
+  </div>
+  <div class="sb-section">Config</div>
+  <div class="sb-item">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="6" r="3"/><path d="M2 14c0-3 2.7-5 6-5s6 2 6 5"/></svg>
+    Clientes
+  </div>
+  <div class="sb-bottom">
+    <div style="font-size:11px;color:var(--hint)">worker ativo</div>
+    <div style="font-size:10px;color:var(--green);margin-top:3px">● Railway · online</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="back-btn" id="backBtn" onclick="showPortfolio()">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 4L6 8l4 4"/></svg>
+        portfólio
+      </div>
+      <div>
+        <div class="page-title" id="pageTitle">Portfólio de clientes</div>
+        <div class="page-sub" id="pageSub">abril 2026 · Manaus</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn" id="topBtn2">↻ atualizar</button>
+      <button class="btn primary" id="topBtn1" onclick="alert('Relatório PDF em desenvolvimento!')">⬇ exportar PDF</button>
+    </div>
+  </div>
+
+  <!-- ══ PORTFOLIO VIEW ══ -->
+  <div id="portfolioView" class="portfolio-view">
+
+    <div class="metrics-grid">
+      <div class="metric">
+        <div class="metric-label">clientes ativos</div>
+        <div class="metric-val" id="metricaClientes">—</div>
+        <div class="metric-sub">UCs monitoradas</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">economia total / ano</div>
+        <div class="metric-val green" id="metricaEco">—</div>
+        <div class="metric-sub">identificada pelo sistema</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">seu honorário potencial</div>
+        <div class="metric-val amber" id="metricaHon">—</div>
+        <div class="metric-sub">25% da economia gerada</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">críticos (score &lt; 70)</div>
+        <div class="metric-val red" id="metricaCrit">—</div>
+        <div class="metric-sub">ação recomendada</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">clientes ranqueados por oportunidade</div>
+        <div class="filters">
+          <span class="chip on" onclick="setFilter('todos',this)">todos</span>
+          <span class="chip" onclick="setFilter('c',this)">críticos</span>
+          <span class="chip" onclick="setFilter('consul',this)">consultoria</span>
+          <span class="chip" onclick="setFilter('assin',this)">assinatura</span>
+          <span class="chip" onclick="setFilter('mercado',this)">mercado livre</span>
+        </div>
+      </div>
+      <div class="table">
+        <div class="thead">
+          <div class="th">cliente</div>
+          <div class="th r">fatura/mês</div>
+          <div class="th r">economia/ano</div>
+          <div class="th r">score</div>
+          <div class="th r">status</div>
+          <div class="th r">modelo</div>
+        </div>
+        <div id="tbody"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ UC VIEW ══ -->
+  <div id="ucView" class="uc-view">
+
+    <div class="metrics-grid" id="ucMetrics"></div>
+
+    <div class="uc-grid">
+      <!-- Histórico consumo -->
+      <div class="card">
+        <div class="card-title">histórico de consumo — 13 meses (kWh)</div>
+        <div class="chart-wrap"><canvas id="histChart"></canvas></div>
+      </div>
+      <!-- Demanda -->
+      <div class="card">
+        <div class="card-title">demanda contratada vs medida</div>
+        <div id="demandaContent"></div>
+      </div>
+    </div>
+
+    <div class="uc-grid-3">
+      <!-- Alertas -->
+      <div class="card">
+        <div class="card-title">alertas identificados</div>
+        <div id="alertasContent"></div>
+      </div>
+      <!-- Análise IA + Proposta -->
+      <div class="card">
+        <div class="card-title">análise executiva (IA)</div>
+        <div id="aiContent"></div>
+      </div>
+      <!-- Score + Proposta -->
+      <div class="card">
+        <div class="card-title">score e proposta comercial</div>
+        <div id="propostaContent"></div>
+      </div>
+    </div>
+
+  </div>
+
+</div><!-- /main -->
+</div><!-- /shell -->
+
+<script>
+const SUPABASE_URL = "https://shaihalexolocjjkkpoh.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNoYWloYWxleG9sb2NqamtrcG9oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwMDA2ODUsImV4cCI6MjA5MDU3NjY4NX0.TfMwnhlu-TDZY2n_hxIhpUdXQEOdbr14SuH2e8R9cH8";
+
+const MESES_ABREV = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+
+let CLIENTES = [];
+let filtered  = [];
+let currentCliente  = null;
+let histChartInstance = null;
+let filtroAtivo = 'todos';
+
+// ── SUPABASE HELPERS ──
+async function sbGet(endpoint) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
+    headers: {
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+      "Content-Type": "application/json",
+    }
+  });
+  return r.json();
+}
+
+// ── CARREGAR DADOS DO SUPABASE ──
+async function carregarDados() {
+  document.getElementById('tbody').innerHTML =
+    '<div class="empty" style="padding:32px">Carregando dados...</div>';
+
+  try {
+    // Busca faturas_parsed com faturas_analise via join
+    const rows = await sbGet(
+      "faturas_parsed?select=id,uc,mes_referencia,cliente_nome,subgrupo,modalidade," +
+      "total_a_pagar,consumo_total_kwh,media_12_meses_kwh,historico_kwh," +
+      "demanda_contratada_fora_ponta_kw,demanda_medida_fora_ponta_kw," +
+      "tarifa_demanda,parsed_at," +
+      "faturas_analise(score_eficiencia,potencial_economia_mensal," +
+      "potencial_economia_anual,resumo_executivo,alertas,analise_claude)" +
+      "&order=parsed_at.desc"
+    );
+
+    if (!Array.isArray(rows) || rows.length === 0) {
+      document.getElementById('tbody').innerHTML =
+        '<div class="empty">Nenhuma fatura analisada ainda. Cadastre um cliente no SaaS Faturas.</div>';
+      return;
+    }
+
+    // Agrupa por UC — pega só a fatura mais recente de cada UC
+    const porUC = {};
+    for (const row of rows) {
+      if (!porUC[row.uc]) porUC[row.uc] = row;
+    }
+
+    CLIENTES = Object.values(porUC).map((row, idx) => {
+      const analise = Array.isArray(row.faturas_analise)
+        ? row.faturas_analise[0]
+        : row.faturas_analise || {};
+
+      const score   = analise.score_eficiencia ?? 100;
+      const eco_m   = analise.potencial_economia_mensal ?? 0;
+      const eco_a   = analise.potencial_economia_anual ?? 0;
+      const alertas = analise.alertas ?? [];
+      const ctda    = row.demanda_contratada_fora_ponta_kw ?? 0;
+      const medi    = row.demanda_medida_fora_ponta_kw ?? 0;
+      const hist    = row.historico_kwh ?? [];
+      const cons    = row.consumo_total_kwh ?? 1;
+
+      // Estima pico de demanda via ratio
+      const ratio   = cons > 0 ? medi / cons : 0;
+      const pico    = hist.length ? Math.round(ratio * Math.max(...hist)) : medi;
+
+      // Score → status
+      const status = score < 60 ? 'c' : score < 80 ? 'a' : 'ok';
+
+      // Modelo recomendado baseado nos alertas
+      const temMercado  = alertas.some(a => a.codigo === 'MERCADO_LIVRE_ELEGIVEL');
+      const temDemanda  = alertas.some(a => a.codigo === 'DEMANDA_SUPERDIMENSIONADA');
+      const modelo = temMercado ? 'mercado' : temDemanda ? 'consul' : 'assin';
+
+      // Meses do histórico
+      const mesRef = row.mes_referencia || '';
+      const [mesN, anoN] = mesRef.split('/');
+      const mesesHist = hist.map((_, i) => {
+        const offset = hist.length - 1 - i;
+        const mesIdx = ((parseInt(mesN || 1) - 1 - offset) % 12 + 12) % 12;
+        return MESES_ABREV[mesIdx];
+      });
+
+      // Normaliza alertas para o formato do dashboard
+      const alertasNorm = alertas.map(a => ({
+        sev: a.severidade === 'critico' ? 'c' : a.severidade === 'atencao' ? 'a' : 'i',
+        t:   a.titulo || '',
+        e:   a.economia_mensal_r ? `R$ ${a.economia_mensal_r.toLocaleString('pt-BR', {minimumFractionDigits:2})}/mês` : '',
+        a:   a.acao_recomendada || '',
+      }));
+
+      // Nome: usa o cliente_nome do parser, limpa se necessário
+      let nome = row.cliente_nome || `UC ${row.uc}`;
+      // Trunca texto longo (parser pega linha inteira às vezes)
+      if (nome.length > 50) nome = nome.slice(0, 47) + '...';
+
+      return {
+        id:       row.id,
+        fatura_id: analise.id || row.id,
+        nome,
+        uc:       row.uc,
+        mes:      row.mes_referencia,
+        subgrupo: row.subgrupo || 'A4',
+        modalidade: row.modalidade || '',
+        fat:      row.total_a_pagar ?? 0,
+        eco:      eco_a,
+        honorario: Math.round(eco_a * 0.25),
+        score,
+        status,
+        modelo,
+        dem:      { ctda, medi, pico },
+        hist,
+        meses:    mesesHist,
+        alertas:  alertasNorm,
+        ai:       analise.analise_claude || analise.resumo_executivo || '',
+      };
+    });
+
+    // Ordena por economia decrescente
+    CLIENTES.sort((a, b) => b.eco - a.eco);
+
+    // Atualiza métricas do portfólio
+    const totalEco    = CLIENTES.reduce((s, c) => s + c.eco, 0);
+    const totalHon    = CLIENTES.reduce((s, c) => s + c.honorario, 0);
+    const totalCrit   = CLIENTES.filter(c => c.status === 'c').length;
+    document.getElementById('metricaClientes').textContent = CLIENTES.length;
+    document.getElementById('metricaEco').textContent      = `R$ ${totalEco.toLocaleString('pt-BR')}`;
+    document.getElementById('metricaHon').textContent      = `R$ ${totalHon.toLocaleString('pt-BR')}`;
+    document.getElementById('metricaCrit').textContent     = totalCrit;
+
+    aplicarFiltro(filtroAtivo);
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById('tbody').innerHTML =
+      `<div class="empty">Erro ao carregar dados: ${err.message}</div>`;
+  }
+}
+
+// ── FILTROS ──
+function setFilter(f, el) {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  filtroAtivo = f;
+  aplicarFiltro(f);
+}
+
+function aplicarFiltro(f) {
+  filtered = f === 'todos' ? [...CLIENTES]
+    : f === 'c'      ? CLIENTES.filter(d => d.status === 'c')
+    : CLIENTES.filter(d => d.modelo === f);
+  renderPortfolio();
+}
+
+// ── CORES ──
+function scoreColor(s){ return s<60?'var(--red)':s<80?'var(--amber)':'var(--green)'; }
+function sevColor(s){ return s==='c'?'var(--red)':s==='a'?'var(--amber)':'var(--muted)'; }
+function sevLabel(s){ return s==='c'?'crítico':s==='a'?'atenção':'info'; }
+function sevClass(s){ return s==='c'?'c':s==='a'?'a':'ok'; }
+
+// ── PORTFOLIO ──
+function renderPortfolio() {
+  const tb = document.getElementById('tbody');
+  if (!filtered.length) { tb.innerHTML = '<div class="empty">Nenhum cliente encontrado.</div>'; return; }
+  tb.innerHTML = filtered.map(d => `
+    <div class="trow" onclick="showUC(${d.id})">
+      <div>
+        <div class="cname">${d.nome}</div>
+        <div class="cuc">UC ${d.uc}</div>
+      </div>
+      <div class="td r">R$ ${d.fat.toLocaleString('pt-BR')}</div>
+      <div class="td r green">R$ ${d.eco.toLocaleString('pt-BR')}</div>
+      <div class="td r">
+        <div class="score-cell">
+          <span class="score-num" style="color:${scoreColor(d.score)}">${d.score}/100</span>
+          <div class="score-bar"><div class="score-fill" style="width:${d.score}%;background:${scoreColor(d.score)}"></div></div>
+        </div>
+      </div>
+      <div class="td r"><span class="badge ${d.status}">${d.status==='c'?'crítico':d.status==='a'?'atenção':'ok'}</span></div>
+      <div class="td r"><span class="modelo ${d.modelo}">${d.modelo==='consul'?'consultoria':d.modelo==='assin'?'assinatura':'mercado livre'}</span></div>
+    </div>
+  `).join('');
+}
+
+// ── UC DETAIL ──
+function showUC(id) {
+  currentCliente = CLIENTES.find(c=>c.id===id);
+  if (!currentCliente) return;
+  const d = currentCliente;
+
+  document.getElementById('portfolioView').classList.add('hide');
+  document.getElementById('ucView').classList.add('show');
+  document.getElementById('backBtn').classList.add('show');
+  document.getElementById('pageTitle').textContent = d.nome;
+  document.getElementById('pageSub').textContent = `UC ${d.uc} · ${d.meses[d.meses.length-1]}/${d.meses[d.meses.length-1]==='mar'?'2026':'2026'}`;
+
+  // Métricas UC
+  document.getElementById('ucMetrics').innerHTML = `
+    <div class="metric"><div class="metric-label">fatura do mês</div><div class="metric-val">R$ ${d.fat.toLocaleString('pt-BR')}</div><div class="metric-sub">mês atual</div></div>
+    <div class="metric"><div class="metric-label">economia potencial / ano</div><div class="metric-val green">R$ ${d.eco.toLocaleString('pt-BR')}</div><div class="metric-sub">R$ ${Math.round(d.eco/12).toLocaleString('pt-BR')}/mês</div></div>
+    <div class="metric"><div class="metric-label">seu honorário (25%)</div><div class="metric-val amber">R$ ${d.honorario.toLocaleString('pt-BR')}</div><div class="metric-sub">modelo consultoria</div></div>
+    <div class="metric"><div class="metric-label">score de eficiência</div><div class="metric-val" style="color:${scoreColor(d.score)}">${d.score}/100</div><div class="metric-sub">${d.alertas.length} alerta(s)</div></div>
+  `;
+
+  // Histórico Chart
+  if(histChartInstance) histChartInstance.destroy();
+  const ctx = document.getElementById('histChart').getContext('2d');
+  const maxHist = Math.max(...d.hist);
+  histChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: d.meses,
+      datasets: [{
+        data: d.hist,
+        backgroundColor: d.hist.map((v,i)=> i===d.hist.length-1 ? 'rgba(77,158,247,0.7)' : 'rgba(255,255,255,0.08)'),
+        borderColor: d.hist.map((v,i)=> i===d.hist.length-1 ? '#4d9ef7' : 'rgba(255,255,255,0.12)'),
+        borderWidth: 1, borderRadius: 3,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        callbacks: { label: ctx => ` ${ctx.raw.toLocaleString('pt-BR')} kWh` }
+      }},
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#444c5a', font: { size: 9, family: 'DM Sans' }}},
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#444c5a', font: { size: 9 },
+          callback: v => v>=1000 ? (v/1000).toFixed(0)+'k' : v }}
+      }
+    }
+  });
+
+  // Demanda
+  const dem = d.dem;
+  const util = Math.round(dem.medi/dem.ctda*100);
+  const utilColor = util<70?'var(--red)':util<85?'var(--amber)':'var(--green)';
+  document.getElementById('demandaContent').innerHTML = `
+    <div class="dem-row">
+      <div class="dem-label">contratada</div>
+      <div class="dem-track"><div class="dem-fill" style="width:100%;background:rgba(239,69,69,.5)"></div></div>
+      <div class="dem-val">${dem.ctda} kW</div>
+    </div>
+    <div class="dem-row">
+      <div class="dem-label">medida (mês atual)</div>
+      <div class="dem-track"><div class="dem-fill" style="width:${util}%;background:var(--blue)"></div></div>
+      <div class="dem-val">${dem.medi} kW</div>
+    </div>
+    <div class="dem-row">
+      <div class="dem-label">pico histórico</div>
+      <div class="dem-track"><div class="dem-fill" style="width:${Math.round(dem.pico/dem.ctda*100)}%;background:var(--amber);opacity:.7"></div></div>
+      <div class="dem-val">${dem.pico} kW</div>
+    </div>
+    <div class="dem-note">
+      Utilização atual: <strong style="color:${utilColor}">${util}%</strong> · 
+      Redução segura: <strong>${Math.round(dem.pico*1.1)} kW</strong> (110% do pico)
+    </div>
+  `;
+
+  // Alertas
+  const alertasHtml = d.alertas.length
+    ? d.alertas.map(a=>`
+        <div class="alert-item">
+          <div class="alert-header">
+            <span class="badge ${sevClass(a.sev)}" style="font-size:9px;padding:1px 6px">${sevLabel(a.sev)}</span>
+            <span class="alert-title">${a.t}</span>
+          </div>
+          ${a.e ? `<div class="alert-eco">${a.e}</div>` : ''}
+          ${a.a ? `<div class="alert-action">${a.a}</div>` : ''}
+        </div>
+      `).join('')
+    : '<div style="font-size:12px;color:var(--green);padding:8px 0">Nenhum alerta. UC eficiente.</div>';
+  document.getElementById('alertasContent').innerHTML = alertasHtml;
+
+  // AI
+  document.getElementById('aiContent').innerHTML = `
+    <div class="ai-box">"${d.ai}"</div>
+    <div style="font-size:10px;color:var(--hint)">gerado por GPT-4o mini · análise automatizada</div>
+    <button class="btn primary" style="width:100%;margin-top:12px;text-align:center" onclick="alert('Relatório PDF em desenvolvimento!')">
+      ⬇ gerar relatório PDF
+    </button>
+  `;
+
+  // Score + Proposta
+  const novaCtda = Math.round(dem.pico * 1.1);
+  const economiaM = d.eco > 0 ? Math.round(d.eco/12) : 0;
+  document.getElementById('propostaContent').innerHTML = `
+    <div class="score-big">
+      <div class="score-circle" style="background:${scoreColor(d.score)}22;color:${scoreColor(d.score)};border:2px solid ${scoreColor(d.score)}44">
+        ${d.score}
+      </div>
+      <div class="score-info">
+        <div style="font-size:13px;font-weight:500;color:${scoreColor(d.score)}">
+          ${d.score>=85?'Eficiente':d.score>=70?'Atenção':'Crítico'}
+        </div>
+        <div class="score-desc">${d.alertas.length} alerta(s) identificado(s)</div>
+      </div>
+    </div>
+    <div class="proposta">
+      <div class="proposta-title">proposta comercial</div>
+      <div class="proposta-row"><span class="proposta-label">modelo</span><span class="modelo ${d.modelo}">${d.modelo==='consul'?'consultoria':d.modelo==='assin'?'assinatura':'mercado livre'}</span></div>
+      <hr class="proposta-divider">
+      <div class="proposta-row"><span class="proposta-label">economia / mês</span><span class="proposta-val">R$ ${economiaM.toLocaleString('pt-BR')}</span></div>
+      <div class="proposta-row"><span class="proposta-label">economia / ano</span><span class="proposta-val">R$ ${d.eco.toLocaleString('pt-BR')}</span></div>
+      <div class="proposta-row"><span class="proposta-label">honorário (25%)</span><span class="proposta-val green">R$ ${d.honorario.toLocaleString('pt-BR')}</span></div>
+      <hr class="proposta-divider">
+      <div style="font-size:11px;color:var(--hint);line-height:1.5">
+        Cliente paga somente se economizar. Risco zero para o contratante.
+      </div>
+    </div>
+    <div class="tags">
+      <span class="tag">Grupo A · ${d.uc.startsWith('0041')?'A3a':'A4'}</span>
+      <span class="tag">Horossazonal Verde</span>
+      ${dem.ctda>=500?'<span class="tag" style="border-color:rgba(45,212,191,.3);color:var(--teal)">elegível ACL</span>':''}
+    </div>
+  `;
+}
+
+function showPortfolio() {
+  document.getElementById('portfolioView').classList.remove('hide');
+  document.getElementById('ucView').classList.remove('show');
+  document.getElementById('backBtn').classList.remove('show');
+  document.getElementById('pageTitle').textContent = 'Portfólio de clientes';
+  document.getElementById('pageSub').textContent = 'abril 2026 · Manaus';
+  currentCliente = null;
+}
+
+// Carrega dados reais do Supabase ao iniciar
+carregarDados();
+// Atualiza a cada 30 segundos
+setInterval(carregarDados, 30000);
+</script>
+</body>
+</html>

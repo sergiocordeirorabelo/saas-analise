@@ -591,7 +591,7 @@ function renderPortfolio() {
   const tb = document.getElementById('tbody');
   if (!filtered.length) { tb.innerHTML = '<div class="empty">Nenhum cliente encontrado.</div>'; return; }
   tb.innerHTML = filtered.map(d => `
-    <div class="trow" onclick="showUC(${d.id})">
+    <div class="trow" onclick="showUC('${d.id}')">
       <div>
         <div class="cname">${d.nome}</div>
         <div class="cuc">UC ${d.uc}</div>
@@ -612,7 +612,7 @@ function renderPortfolio() {
 
 // ── UC DETAIL ──
 function showUC(id) {
-  currentCliente = CLIENTES.find(c=>c.id===id);
+  currentCliente = CLIENTES.find(c => String(c.id) === String(id));
   if (!currentCliente) return;
   const d = currentCliente;
 

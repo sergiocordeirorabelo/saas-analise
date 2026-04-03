@@ -816,6 +816,10 @@ function showUC(id) {
   // Score + Proposta
   const novaCtda = Math.round(dem.pico * 1.1);
   const economiaM = d.eco > 0 ? Math.round(d.eco/12) : 0;
+  const hon30a = Math.round(d.eco * 0.30);
+  const hon30m = Math.round(economiaM * 0.30);
+  const elegivel = dem.ctda >= 500;
+
   document.getElementById('propostaContent').innerHTML = `
     <div class="score-big">
       <div class="score-circle" style="background:${scoreColor(d.score)}22;color:${scoreColor(d.score)};border:2px solid ${scoreColor(d.score)}44">
@@ -825,25 +829,56 @@ function showUC(id) {
         <div style="font-size:13px;font-weight:500;color:${scoreColor(d.score)}">
           ${d.score>=85?'Eficiente':d.score>=70?'Atenção':'Crítico'}
         </div>
-        <div class="score-desc">${d.alertas.length} alerta(s) identificado(s)</div>
+        <div class="score-desc">${d.alertas.length} alerta(s) · ${d.subgrupo||'A4'} · ${d.modalidade||'HV'}</div>
       </div>
     </div>
-    <div class="proposta">
-      <div class="proposta-title">proposta comercial</div>
-      <div class="proposta-row"><span class="proposta-label">modelo</span><span class="modelo ${d.modelo}">${d.modelo==='consul'?'consultoria':d.modelo==='assin'?'assinatura':'mercado livre'}</span></div>
-      <hr class="proposta-divider">
+
+    <!-- Serviço 1: Consultoria -->
+    <div class="proposta" style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div class="proposta-title" style="margin:0">1. Consultoria por resultado</div>
+        <span class="modelo consul">disponível</span>
+      </div>
+      <div class="proposta-row"><span class="proposta-label">cobrança</span><span class="proposta-val">30% da economia gerada</span></div>
       <div class="proposta-row"><span class="proposta-label">economia / mês</span><span class="proposta-val">R$ ${economiaM.toLocaleString('pt-BR')}</span></div>
       <div class="proposta-row"><span class="proposta-label">economia / ano</span><span class="proposta-val">R$ ${d.eco.toLocaleString('pt-BR')}</span></div>
-      <div class="proposta-row"><span class="proposta-label">honorário (25%)</span><span class="proposta-val green">R$ ${d.honorario.toLocaleString('pt-BR')}</span></div>
+      <div class="proposta-row"><span class="proposta-label">seu honorário / ano</span><span class="proposta-val green">R$ ${hon30a.toLocaleString('pt-BR')}</span></div>
+      <div class="proposta-row"><span class="proposta-label">seu honorário / mês</span><span class="proposta-val green">R$ ${hon30m.toLocaleString('pt-BR')}</span></div>
       <hr class="proposta-divider">
-      <div style="font-size:11px;color:var(--hint);line-height:1.5">
-        Cliente paga somente se economizar. Risco zero para o contratante.
-      </div>
+      <div style="font-size:10px;color:var(--hint)">Cliente paga somente se economizar. Risco zero.</div>
     </div>
-    <div class="tags">
-      <span class="tag">Grupo A · ${d.subgrupo || 'A4'}</span>
-      <span class="tag">${d.modalidade || 'Horossazonal Verde'}</span>
-      ${dem.ctda>=500?'<span class="tag" style="border-color:rgba(13,148,136,.3);color:var(--teal)">elegível ACL</span>':''}
+
+    <!-- Serviço 2: Monitoramento -->
+    <div style="background:#f8f9fa;border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-size:12px;font-weight:600;color:var(--blue)">2. Monitoramento e gestão de energia</div>
+        <span class="modelo assin">disponível</span>
+      </div>
+      <div class="proposta-row"><span class="proposta-label">valor</span><span class="proposta-val">R$ 300 / UC / mês</span></div>
+      <div class="proposta-row"><span class="proposta-label">inclui</span><span class="proposta-val" style="font-size:11px;text-align:right">análise mensal + alertas + relatório PDF</span></div>
+      <div class="proposta-row"><span class="proposta-label">contrato</span><span class="proposta-val">mensal · sem fidelidade</span></div>
+    </div>
+
+    <!-- Serviço 3: Mercado Livre -->
+    <div style="background:${elegivel?'rgba(13,148,136,.06)':'#f8f9fa'};border:1px solid ${elegivel?'rgba(13,148,136,.3)':'var(--border)'};border-radius:10px;padding:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-size:12px;font-weight:600;color:${elegivel?'var(--teal)':'var(--hint)'}">3. Mercado Livre de Energia</div>
+        <span style="font-size:10px;padding:3px 9px;border-radius:20px;font-weight:500;
+          background:${elegivel?'rgba(13,148,136,.1)':'var(--bg3)'};
+          color:${elegivel?'var(--teal)':'var(--hint)'}">
+          ${elegivel?'elegível ACL':'não elegível'}
+        </span>
+      </div>
+      ${elegivel ? `
+        <div class="proposta-row"><span class="proposta-label">economia estimada</span><span class="proposta-val" style="color:var(--teal)">15–30% / ano</span></div>
+        <div class="proposta-row"><span class="proposta-label">modelo</span><span class="proposta-val">comissão de corretagem</span></div>
+        <div class="proposta-row"><span class="proposta-label">ticket estimado</span><span class="proposta-val">R$ 20k – R$ 80k</span></div>
+      ` : `
+        <div style="font-size:11px;color:var(--hint);line-height:1.5">
+          Requer demanda contratada ≥ 500 kW. Esta UC possui ${dem.ctda} kW.
+          ${dem.ctda >= 300 ? '<br><b style="color:var(--amber)">Próximo do limite — monitorar crescimento.</b>' : ''}
+        </div>
+      `}
     </div>
   `;
 
@@ -1044,17 +1079,43 @@ function openFaturaDetail(clienteId, faturaIdx) {
         : '<div style="font-size:12px;color:var(--hint)">Análise IA não disponível para esta fatura.</div>'}
     </div>
     <div class="card">
-      <div class="card-title">proposta comercial</div>
-      <div class="proposta">
-        <div class="proposta-title">proposta para ${d.nome.split(' ').slice(0,2).join(' ')}</div>
-        <div class="proposta-row"><span class="proposta-label">economia / mês</span><span class="proposta-val">R$ ${economiaM.toLocaleString('pt-BR')}</span></div>
+      <div class="card-title">serviços disponíveis</div>
+
+      <div class="proposta" style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div class="proposta-title" style="margin:0">1. Consultoria por resultado</div>
+          <span class="modelo consul">disponível</span>
+        </div>
+        <div class="proposta-row"><span class="proposta-label">cobrança</span><span class="proposta-val">30% da economia</span></div>
         <div class="proposta-row"><span class="proposta-label">economia / ano</span><span class="proposta-val">R$ ${d.eco.toLocaleString('pt-BR')}</span></div>
+        <div class="proposta-row"><span class="proposta-label">seu honorário / ano</span><span class="proposta-val green">R$ ${Math.round(d.eco*0.3).toLocaleString('pt-BR')}</span></div>
         <hr class="proposta-divider">
-        <div class="proposta-row"><span class="proposta-label">honorário (25%)</span><span class="proposta-val green">R$ ${d.honorario.toLocaleString('pt-BR')}</span></div>
-        <hr class="proposta-divider">
-        <div style="font-size:11px;color:var(--hint)">Cliente paga somente se economizar.</div>
+        <div style="font-size:10px;color:var(--hint)">Só paga se economizar. Risco zero.</div>
       </div>
-      <button class="btn primary" style="width:100%;margin-top:12px;text-align:center"
+
+      <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:10px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div style="font-size:11px;font-weight:600;color:var(--blue)">2. Monitoramento e gestão</div>
+          <span class="modelo assin">disponível</span>
+        </div>
+        <div class="proposta-row"><span class="proposta-label">valor fixo</span><span class="proposta-val">R$ 300/UC/mês</span></div>
+        <div class="proposta-row"><span class="proposta-label">inclui</span><span style="font-size:10px;color:var(--muted);text-align:right">análise + alertas + PDF mensal</span></div>
+      </div>
+
+      <div style="background:${dem.ctda>=500?'rgba(13,148,136,.06)':'#f8f9fa'};border:1px solid ${dem.ctda>=500?'rgba(13,148,136,.3)':'var(--border)'};border-radius:8px;padding:10px;margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div style="font-size:11px;font-weight:600;color:${dem.ctda>=500?'var(--teal)':'var(--hint)'}">3. Mercado Livre de Energia</div>
+          <span style="font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500;background:${dem.ctda>=500?'rgba(13,148,136,.1)':'var(--bg3)'};color:${dem.ctda>=500?'var(--teal)':'var(--hint)'}">
+            ${dem.ctda>=500?'elegível ACL':'não elegível'}
+          </span>
+        </div>
+        ${dem.ctda>=500
+          ? `<div class="proposta-row"><span class="proposta-label">economia</span><span style="color:var(--teal);font-weight:600;font-size:12px">15–30% / ano</span></div>`
+          : `<div style="font-size:10px;color:var(--hint)">Requer ≥ 500 kW. Esta UC: ${dem.ctda} kW.${dem.ctda>=300?' <b style="color:var(--amber)">Monitorar crescimento.</b>':''}</div>`
+        }
+      </div>
+
+      <button class="btn primary" style="width:100%;text-align:center"
         onclick="downloadPDF('${d.fatura_id}','${d.nome}','${d.mes}')">
         ⬇ gerar relatório PDF
       </button>

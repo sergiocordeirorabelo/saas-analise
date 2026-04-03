@@ -310,7 +310,7 @@
     </div>
     <div class="topbar-right">
       <button class="btn" id="topBtn2">↻ atualizar</button>
-      <button class="btn primary" id="topBtn1" onclick="alert('Relatório PDF em desenvolvimento!')">⬇ exportar PDF</button>
+      <button class="btn primary" id="topBtn1" onclick="currentCliente && downloadPDF(currentCliente.fatura_id, currentCliente.nome, currentCliente.mes)">⬇ exportar PDF</button>
     </div>
   </div>
 
@@ -451,7 +451,45 @@
 const SUPABASE_URL = "https://shaihalexolocjjkkpoh.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNoYWloYWxleG9sb2NqamtrcG9oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwMDA2ODUsImV4cCI6MjA5MDU3NjY4NX0.TfMwnhlu-TDZY2n_hxIhpUdXQEOdbr14SuH2e8R9cH8";
 
-const MESES_ABREV = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+const WORKER_URL = "https://saas-faturas-production.up.railway.app";
+const RAILWAY_URL = "https://saas-faturas-production.up.railway.app";
+
+function downloadPDF(faturaId, nome, mes) {
+  if (!faturaId) { alert('Fatura não encontrada.'); return; }
+  const url = `${RAILWAY_URL}/relatorio/${faturaId}`;
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `relatorio_${(nome||'').slice(0,20).replace(/\s+/g,'_')}_${(mes||'').replace('/','')}.pdf`;
+  a.target = '_blank';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+async function downloadPDF(faturaId, nomeCliente, mes) {
+  const btn = event.target;
+  const original = btn.textContent;
+  btn.textContent = 'Gerando...';
+  btn.disabled = true;
+  try {
+    const resp = await fetch(`${WORKER_URL}/relatorio/${faturaId}`);
+    if (!resp.ok) throw new Error(`Erro ${resp.status}`);
+    const blob = await resp.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `analise_${(nomeCliente||'cliente').split(' ')[0]}_${mes}.pdf`.toLowerCase();
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch(err) {
+    alert(`Erro ao gerar PDF: ${err.message}`);
+  } finally {
+    btn.textContent = original;
+    btn.disabled = false;
+  }
+}
 
 let CLIENTES = [];
 let filtered  = [];
@@ -768,7 +806,8 @@ function showUC(id) {
   document.getElementById('aiContent').innerHTML = `
     <div class="ai-box">"${d.ai}"</div>
     <div style="font-size:10px;color:var(--hint)">gerado por GPT-4o mini · análise automatizada</div>
-    <button class="btn primary" style="width:100%;margin-top:12px;text-align:center" onclick="alert('Relatório PDF em desenvolvimento!')">
+    <button class="btn primary" style="width:100%;margin-top:12px;text-align:center"
+      onclick="downloadPDF('${d.fatura_id}','${d.nome}','${d.mes}')">
       ⬇ gerar relatório PDF
     </button>
   `;
@@ -1014,7 +1053,8 @@ function openFaturaDetail(clienteId, faturaIdx) {
         <hr class="proposta-divider">
         <div style="font-size:11px;color:var(--hint)">Cliente paga somente se economizar.</div>
       </div>
-      <button class="btn primary" style="width:100%;margin-top:12px;text-align:center" onclick="alert('Relatório PDF em breve!')">
+      <button class="btn primary" style="width:100%;margin-top:12px;text-align:center"
+        onclick="downloadPDF('${d.fatura_id}','${d.nome}','${d.mes}')">
         ⬇ gerar relatório PDF
       </button>
     </div>

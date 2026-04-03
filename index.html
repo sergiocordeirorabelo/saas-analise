@@ -9,25 +9,26 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
   :root {
-    --bg: #0a0c0f;
-    --bg2: #111318;
-    --bg3: #181c22;
-    --border: rgba(255,255,255,0.07);
-    --border2: rgba(255,255,255,0.12);
-    --text: #e8eaed;
-    --muted: #7a8494;
-    --hint: #444c5a;
-    --green: #22c97a;
-    --green-bg: rgba(34,201,122,0.08);
-    --amber: #f5a623;
-    --amber-bg: rgba(245,166,35,0.08);
-    --red: #ef4545;
-    --red-bg: rgba(239,69,69,0.08);
-    --blue: #4d9ef7;
-    --blue-bg: rgba(77,158,247,0.08);
-    --teal: #2dd4bf;
-    --radius: 10px;
-    --radius-sm: 6px;
+    --bg:       #f5f6fa;
+    --bg2:      #ffffff;
+    --bg3:      #f1f3f5;
+    --border:   rgba(0,0,0,0.08);
+    --border2:  rgba(0,0,0,0.15);
+    --text:     #1a1d23;
+    --muted:    #6b7280;
+    --hint:     #9ca3af;
+    --green:    #059669;
+    --green-bg: #d1fae5;
+    --amber:    #d97706;
+    --amber-bg: #fef3c7;
+    --red:      #dc2626;
+    --red-bg:   #fee2e2;
+    --blue:     #2563eb;
+    --blue-bg:  #dbeafe;
+    --teal:     #0d9488;
+    --accent:   #0d2137;
+    --radius:   10px;
+    --radius-sm:6px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -54,24 +55,25 @@
     padding: 20px 18px 16px;
     border-bottom: 1px solid var(--border);
     display: flex; align-items: center; gap: 10px;
+    background: var(--accent);
   }
   .sb-icon {
     width: 30px; height: 30px;
     background: var(--green);
     border-radius: 8px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 15px; color: #000; flex-shrink: 0;
+    font-size: 15px; color: #fff; flex-shrink: 0;
   }
-  .sb-title { font-size: 13px; font-weight: 600; color: var(--text); }
-  .sb-sub { font-size: 10px; color: var(--muted); margin-top: 1px; }
+  .sb-title { font-size: 13px; font-weight: 600; color: #fff; }
+  .sb-sub { font-size: 10px; color: rgba(255,255,255,.5); margin-top: 1px; }
   .sb-section { font-size: 10px; color: var(--hint); text-transform: uppercase; letter-spacing: .06em; padding: 16px 18px 6px; }
   .sb-item {
     display: flex; align-items: center; gap: 9px;
     padding: 8px 18px; font-size: 12px; color: var(--muted);
     cursor: pointer; border-left: 2px solid transparent; transition: all .15s;
   }
-  .sb-item:hover { color: var(--text); background: rgba(255,255,255,.03); }
-  .sb-item.active { color: var(--text); border-left-color: var(--green); background: rgba(34,201,122,.05); }
+  .sb-item:hover { color: var(--text); background: rgba(0,0,0,.04); }
+  .sb-item.active { color: var(--accent); border-left-color: var(--green); background: var(--green-bg); }
   .sb-item svg { width: 14px; height: 14px; flex-shrink: 0; opacity: .7; }
   .sb-bottom { margin-top: auto; padding: 16px 18px; border-top: 1px solid var(--border); }
   .sb-badge {
@@ -105,7 +107,7 @@
     cursor: pointer; color: var(--muted); background: transparent;
     font-family: inherit; transition: all .15s;
   }
-  .btn:hover { color: var(--text); border-color: rgba(255,255,255,.2); }
+  .btn:hover { color: var(--text); border-color: var(--border2); }
   .btn.primary {
     background: var(--green); color: #000;
     border-color: var(--green); font-weight: 600;
@@ -194,7 +196,7 @@
   .dem-track { flex: 1; height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
   .dem-fill { height: 100%; border-radius: 3px; }
   .dem-val { font-size: 11px; color: var(--text); width: 55px; text-align: right; font-family: 'DM Mono', monospace; }
-  .dem-note { font-size: 11px; color: var(--amber); margin-top: 8px; padding: 8px 10px; background: var(--amber-bg); border-radius: var(--radius-sm); }
+  .dem-note { font-size: 11px; color: var(--amber); margin-top: 8px; padding: 8px 10px; background: var(--amber-bg); border-radius: var(--radius-sm); border: 1px solid rgba(217,119,6,0.2); }
 
   /* alertas */
   .alert-item { padding: 9px 0; border-bottom: 1px solid var(--border); }
@@ -217,8 +219,8 @@
 
   /* proposta */
   .proposta {
-    background: linear-gradient(135deg, rgba(34,201,122,.06), rgba(34,201,122,.02));
-    border: 1px solid rgba(34,201,122,.2);
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
     border-radius: var(--radius); padding: 16px;
   }
   .proposta-title { font-size: 13px; font-weight: 600; color: var(--green); margin-bottom: 10px; }
@@ -286,7 +288,7 @@
     Clientes
   </div>
   <div class="sb-bottom">
-    <div style="font-size:11px;color:var(--hint)">worker ativo</div>
+    <div style="font-size:11px;color:var(--muted)">worker ativo</div>
     <div style="font-size:10px;color:var(--green);margin-top:3px">● Railway · online</div>
   </div>
 </div>
@@ -388,7 +390,7 @@
         <div class="card-title">alertas identificados</div>
         <div id="alertasContent"></div>
       </div>
-      <!-- Análise IA + Proposta -->
+      <!-- Análise IA -->
       <div class="card">
         <div class="card-title">análise executiva (IA)</div>
         <div id="aiContent"></div>
@@ -397,6 +399,25 @@
       <div class="card">
         <div class="card-title">score e proposta comercial</div>
         <div id="propostaContent"></div>
+      </div>
+    </div>
+
+    <!-- Faturas individuais -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">faturas individuais analisadas</div>
+        <div style="font-size:11px;color:var(--hint)">clique numa fatura para ver a análise individual</div>
+      </div>
+      <div class="table">
+        <div class="thead" style="grid-template-columns:1fr 1fr 1fr 80px 80px 90px">
+          <div class="th">mês referência</div>
+          <div class="th r">valor total</div>
+          <div class="th r">consumo kWh</div>
+          <div class="th r">demanda</div>
+          <div class="th r">score</div>
+          <div class="th r">situação</div>
+        </div>
+        <div id="faturasIndividuais"></div>
       </div>
     </div>
 
@@ -663,8 +684,8 @@ function showUC(id) {
       labels: d.meses,
       datasets: [{
         data: d.hist,
-        backgroundColor: d.hist.map((v,i)=> i===d.hist.length-1 ? 'rgba(77,158,247,0.7)' : 'rgba(255,255,255,0.08)'),
-        borderColor: d.hist.map((v,i)=> i===d.hist.length-1 ? '#4d9ef7' : 'rgba(255,255,255,0.12)'),
+        backgroundColor: d.hist.map((v,i)=> i===d.hist.length-1 ? 'rgba(37,99,235,0.7)' : 'rgba(0,0,0,0.07)'),
+        borderColor: d.hist.map((v,i)=> i===d.hist.length-1 ? '#2563eb' : 'rgba(0,0,0,0.1)'),
         borderWidth: 1, borderRadius: 3,
       }]
     },
@@ -674,8 +695,8 @@ function showUC(id) {
         callbacks: { label: ctx => ` ${ctx.raw.toLocaleString('pt-BR')} kWh` }
       }},
       scales: {
-        x: { grid: { display: false }, ticks: { color: '#444c5a', font: { size: 9, family: 'DM Sans' }}},
-        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#444c5a', font: { size: 9 },
+        x: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 9, family: 'DM Sans' }}},
+        y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { color: '#9ca3af', font: { size: 9 },
           callback: v => v>=1000 ? (v/1000).toFixed(0)+'k' : v }}
       }
     }
@@ -759,11 +780,40 @@ function showUC(id) {
       </div>
     </div>
     <div class="tags">
-      <span class="tag">Grupo A · ${d.uc.startsWith('0041')?'A3a':'A4'}</span>
-      <span class="tag">Horossazonal Verde</span>
-      ${dem.ctda>=500?'<span class="tag" style="border-color:rgba(45,212,191,.3);color:var(--teal)">elegível ACL</span>':''}
+      <span class="tag">Grupo A · ${d.subgrupo || 'A4'}</span>
+      <span class="tag">${d.modalidade || 'Horossazonal Verde'}</span>
+      ${dem.ctda>=500?'<span class="tag" style="border-color:rgba(13,148,136,.3);color:var(--teal)">elegível ACL</span>':''}
     </div>
   `;
+
+  // ── Faturas individuais ──
+  const fi = document.getElementById('faturasIndividuais');
+  if (d.faturasList && d.faturasList.length > 0) {
+    fi.innerHTML = d.faturasList.slice().reverse().map(f => {
+      const situBadge = f.situacao === 'ABER'
+        ? `<span class="badge a" style="font-size:9px">em aberto</span>`
+        : `<span class="badge ok" style="font-size:9px">paga</span>`;
+      return `
+        <div class="trow" style="grid-template-columns:1fr 1fr 1fr 80px 80px 90px;cursor:default">
+          <div>
+            <div style="font-size:13px;font-weight:500;color:var(--text)">${f.mes}</div>
+            <div style="font-size:10px;color:var(--hint)">UC ${d.uc}</div>
+          </div>
+          <div class="td r" style="font-weight:500">R$ ${(f.total||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+          <div class="td r">${(f.consumo||0).toLocaleString('pt-BR')} kWh</div>
+          <div class="td r">${dem.medi > 0 ? dem.medi+' kW' : '—'}</div>
+          <div class="td r">
+            <div class="score-cell">
+              <span class="score-num" style="color:${scoreColor(d.score)}">${d.score}/100</span>
+              <div class="score-bar"><div class="score-fill" style="width:${d.score}%;background:${scoreColor(d.score)}"></div></div>
+            </div>
+          </div>
+          <div class="td r">${situBadge}</div>
+        </div>`;
+    }).join('');
+  } else {
+    fi.innerHTML = '<div class="empty">Nenhuma fatura individual disponível.</div>';
+  }
 }
 
 function showPortfolio() {

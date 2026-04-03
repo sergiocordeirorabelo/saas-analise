@@ -452,64 +452,77 @@ async function carregarDados() {
       return;
     }
 
-    // Agrupa por UC — pega a fatura mais recente de cada UC
-    const porUC = {};
-    for (const row of rows) {
-      if (!porUC[row.uc]) porUC[row.uc] = row;
-    }
-
-    // Monta lista de todas as faturas por UC (para histórico)
+    // Agrupa TODAS as faturas por UC
     const todasPorUC = {};
     for (const row of rows) {
       if (!todasPorUC[row.uc]) todasPorUC[row.uc] = [];
       todasPorUC[row.uc].push(row);
     }
 
-    CLIENTES = Object.values(porUC).map((row, idx) => {
-      // faturas_analise vem como array no join do Supabase
-      const analise = Array.isArray(row.faturas_analise)
-        ? (row.faturas_analise[0] || {})
-        : (row.faturas_analise || {});
+    // Ordena cada UC por mes_referencia crescente
+    for (const uc of Object.keys(todasPorUC)) {
+      todasPorUC[uc].sort((a, b) => {
+        const pa = (a.mes_referencia || '').split('/').reverse().join('');
+        const pb = (b.mes_referencia || '').split('/').reverse().join('');
+        return pa.localeCompare(pb);
+      });
+    }
+
+    CLIENTES = Object.entries(todasPorUC).map(([uc, faturas]) => {
+      // Fatura mais recente para dados base
+      const recente = faturas[faturas.length - 1];
+
+      // Analise da fatura mais recente
+      const analise = Array.isArray(recente.faturas_analise)
+        ? (recente.faturas_analise[0] || {})
+        : (recente.faturas_analise || {});
+
+      // Consolida dados de TODAS as faturas
+      const totalFaturas = faturas.length;
+      const mediaFatura  = faturas.reduce((s, f) => s + (f.total_a_pagar || 0), 0) / totalFaturas;
+      const totalConsumo = faturas.reduce((s, f) => s + (f.consumo_total_kwh || 0), 0);
 
       const score   = analise.score_eficiencia ?? 100;
       const eco_m   = analise.potencial_economia_mensal ?? 0;
       const eco_a   = analise.potencial_economia_anual ?? 0;
       const alertas = analise.alertas ?? [];
-      const ctda    = row.demanda_contratada_fora_ponta_kw ?? 0;
-      const medi    = row.demanda_medida_fora_ponta_kw ?? 0;
+      const ctda    = recente.demanda_contratada_fora_ponta_kw ?? 0;
+      const medi    = recente.demanda_medida_fora_ponta_kw ?? 0;
 
-      // Usa histórico do próprio campo historico_kwh da fatura mais recente
-      // Se não tiver, constrói a partir das múltiplas faturas
-      let hist = row.historico_kwh ?? [];
-      if (hist.length === 0 && todasPorUC[row.uc]) {
-        hist = todasPorUC[row.uc]
-          .slice().reverse()
-          .map(f => f.consumo_total_kwh || 0)
-          .filter(v => v > 0);
+      // Histórico de consumo: usa historico_kwh da fatura mais recente
+      // (já vem com 13 meses) ou constrói a partir das faturas disponíveis
+      let hist = recente.historico_kwh ?? [];
+      let mesesHist = [];
+
+      if (hist.length > 0) {
+        // Histórico completo da fatura — usa os meses do campo
+        const [mesN] = (recente.mes_referencia || '01/2026').split('/');
+        mesesHist = hist.map((_, i) => {
+          const offset = hist.length - 1 - i;
+          const mesIdx = ((parseInt(mesN || 1) - 1 - offset) % 12 + 12) % 12;
+          return MESES_ABREV[mesIdx];
+        });
+      } else {
+        // Constrói histórico das faturas baixadas
+        hist = faturas.map(f => f.consumo_total_kwh || 0);
+        mesesHist = faturas.map(f => {
+          const [m] = (f.mes_referencia || '').split('/');
+          return MESES_ABREV[(parseInt(m || 1) - 1 + 12) % 12];
+        });
       }
 
-      const cons = row.consumo_total_kwh ?? 1;
+      // Pico de demanda histórico: maior valor estimado no histórico
+      const cons  = recente.consumo_total_kwh ?? 1;
       const ratio = cons > 0 ? medi / cons : 0;
       const pico  = hist.length ? Math.round(ratio * Math.max(...hist)) : medi;
 
-      // Score → status
+      // Status e modelo
       const status = score < 60 ? 'c' : score < 80 ? 'a' : 'ok';
-
-      // Modelo recomendado baseado nos alertas
-      const temMercado  = alertas.some(a => a.codigo === 'MERCADO_LIVRE_ELEGIVEL');
-      const temDemanda  = alertas.some(a => a.codigo === 'DEMANDA_SUPERDIMENSIONADA');
+      const temMercado = alertas.some(a => a.codigo === 'MERCADO_LIVRE_ELEGIVEL');
+      const temDemanda = alertas.some(a => a.codigo === 'DEMANDA_SUPERDIMENSIONADA');
       const modelo = temMercado ? 'mercado' : temDemanda ? 'consul' : 'assin';
 
-      // Meses do histórico
-      const mesRef = row.mes_referencia || '';
-      const [mesN, anoN] = mesRef.split('/');
-      const mesesHist = hist.map((_, i) => {
-        const offset = hist.length - 1 - i;
-        const mesIdx = ((parseInt(mesN || 1) - 1 - offset) % 12 + 12) % 12;
-        return MESES_ABREV[mesIdx];
-      });
-
-      // Normaliza alertas para o formato do dashboard
+      // Alertas normalizados
       const alertasNorm = alertas.map(a => ({
         sev: a.severidade === 'critico' ? 'c' : a.severidade === 'atencao' ? 'a' : 'i',
         t:   a.titulo || '',
@@ -517,30 +530,40 @@ async function carregarDados() {
         a:   a.acao_recomendada || '',
       }));
 
-      // Nome: usa o cliente_nome do parser, limpa se necessário
-      let nome = row.cliente_nome || `UC ${row.uc}`;
-      // Trunca texto longo (parser pega linha inteira às vezes)
+      // Nome do cliente
+      let nome = recente.cliente_nome || `UC ${uc}`;
       if (nome.length > 50) nome = nome.slice(0, 47) + '...';
 
+      // Lista de faturas para o histórico de meses no detalhe
+      const faturasList = faturas.map(f => ({
+        mes:    f.mes_referencia,
+        total:  f.total_a_pagar ?? 0,
+        consumo: f.consumo_total_kwh ?? 0,
+        situacao: f.situacao || '',
+      }));
+
       return {
-        id:       row.id,
-        fatura_id: analise.id || row.id,
+        id:         recente.id,
+        fatura_id:  analise.id || recente.id,
         nome,
-        uc:       row.uc,
-        mes:      row.mes_referencia,
-        subgrupo: row.subgrupo || 'A4',
-        modalidade: row.modalidade || '',
-        fat:      row.total_a_pagar ?? 0,
-        eco:      eco_a,
-        honorario: Math.round(eco_a * 0.25),
+        uc,
+        mes:        recente.mes_referencia,
+        subgrupo:   recente.subgrupo || 'A4',
+        modalidade: recente.modalidade || '',
+        fat:        recente.total_a_pagar ?? 0,
+        mediaFatura: Math.round(mediaFatura),
+        totalFaturas,
+        eco:        eco_a,
+        honorario:  Math.round(eco_a * 0.25),
         score,
         status,
         modelo,
-        dem:      { ctda, medi, pico },
+        dem:        { ctda, medi, pico },
         hist,
-        meses:    mesesHist,
-        alertas:  alertasNorm,
-        ai:       analise.analise_claude || analise.resumo_executivo || '',
+        meses:      mesesHist,
+        alertas:    alertasNorm,
+        ai:         analise.analise_claude || analise.resumo_executivo || '',
+        faturasList,
       };
     });
 
@@ -596,7 +619,7 @@ function renderPortfolio() {
         <div class="cname">${d.nome}</div>
         <div class="cuc">UC ${d.uc}</div>
       </div>
-      <div class="td r">R$ ${d.fat.toLocaleString('pt-BR')}</div>
+      <div class="td r">R$ ${d.mediaFatura.toLocaleString('pt-BR')}<br><span style="font-size:10px;color:var(--hint)">${d.totalFaturas} fatura(s)</span></div>
       <div class="td r green">R$ ${d.eco.toLocaleString('pt-BR')}</div>
       <div class="td r">
         <div class="score-cell">

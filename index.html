@@ -3,254 +3,184 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SaaS Análise — Energia</title>
+<title>Amazônia Faturas — Gestão Inteligente de Energia</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
-  :root {
-    --bg:       #f5f6fa;
-    --bg2:      #ffffff;
-    --bg3:      #f1f3f5;
-    --border:   rgba(0,0,0,0.08);
-    --border2:  rgba(0,0,0,0.15);
-    --text:     #1a1d23;
-    --muted:    #6b7280;
-    --hint:     #9ca3af;
-    --green:    #059669;
-    --green-bg: #d1fae5;
-    --amber:    #d97706;
-    --amber-bg: #fef3c7;
-    --red:      #dc2626;
-    --red-bg:   #fee2e2;
-    --blue:     #2563eb;
-    --blue-bg:  #dbeafe;
-    --teal:     #0d9488;
-    --accent:   #0d2137;
-    --radius:   10px;
-    --radius-sm:6px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    font-size: 14px;
-  }
+:root{
+  --bg:#f8fafc;--bg2:#ffffff;--bg3:#f1f5f9;
+  --border:#e2e8f0;--border2:#cbd5e1;
+  --text:#0f172a;--muted:#64748b;--hint:#94a3b8;
+  --green:#059669;--green-bg:#d1fae5;--green-dark:#065f46;
+  --amber:#d97706;--amber-bg:#fef3c7;
+  --red:#dc2626;--red-bg:#fee2e2;
+  --blue:#2563eb;--blue-bg:#dbeafe;
+  --teal:#0d9488;--teal-bg:#ccfbf1;
+  --purple:#7c3aed;--purple-bg:#ede9fe;
+  --accent:#1e293b;--accent2:#0f172a;
+  --sidebar-w:240px;
+  --radius:10px;--radius-sm:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+.shell{display:flex;min-height:100vh}
 
-  /* ── LAYOUT ── */
-  .shell { display: flex; min-height: 100vh; }
-  .sidebar {
-    width: 220px; flex-shrink: 0;
-    background: var(--bg2);
-    border-right: 1px solid var(--border);
-    display: flex; flex-direction: column;
-    padding: 0;
-  }
-  .main { flex: 1; overflow: auto; }
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sidebar-w);flex-shrink:0;background:var(--accent2);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:50;overflow-y:auto}
+.sb-logo{padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px}
+.sb-icon{width:32px;height:32px;background:var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.sb-title{font-size:13px;font-weight:700;color:#fff}
+.sb-sub{font-size:10px;color:rgba(255,255,255,.4);margin-top:1px}
+.sb-empresa{padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.06)}
+.sb-empresa select{width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#fff;padding:7px 10px;border-radius:6px;font-size:12px;cursor:pointer;outline:none}
+.sb-empresa select option{background:#1e293b;color:#fff}
+.sb-section{font-size:10px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.06em;padding:14px 16px 6px}
+.sb-item{display:flex;align-items:center;gap:9px;padding:8px 16px;font-size:12px;color:rgba(255,255,255,.6);cursor:pointer;border-left:2px solid transparent;transition:all .15s;user-select:none}
+.sb-item:hover{color:#fff;background:rgba(255,255,255,.06)}
+.sb-item.active{color:#fff;border-left-color:var(--green);background:rgba(5,150,105,.12)}
+.sb-item svg{width:15px;height:15px;flex-shrink:0}
+.sb-badge{margin-left:auto;font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7)}
+.sb-badge.red{background:rgba(220,38,38,.2);color:#fca5a5}
+.sb-badge.green{background:rgba(5,150,105,.2);color:#6ee7b7}
+.sb-bottom{margin-top:auto;padding:14px 16px;border-top:1px solid rgba(255,255,255,.06)}
 
-  /* ── SIDEBAR ── */
-  .sb-logo {
-    padding: 20px 18px 16px;
-    border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; gap: 10px;
-    background: var(--accent);
-  }
-  .sb-icon {
-    width: 30px; height: 30px;
-    background: var(--green);
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 15px; color: #fff; flex-shrink: 0;
-  }
-  .sb-title { font-size: 13px; font-weight: 600; color: #fff; }
-  .sb-sub { font-size: 10px; color: rgba(255,255,255,.5); margin-top: 1px; }
-  .sb-section { font-size: 10px; color: var(--hint); text-transform: uppercase; letter-spacing: .06em; padding: 16px 18px 6px; }
-  .sb-item {
-    display: flex; align-items: center; gap: 9px;
-    padding: 8px 18px; font-size: 12px; color: var(--muted);
-    cursor: pointer; border-left: 2px solid transparent; transition: all .15s;
-  }
-  .sb-item:hover { color: var(--text); background: rgba(0,0,0,.04); }
-  .sb-item.active { color: var(--accent); border-left-color: var(--green); background: var(--green-bg); }
-  .sb-item svg { width: 14px; height: 14px; flex-shrink: 0; opacity: .7; }
-  .sb-bottom { margin-top: auto; padding: 16px 18px; border-top: 1px solid var(--border); }
-  .sb-badge {
-    font-size: 10px; padding: 2px 7px; border-radius: 20px;
-    background: var(--green-bg); color: var(--green); float: right;
-  }
+/* ── MAIN ── */
+.main{margin-left:var(--sidebar-w);flex:1;overflow:auto;min-height:100vh}
 
-  /* ── TOPBAR ── */
-  .topbar {
-    padding: 16px 24px;
-    border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between;
-    background: var(--bg);
-    position: sticky; top: 0; z-index: 10;
-  }
-  .topbar-left { display: flex; align-items: center; gap: 10px; }
-  .back-btn {
-    display: none; align-items: center; gap: 6px;
-    font-size: 12px; color: var(--muted); cursor: pointer;
-    padding: 5px 10px; border: 1px solid var(--border);
-    border-radius: var(--radius-sm); transition: all .15s;
-  }
-  .back-btn:hover { color: var(--text); border-color: var(--border2); }
-  .back-btn.show { display: flex; }
-  .page-title { font-size: 15px; font-weight: 500; }
-  .page-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
-  .topbar-right { display: flex; gap: 8px; align-items: center; }
-  .btn {
-    font-size: 12px; padding: 7px 14px;
-    border: 1px solid var(--border2); border-radius: var(--radius-sm);
-    cursor: pointer; color: var(--muted); background: transparent;
-    font-family: inherit; transition: all .15s;
-  }
-  .btn:hover { color: var(--text); border-color: var(--border2); }
-  .btn.primary {
-    background: var(--green); color: #000;
-    border-color: var(--green); font-weight: 600;
-  }
-  .btn.primary:hover { opacity: .88; }
+/* ── TOPBAR ── */
+.topbar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg2);position:sticky;top:0;z-index:40}
+.topbar-title{font-size:16px;font-weight:600;color:var(--text)}
+.topbar-right{display:flex;gap:8px;align-items:center}
+.btn{font-size:12px;padding:7px 14px;border:1px solid var(--border2);border-radius:var(--radius-sm);cursor:pointer;color:var(--muted);background:transparent;font-family:inherit;transition:all .15s;font-weight:500}
+.btn:hover{color:var(--text);border-color:var(--blue);background:var(--blue-bg)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn.primary:hover{opacity:.88}
+.btn.green{background:var(--green);color:#fff;border-color:var(--green)}
+.btn.green:hover{opacity:.88}
+.btn.danger{background:var(--red-bg);color:var(--red);border-color:#fecaca}
 
-  /* ── MÉTRICAS ── */
-  .metrics-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; padding: 20px 24px; }
-  .metric {
-    background: var(--bg2); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 16px;
-  }
-  .metric-label { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
-  .metric-val { font-size: 22px; font-weight: 500; line-height: 1; }
-  .metric-sub { font-size: 11px; color: var(--hint); margin-top: 6px; }
-  .metric-val.green { color: var(--green); }
-  .metric-val.amber { color: var(--amber); }
-  .metric-val.red { color: var(--red); }
+/* ── PAGE WRAPPER ── */
+.page{display:none;padding:24px}
+.page.active{display:block}
 
-  /* ── TABELA PORTFÓLIO ── */
-  .section { padding: 0 24px 24px; }
-  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-  .section-title { font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
-  .filters { display: flex; gap: 6px; }
-  .chip {
-    font-size: 11px; padding: 4px 11px;
-    border: 1px solid var(--border); border-radius: 20px;
-    cursor: pointer; color: var(--muted); transition: all .15s;
-  }
-  .chip:hover { border-color: var(--border2); color: var(--text); }
-  .chip.on { border-color: var(--green); color: var(--green); background: var(--green-bg); }
+/* ── MÉTRICAS ── */
+.metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.metric-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:18px;position:relative}
+.metric-label{font-size:11px;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.metric-val{font-size:22px;font-weight:700;line-height:1;color:var(--text)}
+.metric-val.green{color:var(--green)}
+.metric-val.amber{color:var(--amber)}
+.metric-val.red{color:var(--red)}
+.metric-sub{font-size:11px;color:var(--hint);margin-top:6px}
+.metric-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px}
 
-  .table { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-  .thead {
-    display: grid; grid-template-columns: 2fr 1fr 1fr 70px 90px 110px;
-    padding: 10px 16px; background: var(--bg3);
-    border-bottom: 1px solid var(--border);
-  }
-  .th { font-size: 10px; color: var(--hint); text-transform: uppercase; letter-spacing: .05em; }
-  .th.r { text-align: right; }
-  .trow {
-    display: grid; grid-template-columns: 2fr 1fr 1fr 70px 90px 110px;
-    padding: 12px 16px; border-bottom: 1px solid var(--border);
-    align-items: center; cursor: pointer; transition: background .12s;
-  }
-  .trow:hover { background: rgba(255,255,255,.02); }
-  .trow:last-child { border-bottom: none; }
-  .td { font-size: 12px; color: var(--text); }
-  .td.r { text-align: right; }
-  .td.muted { color: var(--muted); font-size: 11px; }
-  .td.green { color: var(--green); font-weight: 500; }
-  .cname { font-size: 13px; font-weight: 500; color: var(--text); }
-  .cuc { font-size: 10px; color: var(--hint); margin-top: 2px; font-family: 'DM Mono', monospace; }
+/* ── CARDS ── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.card-title{font-size:13px;font-weight:600;color:var(--text)}
+.card-sub{font-size:11px;color:var(--muted);margin-top:2px}
 
-  .score-cell { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
-  .score-num { font-size: 12px; font-weight: 500; font-family: 'DM Mono', monospace; }
-  .score-bar { width: 50px; height: 3px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
-  .score-fill { height: 100%; border-radius: 2px; }
+/* ── TABELAS ── */
+.table-wrap{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.table-head{display:grid;padding:10px 16px;background:var(--bg3);border-bottom:1px solid var(--border)}
+.th{font-size:10px;color:var(--hint);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.th.r{text-align:right}
+.table-row{display:grid;padding:12px 16px;border-bottom:1px solid var(--border);align-items:center;transition:background .12s;cursor:pointer}
+.table-row:last-child{border-bottom:none}
+.table-row:hover{background:var(--bg3)}
+.td{font-size:12px;color:var(--text)}
+.td.r{text-align:right}
+.td.muted{color:var(--muted);font-size:11px}
+.td.green{color:var(--green);font-weight:600}
 
-  .badge { font-size: 10px; padding: 3px 9px; border-radius: 20px; font-weight: 500; text-align: center; }
-  .badge.c { background: var(--red-bg); color: var(--red); }
-  .badge.a { background: var(--amber-bg); color: var(--amber); }
-  .badge.ok { background: var(--green-bg); color: var(--green); }
+/* ── BADGES ── */
+.badge{font-size:10px;padding:3px 9px;border-radius:20px;font-weight:500;display:inline-block}
+.badge.critico{background:var(--red-bg);color:var(--red)}
+.badge.atencao{background:var(--amber-bg);color:var(--amber)}
+.badge.info{background:var(--blue-bg);color:var(--blue)}
+.badge.ok{background:var(--green-bg);color:var(--green)}
+.badge.purple{background:var(--purple-bg);color:var(--purple)}
+.badge.gray{background:var(--bg3);color:var(--muted)}
 
-  .modelo { font-size: 10px; padding: 3px 9px; border-radius: 20px; text-align: center; font-weight: 500; }
-  .modelo.consul { background: var(--amber-bg); color: var(--amber); }
-  .modelo.assin { background: var(--blue-bg); color: var(--blue); }
-  .modelo.mercado { background: rgba(45,212,191,.08); color: var(--teal); }
+/* ── TOGGLE ── */
+.toggle{position:relative;width:40px;height:22px;background:#d1d5db;border-radius:11px;cursor:pointer;transition:background .2s;flex-shrink:0}
+.toggle.on{background:var(--green)}
+.toggle-dot{position:absolute;top:2px;left:2px;width:18px;height:18px;background:#fff;border-radius:50%;transition:left .2s}
+.toggle.on .toggle-dot{left:20px}
 
-  /* ── VIEW UC ── */
-  .uc-view { display: none; }
-  .uc-view.show { display: block; }
-  .portfolio-view.hide { display: none; }
+/* ── CHARTS ── */
+.chart-wrap{position:relative;height:140px}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px}
 
-  .uc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 24px 12px; }
-  .uc-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; padding: 0 24px 24px; }
-  .card {
-    background: var(--bg2); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 16px;
-  }
-  .card-title { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 12px; }
+/* ── CLIENTE CARD ── */
+.cliente-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px;overflow:hidden}
+.cliente-card-header{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.cliente-card-header:hover{background:var(--bg3)}
+.cliente-nome{font-size:13px;font-weight:600;color:var(--text)}
+.cliente-uc{font-size:11px;color:var(--muted);margin-top:2px}
+.cliente-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:14px 18px;border-top:1px solid var(--border);background:var(--bg3)}
+.cli-m-label{font-size:10px;color:var(--muted);margin-bottom:3px}
+.cli-m-val{font-size:14px;font-weight:700}
 
-  /* demanda bars */
-  .dem-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-  .dem-label { font-size: 11px; color: var(--muted); width: 110px; flex-shrink: 0; }
-  .dem-track { flex: 1; height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
-  .dem-fill { height: 100%; border-radius: 3px; }
-  .dem-val { font-size: 11px; color: var(--text); width: 55px; text-align: right; font-family: 'DM Mono', monospace; }
-  .dem-note { font-size: 11px; color: var(--amber); margin-top: 8px; padding: 8px 10px; background: var(--amber-bg); border-radius: var(--radius-sm); border: 1px solid rgba(217,119,6,0.2); }
+/* ── ALERT ITEM ── */
+.alert-item{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start}
+.alert-item:last-child{border-bottom:none}
+.alert-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px}
+.alert-content{flex:1}
+.alert-titulo{font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px}
+.alert-desc{font-size:12px;color:var(--muted);line-height:1.5}
+.alert-meta{font-size:10px;color:var(--hint);margin-top:4px}
 
-  /* alertas */
-  .alert-item { padding: 9px 0; border-bottom: 1px solid var(--border); }
-  .alert-item:last-child { border-bottom: none; }
-  .alert-header { display: flex; align-items: center; gap: 7px; margin-bottom: 3px; }
-  .alert-title { font-size: 12px; color: var(--text); }
-  .alert-eco { font-size: 11px; color: var(--green); }
-  .alert-action { font-size: 11px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+/* ── INSIGHT ITEM (Análise IA) ── */
+.insight-item{padding:14px 16px;border-bottom:1px solid var(--border)}
+.insight-item:last-child{border-bottom:none}
+.insight-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.insight-titulo{font-size:13px;font-weight:500;color:var(--text)}
+.insight-meta{font-size:10px;color:var(--hint)}
+.insight-desc{font-size:12px;color:var(--muted);line-height:1.6}
 
-  /* AI text */
-  .ai-box {
-    background: var(--bg3); border: 1px solid var(--border);
-    border-radius: var(--radius-sm); padding: 14px;
-    font-size: 13px; color: var(--muted); line-height: 1.7;
-    font-style: italic; margin-bottom: 12px;
-  }
+/* ── CONTESTAÇÃO ── */
+.cont-item{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.cont-item:last-child{border-bottom:none}
+.cont-id{font-size:11px;font-family:monospace;color:var(--blue);font-weight:600}
+.cont-tipo{font-size:11px;color:var(--muted)}
+.cont-valor{font-size:13px;font-weight:600;color:var(--text);margin-left:auto}
 
-  /* hist chart */
-  .chart-wrap { position: relative; height: 120px; margin-top: 4px; }
+/* ── EMPTY ── */
+.empty{padding:48px;text-align:center;color:var(--hint)}
+.empty-icon{font-size:36px;margin-bottom:12px}
+.empty-title{font-size:14px;font-weight:500;color:var(--muted);margin-bottom:6px}
 
-  /* proposta */
-  .proposta {
-    background: #f0fdf4;
-    border: 1px solid #bbf7d0;
-    border-radius: var(--radius); padding: 16px;
-  }
-  .proposta-title { font-size: 13px; font-weight: 600; color: var(--green); margin-bottom: 10px; }
-  .proposta-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-  .proposta-label { font-size: 12px; color: var(--muted); }
-  .proposta-val { font-size: 13px; font-weight: 500; color: var(--text); font-family: 'DM Mono', monospace; }
-  .proposta-val.green { color: var(--green); }
-  .proposta-divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
+/* ── OVERLAY (Faturas Modal) ── */
+#faturasModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;overflow:auto;padding:32px 16px}
+.modal-box{background:#fff;border-radius:20px;width:100%;max-width:480px;box-shadow:0 16px 48px rgba(0,0,0,.2);overflow:hidden;margin:0 auto}
+.modal-header{background:var(--accent2);padding:20px 24px;display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-size:15px;font-weight:700;color:#fff}
+.modal-close{background:rgba(255,255,255,.15);border:none;color:#fff;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px}
+.form-label{font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;display:block}
+.form-input{width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid #d1d5db;font-size:14px;background:#f9fafb;outline:none;font-family:inherit}
+.form-input:focus{border-color:var(--blue)}
 
-  /* score ring */
-  .score-big { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
-  .score-circle {
-    width: 64px; height: 64px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 20px; font-weight: 600; font-family: 'DM Mono', monospace;
-    flex-shrink: 0;
-  }
-  .score-info { flex: 1; }
-  .score-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+/* ── RECUPERAÇÃO TRIBUTÁRIA ── */
+.recup-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:10px}
+.recup-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.recup-uc{font-size:12px;font-family:monospace;font-weight:600;color:var(--text)}
+.recup-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.recup-m{background:var(--bg3);border-radius:6px;padding:10px}
+.recup-m-label{font-size:10px;color:var(--muted);margin-bottom:3px}
+.recup-m-val{font-size:13px;font-weight:600}
 
-  /* tags */
-  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-  .tag { font-size: 10px; padding: 3px 9px; border-radius: 20px; border: 1px solid var(--border); color: var(--muted); }
+/* ── MULTI UC ── */
+.multi-uc-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:14px}
 
-  /* empty */
-  .empty { padding: 40px; text-align: center; color: var(--hint); font-size: 13px; }
+/* ── SCROLL ── */
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px}
 </style>
 </head>
 <body>
-
 <div class="shell">
 
 <!-- SIDEBAR -->
@@ -258,125 +188,61 @@
   <div class="sb-logo">
     <div class="sb-icon">⚡</div>
     <div>
-      <div class="sb-title">SaaS Análise</div>
-      <div class="sb-sub">painel interno</div>
+      <div class="sb-title">Amazônia Faturas</div>
+      <div class="sb-sub">Gestão Inteligente de Energia</div>
     </div>
   </div>
-  <div class="sb-section">Portfólio</div>
-  <div class="sb-item active" id="sb-clientes" onclick="showPortfolio();setSbActive(this)">
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
-    Clientes
-    <span class="sb-badge" id="sbCount">—</span>
+  <div class="sb-empresa">
+    <select id="filtroEmpresa" onchange="filtrarEmpresa(this.value)">
+      <option value="">Todas as Empresas</option>
+    </select>
   </div>
-  <div class="sb-item" id="sb-faturas" onclick="openFaturasModal();setSbActive(this)">
+  <div class="sb-section">Principal</div>
+  <div class="sb-item active" id="sb-visao" onclick="navegar('visao',this)">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+    Visão Geral
+  </div>
+  <div class="sb-item" id="sb-faturas-page" onclick="navegar('faturas-page',this)">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h10a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"/><path d="M5 6h6M5 9h4"/></svg>
     Faturas
-    <span class="sb-badge" id="sbFaturasbadge" style="display:none;background:rgba(245,166,35,.12);color:var(--amber)">•</span>
+    <span class="sb-badge" id="sb-n-faturas">0</span>
   </div>
-  <div class="sb-item">
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12L6 7l3 3 3-4 2 2"/></svg>
-    Tendências
-  </div>
-  <div class="sb-section">Análise</div>
-  <div class="sb-item">
+  <div class="sb-item" id="sb-analise-ia" onclick="navegar('analise-ia',this)">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
-    Alertas ativos
-    <span class="sb-badge" id="sbAlertas" style="background:rgba(239,69,69,.1);color:var(--red)">—</span>
+    Análise IA
+    <span class="sb-badge" id="sb-n-insights">0</span>
   </div>
-  <div class="sb-item">
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="10" rx="1"/><path d="M5 7h6M5 10h4"/></svg>
-    Relatórios
-  </div>
-  <div class="sb-section">Config</div>
-  <div class="sb-item">
+  <div class="sb-item" id="sb-clientes-page" onclick="navegar('clientes-page',this)">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="6" r="3"/><path d="M2 14c0-3 2.7-5 6-5s6 2 6 5"/></svg>
     Clientes
+    <span class="sb-badge green" id="sb-n-clientes">0</span>
+  </div>
+  <div class="sb-section">Análise</div>
+  <div class="sb-item" id="sb-alertas-page" onclick="navegar('alertas-page',this)">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2L2 13h12L8 2z"/><path d="M8 7v3M8 11.5v.5"/></svg>
+    Alertas
+    <span class="sb-badge red" id="sb-n-alertas">0</span>
+  </div>
+  <div class="sb-item" id="sb-recup" onclick="navegar('recup',this)">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h12M8 2l4 6-4 6"/></svg>
+    Recup. Tributária
+  </div>
+  <div class="sb-item" id="sb-multi-uc" onclick="navegar('multi-uc',this)">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="10" rx="1"/><path d="M5 7h6M5 10h4"/></svg>
+    Consolidado Multi-UC
+  </div>
+  <div class="sb-item" id="sb-contestacao" onclick="navegar('contestacao',this)">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11v1"/></svg>
+    Contestação
+  </div>
+  <div class="sb-section">Extração</div>
+  <div class="sb-item" id="sb-faturas" onclick="openFaturasModal();setSbActive(document.getElementById('sb-faturas'))">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v6M5 8h6"/></svg>
+    Nova Extração
   </div>
   <div class="sb-bottom">
-    <div style="font-size:11px;color:var(--muted)">worker ativo</div>
-    <div style="font-size:10px;color:var(--green);margin-top:3px">● Railway · online</div>
-  </div>
-</div>
-
-<!-- ══ MODAL FATURAS ══ -->
-<div id="faturasModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;overflow:auto;padding:32px 16px">
-  <div style="background:#fff;border-radius:20px;width:100%;max-width:480px;box-shadow:0 16px 48px rgba(0,0,0,.25);overflow:hidden;margin:0 auto">
-
-    <!-- Header -->
-    <div style="background:var(--accent);padding:20px 24px;display:flex;align-items:center;justify-content:space-between">
-      <div>
-        <div style="font-size:16px;font-weight:700;color:#fff">⚡ Nova Extração</div>
-        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:2px">Amazonas Energia · portal do cliente</div>
-      </div>
-      <button onclick="closeFaturasModal()" style="background:rgba(255,255,255,.15);border:none;color:#fff;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px">✕</button>
-    </div>
-
-    <!-- Formulário -->
-    <div id="faturasForm" style="padding:24px">
-      <div style="margin-bottom:16px">
-        <label style="font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;display:block">CPF ou CNPJ *</label>
-        <input id="fm-cpf" type="text" placeholder="000.000.000-00"
-          oninput="this.value=formatCpf(this.value)"
-          style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #d1d5db;font-size:15px;background:#f9fafb;outline:none" />
-      </div>
-      <div style="margin-bottom:16px">
-        <label style="font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;display:block">Senha *</label>
-        <input id="fm-senha" type="password" placeholder="Senha do portal"
-          onkeydown="if(event.key==='Enter') enviarExtracao()"
-          style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #d1d5db;font-size:15px;background:#f9fafb;outline:none" />
-      </div>
-      <div style="margin-bottom:16px">
-        <label style="font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;display:block">Período de faturas</label>
-        <select id="fm-meses"
-          style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #d1d5db;font-size:14px;background:#f9fafb;cursor:pointer;color:#1e293b;outline:none">
-          <option value="1">Último mês</option>
-          <option value="3">Últimos 3 meses</option>
-          <option value="6">Últimos 6 meses</option>
-          <option value="12" selected>Últimos 12 meses</option>
-          <option value="24">Últimos 24 meses (2 anos)</option>
-          <option value="36">Últimos 36 meses (3 anos)</option>
-        </select>
-      </div>
-      <div style="margin-bottom:16px">
-        <label style="font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;display:block">
-          UCs específicas <span style="font-weight:400;color:#9ca3af">(opcional — vazio = todas)</span>
-        </label>
-        <input id="fm-ucs" type="text" placeholder="Ex: 21300, 6021263"
-          style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #d1d5db;font-size:14px;background:#f9fafb;outline:none" />
-        <p style="font-size:11px;color:#9ca3af;margin-top:4px">Separe por vírgula. Vazio = todas as UCs.</p>
-      </div>
-      <div style="margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0">
-        <div>
-          <div style="font-size:13px;font-weight:700;color:#166534">🔔 Monitorar faturas novas</div>
-          <div style="font-size:11px;color:#6b7280;margin-top:2px">Busca automática quando surgir fatura nova</div>
-        </div>
-        <div id="fm-toggle" class="toggle" onclick="this.classList.toggle('on')">
-          <div class="toggle-dot"></div>
-        </div>
-      </div>
-      <div id="fm-error" style="display:none;background:#fee2e2;border:1px solid #fecaca;border-radius:10px;padding:10px 14px;margin-bottom:16px;color:#dc2626;font-size:13px"></div>
-      <button id="fm-btn" onclick="enviarExtracao()"
-        style="width:100%;padding:14px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-size:15px;font-weight:700;cursor:pointer">
-        ⚡ Buscar Faturas
-      </button>
-    </div>
-
-    <!-- Status após envio -->
-    <div id="faturasStatus" style="display:none;padding:24px">
-      <div style="text-align:center;padding:8px 0 20px">
-        <div id="fs-icon" style="font-size:36px;margin-bottom:12px">⏳</div>
-        <div id="fs-title" style="font-size:16px;font-weight:700;color:#0f172a;margin-bottom:6px">Processando...</div>
-        <div id="fs-sub" style="font-size:13px;color:#6b7280;line-height:1.5"></div>
-      </div>
-      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:16px">
-        <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">log da extração</div>
-        <div id="fs-log" style="font-size:12px;color:#374151;line-height:1.9"></div>
-      </div>
-      <button id="fs-close-btn" onclick="closeFaturasModal();setSbActive(document.getElementById('sb-clientes'));carregarDados()" style="display:none;width:100%;padding:12px;border-radius:10px;border:1px solid #d1d5db;background:transparent;color:#374151;font-size:14px;cursor:pointer;font-weight:600">
-        ✓ Ver no portfólio
-      </button>
-    </div>
-
+    <div style="font-size:10px;color:rgba(255,255,255,.3)">worker</div>
+    <div style="font-size:10px;color:#6ee7b7;margin-top:2px">● Railway · online</div>
   </div>
 </div>
 
@@ -385,1036 +251,929 @@
 
   <!-- TOPBAR -->
   <div class="topbar">
-    <div class="topbar-left">
-      <div class="back-btn" id="backBtn" onclick="showPortfolio()">
-        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 4L6 8l4 4"/></svg>
-        portfólio
-      </div>
-      <div>
-        <div class="page-title" id="pageTitle">Portfólio de clientes</div>
-        <div class="page-sub" id="pageSub">abril 2026 · Manaus</div>
-      </div>
-    </div>
+    <div id="topbar-title" class="topbar-title">Visão Geral</div>
     <div class="topbar-right">
-      <button class="btn" id="topBtn2">↻ atualizar</button>
-      <button class="btn primary" id="topBtn1" onclick="currentCliente && downloadPDF(currentCliente.fatura_id, currentCliente.nome, currentCliente.mes)">⬇ exportar PDF</button>
+      <button class="btn" onclick="carregarDados()">↻ Atualizar</button>
+      <button class="btn primary" onclick="openFaturasModal()">+ Nova Extração</button>
     </div>
   </div>
 
-  <!-- ══ PORTFOLIO VIEW ══ -->
-  <div id="portfolioView" class="portfolio-view">
-
+  <!-- ══ VISÃO GERAL ══ -->
+  <div id="page-visao" class="page active">
     <div class="metrics-grid">
-      <div class="metric">
-        <div class="metric-label">clientes ativos</div>
-        <div class="metric-val" id="metricaClientes">—</div>
-        <div class="metric-sub">UCs monitoradas</div>
+      <div class="metric-card">
+        <div class="metric-label">Custo Total <span>📄</span></div>
+        <div class="metric-val" id="m-custo">—</div>
+        <div class="metric-sub" id="m-custo-sub">faturas</div>
       </div>
-      <div class="metric">
-        <div class="metric-label">economia total / ano</div>
-        <div class="metric-val green" id="metricaEco">—</div>
-        <div class="metric-sub">identificada pelo sistema</div>
+      <div class="metric-card">
+        <div class="metric-label">Economia Identificada <span>📉</span></div>
+        <div class="metric-val green" id="m-eco">—</div>
+        <div class="metric-sub" id="m-eco-pct">do total faturado</div>
       </div>
-      <div class="metric">
-        <div class="metric-label">seu honorário potencial</div>
-        <div class="metric-val amber" id="metricaHon">—</div>
-        <div class="metric-sub">25% da economia gerada</div>
+      <div class="metric-card">
+        <div class="metric-label">Faturas Analisadas <span>✅</span></div>
+        <div class="metric-val" id="m-faturas">—</div>
+        <div class="metric-sub" id="m-faturas-sub">UCs monitoradas</div>
       </div>
-      <div class="metric">
-        <div class="metric-label">críticos (score &lt; 70)</div>
-        <div class="metric-val red" id="metricaCrit">—</div>
+      <div class="metric-card">
+        <div class="metric-label">Alertas Ativos <span>⚠️</span></div>
+        <div class="metric-val red" id="m-alertas">—</div>
         <div class="metric-sub">ação recomendada</div>
       </div>
     </div>
 
-    <div class="section">
-      <div class="section-header">
-        <div class="section-title">clientes ranqueados por oportunidade</div>
-        <div class="filters">
-          <span class="chip on" onclick="setFilter('todos',this)">todos</span>
-          <span class="chip" onclick="setFilter('c',this)">críticos</span>
-          <span class="chip" onclick="setFilter('consul',this)">consultoria</span>
-          <span class="chip" onclick="setFilter('assin',this)">assinatura</span>
-          <span class="chip" onclick="setFilter('mercado',this)">mercado livre</span>
-        </div>
-      </div>
-      <div class="table">
-        <div class="thead">
-          <div class="th">cliente</div>
-          <div class="th r">fatura/mês</div>
-          <div class="th r">economia/ano</div>
-          <div class="th r">score</div>
-          <div class="th r">status</div>
-          <div class="th r">modelo</div>
-        </div>
-        <div id="tbody"></div>
-      </div>
-    </div>
-
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:14px">Visão por Cliente</h3>
+    <div id="clientes-visao-geral"></div>
   </div>
 
-  <!-- ══ UC VIEW ══ -->
-  <div id="ucView" class="uc-view">
+  <!-- ══ FATURAS ══ -->
+  <div id="page-faturas-page" class="page">
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <select id="filtro-cliente" onchange="renderFaturas()" style="padding:8px 12px;border:1px solid var(--border2);border-radius:8px;font-size:12px;background:var(--bg2);cursor:pointer">
+        <option value="">Todos os Clientes</option>
+      </select>
+      <select id="filtro-uc" onchange="renderFaturas()" style="padding:8px 12px;border:1px solid var(--border2);border-radius:8px;font-size:12px;background:var(--bg2);cursor:pointer">
+        <option value="">Todas as UCs</option>
+      </select>
+      <select id="filtro-status-fat" onchange="renderFaturas()" style="padding:8px 12px;border:1px solid var(--border2);border-radius:8px;font-size:12px;background:var(--bg2);cursor:pointer">
+        <option value="">Todos os Status</option>
+        <option value="ABER">Em Aberto</option>
+        <option value="PAGA">Paga</option>
+      </select>
+      <span style="font-size:12px;color:var(--muted);display:flex;align-items:center" id="fat-count"></span>
+    </div>
+    <div id="faturas-lista"></div>
+  </div>
 
-    <div class="metrics-grid" id="ucMetrics"></div>
+  <!-- ══ ANÁLISE IA ══ -->
+  <div id="page-analise-ia" class="page">
+    <div style="margin-bottom:14px;display:flex;align-items:center;gap:8px">
+      <span style="font-size:13px;font-weight:600">Análise IA por Cliente</span>
+      <span id="insights-total-badge" class="badge info">0 insights</span>
+    </div>
+    <div id="analise-ia-lista"></div>
+  </div>
 
-    <div class="uc-grid">
-      <!-- Histórico consumo -->
-      <div class="card">
-        <div class="card-title">histórico de consumo — 13 meses (kWh)</div>
-        <div class="chart-wrap"><canvas id="histChart"></canvas></div>
+  <!-- ══ CLIENTES ══ -->
+  <div id="page-clientes-page" class="page">
+    <div class="table-wrap">
+      <div class="table-head" style="grid-template-columns:2fr 1fr 1fr 1fr 100px">
+        <div class="th">Cliente</div>
+        <div class="th">CNPJ</div>
+        <div class="th r">Faturas</div>
+        <div class="th r">Economia/ano</div>
+        <div class="th r">Score</div>
       </div>
-      <!-- Demanda -->
-      <div class="card">
-        <div class="card-title">demanda contratada vs medida</div>
-        <div id="demandaContent"></div>
+      <div id="clientes-lista"></div>
+    </div>
+  </div>
+
+  <!-- ══ ALERTAS ══ -->
+  <div id="page-alertas-page" class="page">
+    <div style="display:flex;gap:10px;margin-bottom:16px">
+      <select id="filtro-alerta-sev" onchange="renderAlertas()" style="padding:8px 12px;border:1px solid var(--border2);border-radius:8px;font-size:12px;background:var(--bg2);cursor:pointer">
+        <option value="">Todas as Severidades</option>
+        <option value="critico">Crítico</option>
+        <option value="atencao">Atenção</option>
+        <option value="info">Info</option>
+      </select>
+    </div>
+    <div class="card" style="padding:0">
+      <div id="alertas-lista"></div>
+    </div>
+  </div>
+
+  <!-- ══ RECUPERAÇÃO TRIBUTÁRIA ══ -->
+  <div id="page-recup" class="page">
+    <div class="metrics-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
+      <div class="metric-card">
+        <div class="metric-label">Casos Ativos</div>
+        <div class="metric-val" id="recup-casos">—</div>
+        <div class="metric-sub">recuperação tributária</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Total Faturado Analisado</div>
+        <div class="metric-val" id="recup-faturado">—</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Créditos Identificados</div>
+        <div class="metric-val green" id="recup-creditos">R$ 0,00</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Estimativa Base Total</div>
+        <div class="metric-val amber" id="recup-estimativa">—</div>
       </div>
     </div>
 
-    <div class="uc-grid-3">
-      <!-- Alertas -->
-      <div class="card">
-        <div class="card-title">alertas identificados</div>
-        <div id="alertasContent"></div>
+    <div class="card" style="margin-bottom:16px;background:var(--amber-bg);border-color:#fde68a">
+      <div style="font-size:12px;font-weight:600;color:var(--amber);margin-bottom:6px">⚖️ Base Legal</div>
+      <div style="font-size:12px;color:#92400e;line-height:1.6">
+        Lei 14.385/2022 — Exclusão do ICMS da base de cálculo do PIS/Pasep e da Cofins das distribuidoras de energia.
+        ADI 7324 (STF) — Confirmação da constitucionalidade. Prazo prescricional de 10 anos.
       </div>
-      <!-- Análise IA -->
-      <div class="card">
-        <div class="card-title">análise executiva (IA)</div>
-        <div id="aiContent"></div>
-      </div>
-      <!-- Score + Proposta -->
-      <div class="card">
-        <div class="card-title">score e proposta comercial</div>
-        <div id="propostaContent"></div>
+      <div style="font-size:11px;color:var(--red);margin-top:8px;font-weight:500">
+        ⚠️ Este módulo NÃO afirma automaticamente a existência de crédito líquido exigível. Toda análise requer revisão humana.
       </div>
     </div>
 
-    <!-- Faturas individuais -->
-    <div class="section">
-      <div class="section-header">
-        <div class="section-title">faturas individuais analisadas</div>
-        <div style="font-size:11px;color:var(--hint)">↕ expandir inline · ↗ abrir análise completa</div>
-      </div>
-      <div class="table">
-        <div class="thead" style="grid-template-columns:1fr 1fr 1fr 80px 80px 90px 100px">
-          <div class="th">mês referência</div>
-          <div class="th r">valor total</div>
-          <div class="th r">consumo kWh</div>
-          <div class="th r">demanda</div>
-          <div class="th r">score</div>
-          <div class="th r">situação</div>
-          <div class="th r">ação</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h3 style="font-size:13px;font-weight:600">Casos de Recuperação Tributária</h3>
+      <button class="btn green" onclick="novoRecup()">+ Novo Caso</button>
+    </div>
+    <div id="recup-lista"></div>
+  </div>
+
+  <!-- ══ CONSOLIDADO MULTI-UC ══ -->
+  <div id="page-multi-uc" class="page">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Análise Consolidada Multi-UC</div>
+          <div class="card-sub">Selecione uma empresa para ver análise de todas as UCs agrupadas</div>
         </div>
-        <div id="faturasIndividuais"></div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <select id="multi-uc-empresa" style="flex:1;padding:10px 14px;border:1px solid var(--border2);border-radius:8px;font-size:13px;background:var(--bg2);cursor:pointer">
+          <option value="">Selecione uma empresa / CNPJ</option>
+        </select>
+        <button class="btn primary" onclick="gerarMultiUC()">Gerar Análise</button>
       </div>
     </div>
+    <div id="multi-uc-resultado"></div>
+  </div>
 
+  <!-- ══ CONTESTAÇÃO ══ -->
+  <div id="page-contestacao" class="page">
+    <div class="metrics-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
+      <div class="metric-card">
+        <div class="metric-label">Total de Casos</div>
+        <div class="metric-val" id="cont-total">0</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Valor Total</div>
+        <div class="metric-val amber" id="cont-valor">R$ 0</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Gerados</div>
+        <div class="metric-val blue" id="cont-gerados">0</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Concluídos</div>
+        <div class="metric-val green" id="cont-concluidos">0</div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h3 style="font-size:13px;font-weight:600">Casos de Contestação</h3>
+      <button class="btn green" onclick="gerarContestacoes()">⚡ Gerar Automaticamente</button>
+    </div>
+    <div class="card" style="padding:0">
+      <div id="contestacao-lista"></div>
+    </div>
   </div>
 
 </div><!-- /main -->
 </div><!-- /shell -->
 
-<!-- ══ FATURA DETAIL VIEW (nível 3) ══ -->
-<div id="faturaDetailOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:100;overflow:auto;padding:24px">
-  <div style="max-width:900px;margin:0 auto;background:var(--bg2);border-radius:16px;border:1px solid var(--border);overflow:hidden">
-    <!-- Header -->
-    <div style="background:var(--accent);padding:16px 24px;display:flex;align-items:center;justify-content:space-between">
+<!-- ══ MODAL NOVA EXTRAÇÃO ══ -->
+<div id="faturasModal">
+  <div class="modal-box">
+    <div class="modal-header">
       <div>
-        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:4px" id="fdOverlayBreadcrumb"></div>
-        <div style="font-size:16px;font-weight:600;color:#fff" id="fdOverlayTitle"></div>
+        <div class="modal-title">⚡ Nova Extração</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px">Amazonas Energia · portal do cliente</div>
       </div>
-      <button onclick="closeFaturaDetail()" style="background:rgba(255,255,255,.15);border:none;color:#fff;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px">✕ fechar</button>
+      <button class="modal-close" onclick="closeFaturasModal()">✕</button>
     </div>
-    <!-- Métricas -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:20px 24px" id="fdMetrics"></div>
-    <!-- Grid principal -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 24px 12px" id="fdGrid"></div>
-    <!-- Alertas + IA -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding:0 24px 24px" id="fdBottom"></div>
+    <div id="faturasForm" style="padding:24px">
+      <div style="margin-bottom:14px">
+        <label class="form-label">CPF ou CNPJ *</label>
+        <input id="fm-cpf" class="form-input" type="text" placeholder="000.000.000-00" oninput="this.value=formatCpf(this.value)" />
+      </div>
+      <div style="margin-bottom:14px">
+        <label class="form-label">Senha *</label>
+        <input id="fm-senha" class="form-input" type="password" placeholder="Senha do portal" onkeydown="if(event.key==='Enter')enviarExtracao()" />
+      </div>
+      <div style="margin-bottom:14px">
+        <label class="form-label">Período</label>
+        <select id="fm-meses" class="form-input">
+          <option value="1">Último mês</option>
+          <option value="3">Últimos 3 meses</option>
+          <option value="6">Últimos 6 meses</option>
+          <option value="12" selected>Últimos 12 meses</option>
+          <option value="24">Últimos 24 meses</option>
+          <option value="36">Últimos 36 meses</option>
+        </select>
+      </div>
+      <div style="margin-bottom:14px">
+        <label class="form-label">UCs específicas <span style="font-weight:400;color:var(--hint)">(opcional)</span></label>
+        <input id="fm-ucs" class="form-input" type="text" placeholder="Ex: 21300, 6021263" />
+        <p style="font-size:11px;color:var(--hint);margin-top:4px">Separe por vírgula. Vazio = todas as UCs.</p>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0;margin-bottom:18px">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#166534">🔔 Monitorar faturas novas</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Busca automática mensal</div>
+        </div>
+        <div id="fm-toggle" class="toggle" onclick="this.classList.toggle('on')"><div class="toggle-dot"></div></div>
+      </div>
+      <div id="fm-error" style="display:none;background:var(--red-bg);border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin-bottom:14px;color:var(--red);font-size:12px"></div>
+      <button id="fm-btn" onclick="enviarExtracao()" class="btn primary" style="width:100%;padding:13px;font-size:14px">⚡ Buscar Faturas</button>
+    </div>
+    <div id="faturasStatus" style="display:none;padding:24px">
+      <div style="text-align:center;padding:8px 0 20px">
+        <div id="fs-icon" style="font-size:36px;margin-bottom:12px">⏳</div>
+        <div id="fs-title" style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">Processando...</div>
+        <div id="fs-sub" style="font-size:12px;color:var(--muted);line-height:1.5"></div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px">
+        <div style="font-size:10px;font-weight:700;color:var(--hint);text-transform:uppercase;margin-bottom:8px">log</div>
+        <div id="fs-log" style="font-size:11px;color:var(--muted);line-height:1.9"></div>
+      </div>
+      <button id="fs-close-btn" onclick="closeFaturasModal();navegar('visao',document.getElementById('sb-visao'));carregarDados()" style="display:none;width:100%;padding:11px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--text);font-size:13px;cursor:pointer;font-weight:600">✓ Ver no portfólio</button>
+    </div>
   </div>
 </div>
 
 <script>
 const SUPABASE_URL = "https://shaihalexolocjjkkpoh.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNoYWloYWxleG9sb2NqamtrcG9oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwMDA2ODUsImV4cCI6MjA5MDU3NjY4NX0.TfMwnhlu-TDZY2n_hxIhpUdXQEOdbr14SuH2e8R9cH8";
-
-const WORKER_URL = "https://saas-faturas-production.up.railway.app";
 const RAILWAY_URL = "https://saas-faturas-production.up.railway.app";
 const MESES_ABREV = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
 
-function downloadPDF(faturaId, nome, mes) {
-  if (!faturaId) { alert('Fatura não encontrada.'); return; }
-  const url = `${RAILWAY_URL}/relatorio/${faturaId}`;
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `relatorio_${(nome||'').slice(0,20).replace(/\s+/g,'_')}_${(mes||'').replace('/','')}.pdf`;
-  a.target = '_blank';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+let DADOS = { faturas:[], analises:[], alertas:[], empresas:[], contestacoes:[], recup:[] };
+let EMPRESA_FILTRO = "";
+let _pollInterval = null;
+let _histCharts = {};
+
+async function sbGet(ep){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${ep}`,{headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`}});
+  return r.json();
 }
-
-async function downloadPDF(faturaId, nomeCliente, mes) {
-  const btn = event.target;
-  const original = btn.textContent;
-  btn.textContent = 'Gerando...';
-  btn.disabled = true;
-  try {
-    const resp = await fetch(`${WORKER_URL}/relatorio/${faturaId}`);
-    if (!resp.ok) throw new Error(`Erro ${resp.status}`);
-    const blob = await resp.blob();
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = `analise_${(nomeCliente||'cliente').split(' ')[0]}_${mes}.pdf`.toLowerCase();
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  } catch(err) {
-    alert(`Erro ao gerar PDF: ${err.message}`);
-  } finally {
-    btn.textContent = original;
-    btn.disabled = false;
-  }
-}
-
-let CLIENTES = [];
-let filtered  = [];
-let currentCliente  = null;
-let histChartInstance = null;
-let filtroAtivo = 'todos';
-
-// ── SUPABASE HELPERS ──
-async function sbGet(endpoint) {
-  const r = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
-    headers: {
-      apikey: SUPABASE_KEY,
-      Authorization: `Bearer ${SUPABASE_KEY}`,
-      "Content-Type": "application/json",
-    }
-  });
+async function sbPost(ep,body){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${ep}`,{method:'POST',headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify(body)});
   return r.json();
 }
 
-// ── CARREGAR DADOS DO SUPABASE ──
-async function carregarDados() {
-  document.getElementById('tbody').innerHTML =
-    '<div class="empty" style="padding:32px">Carregando dados...</div>';
+// ── NAVEGAÇÃO ──
+function navegar(page, el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  if(el) el.classList.add('active');
+  const titles = {
+    'visao':'Visão Geral','faturas-page':'Faturas','analise-ia':'Análise IA',
+    'clientes-page':'Clientes','alertas-page':'Alertas Automáticos',
+    'recup':'Recuperação Tributária','multi-uc':'Consolidado Multi-UC',
+    'contestacao':'Contestação de Faturas'
+  };
+  document.getElementById('topbar-title').textContent = titles[page]||page;
+  // Render on demand
+  if(page==='faturas-page') renderFaturas();
+  if(page==='analise-ia') renderAnaliseIA();
+  if(page==='clientes-page') renderClientes();
+  if(page==='alertas-page') renderAlertas();
+  if(page==='recup') renderRecup();
+  if(page==='contestacao') renderContestacao();
+}
+function setSbActive(el){document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));if(el)el.classList.add('active');}
 
-  try {
-    // Busca todas as faturas_parsed com join em faturas_analise
-    const rows = await sbGet(
-      "faturas_parsed?select=id,uc,mes_referencia,cliente_nome,subgrupo,modalidade," +
-      "total_a_pagar,consumo_total_kwh,media_12_meses_kwh,historico_kwh," +
-      "demanda_contratada_fora_ponta_kw,demanda_medida_fora_ponta_kw," +
-      "tarifa_demanda,parsed_at," +
-      "faturas_analise(id,score_eficiencia,potencial_economia_mensal," +
-      "potencial_economia_anual,resumo_executivo,alertas,analise_claude)" +
-      "&order=parsed_at.desc&limit=500"
-    );
+// ── CARREGAR DADOS ──
+async function carregarDados(){
+  try{
+    const [faturas, analises, alertas, empresas, contestacoes, recup] = await Promise.all([
+      sbGet("faturas_parsed?select=*,faturas_analise(*)&order=parsed_at.desc&limit=200"),
+      sbGet("faturas_analise?select=*&order=analyzed_at.desc&limit=200"),
+      sbGet("alertas_de_fatura?select=*&order=created_at.desc&limit=200"),
+      sbGet("empresas?select=*&order=nome"),
+      sbGet("contestacoes?select=*&order=created_at.desc"),
+      sbGet("casos_recuperacao_tributaria?select=*&order=created_at.desc"),
+    ]);
+    DADOS.faturas    = Array.isArray(faturas)      ? faturas      : [];
+    DADOS.analises   = Array.isArray(analises)     ? analises     : [];
+    DADOS.alertas    = Array.isArray(alertas)      ? alertas      : [];
+    DADOS.empresas   = Array.isArray(empresas)     ? empresas     : [];
+    DADOS.contestacoes = Array.isArray(contestacoes)? contestacoes: [];
+    DADOS.recup      = Array.isArray(recup)        ? recup        : [];
 
-    if (!Array.isArray(rows) || rows.length === 0) {
-      document.getElementById('tbody').innerHTML =
-        '<div class="empty">Nenhuma fatura analisada ainda. Cadastre um cliente no SaaS Faturas.</div>';
-      return;
+    popularFiltros();
+    renderVisaoGeral();
+    atualizarBadges();
+  } catch(e){ console.error('Erro carregarDados:', e); }
+}
+
+function atualizarBadges(){
+  const f = DADOS.faturas;
+  const a = DADOS.alertas.filter(x=>!x.resolvido);
+  document.getElementById('sb-n-faturas').textContent  = f.length;
+  document.getElementById('sb-n-alertas').textContent  = a.length;
+  document.getElementById('sb-n-insights').textContent = DADOS.analises.reduce((s,a)=>{
+    const al = a.alertas;
+    return s + (Array.isArray(al)?al.length:0);
+  },0);
+  document.getElementById('sb-n-clientes').textContent = DADOS.empresas.length || [...new Set(f.map(x=>x.cliente_nome).filter(Boolean))].length;
+  document.getElementById('insights-total-badge').textContent = document.getElementById('sb-n-insights').textContent + ' insights';
+}
+
+function popularFiltros(){
+  const nomes = [...new Set(DADOS.faturas.map(f=>f.cliente_nome).filter(Boolean))].sort();
+  const ucs   = [...new Set(DADOS.faturas.map(f=>f.uc).filter(Boolean))].sort();
+  // sidebar empresa filter
+  const sel = document.getElementById('filtroEmpresa');
+  sel.innerHTML = '<option value="">Todas as Empresas</option>' + nomes.map(n=>`<option value="${n}">${n.slice(0,35)}</option>`).join('');
+  // faturas filters
+  const fc = document.getElementById('filtro-cliente');
+  if(fc) fc.innerHTML = '<option value="">Todos os Clientes</option>' + nomes.map(n=>`<option value="${n}">${n.slice(0,40)}</option>`).join('');
+  const fu = document.getElementById('filtro-uc');
+  if(fu) fu.innerHTML = '<option value="">Todas as UCs</option>' + ucs.map(u=>`<option value="${u}">UC ${u}</option>`).join('');
+  // multi-uc empresa
+  const mu = document.getElementById('multi-uc-empresa');
+  if(mu) mu.innerHTML = '<option value="">Selecione uma empresa / CNPJ</option>' + nomes.map(n=>`<option value="${n}">${n.slice(0,50)}</option>`).join('');
+}
+
+function filtrarEmpresa(v){
+  EMPRESA_FILTRO = v;
+  renderVisaoGeral();
+}
+
+function faturasFiltradas(){
+  return EMPRESA_FILTRO ? DADOS.faturas.filter(f=>f.cliente_nome===EMPRESA_FILTRO) : DADOS.faturas;
+}
+
+// ── VISÃO GERAL ──
+function renderVisaoGeral(){
+  const fat = faturasFiltradas();
+  const custoTotal = fat.reduce((s,f)=>s+(f.total_a_pagar||0),0);
+  const analises   = fat.map(f=>{
+    const a = Array.isArray(f.faturas_analise) ? f.faturas_analise[0] : (f.faturas_analise||{});
+    return a;
+  }).filter(a=>a&&a.potencial_economia_anual);
+  const ecoTotal = analises.reduce((s,a)=>s+(a.potencial_economia_anual||0),0);
+  const pct = custoTotal>0 ? ((ecoTotal/(custoTotal*12||1))*100).toFixed(1) : 0;
+  const alertasAtivos = DADOS.alertas.filter(a=>!a.resolvido).length;
+
+  document.getElementById('m-custo').textContent     = 'R$ ' + custoTotal.toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0});
+  document.getElementById('m-custo-sub').textContent = fat.length + ' faturas';
+  document.getElementById('m-eco').textContent       = 'R$ ' + ecoTotal.toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0});
+  document.getElementById('m-eco-pct').textContent   = '↗ ' + pct + '%';
+  document.getElementById('m-faturas').textContent   = fat.length;
+  document.getElementById('m-faturas-sub').textContent = [...new Set(fat.map(f=>f.uc))].length + ' UCs';
+  document.getElementById('m-alertas').textContent   = alertasAtivos;
+
+  // Agrupa por cliente
+  const porCliente = {};
+  for(const f of fat){
+    const nome = f.cliente_nome || f.uc;
+    if(!porCliente[nome]) porCliente[nome] = {nome, uc:f.uc, faturas:[], analise:null};
+    porCliente[nome].faturas.push(f);
+    if(!porCliente[nome].analise){
+      const a = Array.isArray(f.faturas_analise)?f.faturas_analise[0]:(f.faturas_analise||null);
+      if(a) porCliente[nome].analise = a;
     }
-
-    // Agrupa TODAS as faturas por UC
-    const todasPorUC = {};
-    for (const row of rows) {
-      if (!todasPorUC[row.uc]) todasPorUC[row.uc] = [];
-      todasPorUC[row.uc].push(row);
-    }
-
-    // Ordena cada UC por mes_referencia crescente
-    for (const uc of Object.keys(todasPorUC)) {
-      todasPorUC[uc].sort((a, b) => {
-        const pa = (a.mes_referencia || '').split('/').reverse().join('');
-        const pb = (b.mes_referencia || '').split('/').reverse().join('');
-        return pa.localeCompare(pb);
-      });
-    }
-
-    CLIENTES = Object.entries(todasPorUC).map(([uc, faturas]) => {
-      // Fatura mais recente para dados base
-      const recente = faturas[faturas.length - 1];
-
-      // Analise da fatura mais recente
-      const analise = Array.isArray(recente.faturas_analise)
-        ? (recente.faturas_analise[0] || {})
-        : (recente.faturas_analise || {});
-
-      // Consolida dados de TODAS as faturas
-      const totalFaturas = faturas.length;
-      const mediaFatura  = faturas.reduce((s, f) => s + (f.total_a_pagar || 0), 0) / totalFaturas;
-      const totalConsumo = faturas.reduce((s, f) => s + (f.consumo_total_kwh || 0), 0);
-
-      const score   = analise.score_eficiencia ?? 100;
-      const eco_m   = analise.potencial_economia_mensal ?? 0;
-      const eco_a   = analise.potencial_economia_anual ?? 0;
-      const alertas = analise.alertas ?? [];
-      const ctda    = recente.demanda_contratada_fora_ponta_kw ?? 0;
-      const medi    = recente.demanda_medida_fora_ponta_kw ?? 0;
-
-      // Histórico de consumo: usa historico_kwh da fatura mais recente
-      // (já vem com 13 meses) ou constrói a partir das faturas disponíveis
-      let hist = recente.historico_kwh ?? [];
-      let mesesHist = [];
-
-      if (hist.length > 0) {
-        // Histórico completo da fatura — usa os meses do campo
-        const [mesN] = (recente.mes_referencia || '01/2026').split('/');
-        mesesHist = hist.map((_, i) => {
-          const offset = hist.length - 1 - i;
-          const mesIdx = ((parseInt(mesN || 1) - 1 - offset) % 12 + 12) % 12;
-          return MESES_ABREV[mesIdx];
-        });
-      } else {
-        // Constrói histórico das faturas baixadas
-        hist = faturas.map(f => f.consumo_total_kwh || 0);
-        mesesHist = faturas.map(f => {
-          const [m] = (f.mes_referencia || '').split('/');
-          return MESES_ABREV[(parseInt(m || 1) - 1 + 12) % 12];
-        });
-      }
-
-      // Pico de demanda histórico: maior valor estimado no histórico
-      const cons  = recente.consumo_total_kwh ?? 1;
-      const ratio = cons > 0 ? medi / cons : 0;
-      const pico  = hist.length ? Math.round(ratio * Math.max(...hist)) : medi;
-
-      // Status e modelo
-      const status = score < 60 ? 'c' : score < 80 ? 'a' : 'ok';
-      const temMercado = alertas.some(a => a.codigo === 'MERCADO_LIVRE_ELEGIVEL');
-      const temDemanda = alertas.some(a => a.codigo === 'DEMANDA_SUPERDIMENSIONADA');
-      const modelo = temMercado ? 'mercado' : temDemanda ? 'consul' : 'assin';
-
-      // Alertas normalizados
-      const alertasNorm = alertas.map(a => ({
-        sev: a.severidade === 'critico' ? 'c' : a.severidade === 'atencao' ? 'a' : 'i',
-        t:   a.titulo || '',
-        e:   a.economia_mensal_r ? `R$ ${a.economia_mensal_r.toLocaleString('pt-BR', {minimumFractionDigits:2})}/mês` : '',
-        a:   a.acao_recomendada || '',
-      }));
-
-      // Nome do cliente
-      let nome = recente.cliente_nome || `UC ${uc}`;
-      if (nome.length > 50) nome = nome.slice(0, 47) + '...';
-
-      // Lista de faturas para o histórico de meses no detalhe
-      const faturasList = faturas.map(f => ({
-        mes:    f.mes_referencia,
-        total:  f.total_a_pagar ?? 0,
-        consumo: f.consumo_total_kwh ?? 0,
-        situacao: f.situacao || '',
-      }));
-
-      return {
-        id:         recente.id,
-        fatura_id:  analise.id || recente.id,
-        nome,
-        uc,
-        mes:        recente.mes_referencia,
-        subgrupo:   recente.subgrupo || 'A4',
-        modalidade: recente.modalidade || '',
-        fat:        recente.total_a_pagar ?? 0,
-        mediaFatura: Math.round(mediaFatura),
-        totalFaturas,
-        eco:        eco_a,
-        honorario:  Math.round(eco_a * 0.25),
-        score,
-        status,
-        modelo,
-        dem:        { ctda, medi, pico },
-        hist,
-        meses:      mesesHist,
-        alertas:    alertasNorm,
-        ai:         analise.analise_claude || analise.resumo_executivo || '',
-        faturasList,
-      };
-    });
-
-    // Ordena por economia decrescente
-    CLIENTES.sort((a, b) => b.eco - a.eco);
-
-    // Atualiza métricas do portfólio
-    const totalEco    = CLIENTES.reduce((s, c) => s + c.eco, 0);
-    const totalHon    = CLIENTES.reduce((s, c) => s + c.honorario, 0);
-    const totalCrit   = CLIENTES.filter(c => c.status === 'c').length;
-    document.getElementById('metricaClientes').textContent = CLIENTES.length;
-    document.getElementById('metricaEco').textContent      = `R$ ${totalEco.toLocaleString('pt-BR')}`;
-    document.getElementById('metricaHon').textContent      = `R$ ${totalHon.toLocaleString('pt-BR')}`;
-    document.getElementById('metricaCrit').textContent     = totalCrit;
-
-    aplicarFiltro(filtroAtivo);
-
-  } catch (err) {
-    console.error(err);
-    document.getElementById('tbody').innerHTML =
-      `<div class="empty">Erro ao carregar dados: ${err.message}</div>`;
   }
-}
 
-// ── FILTROS ──
-function setFilter(f, el) {
-  document.querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
-  el.classList.add('on');
-  filtroAtivo = f;
-  aplicarFiltro(f);
-}
+  const cont = document.getElementById('clientes-visao-geral');
+  cont.innerHTML = '';
+  Object.values(porCliente).sort((a,b)=>{
+    const ecoA = a.analise?.potencial_economia_anual||0;
+    const ecoB = b.analise?.potencial_economia_anual||0;
+    return ecoB-ecoA;
+  }).forEach(cli => {
+    const totalPago = cli.faturas.reduce((s,f)=>s+(f.total_a_pagar||0),0);
+    const eco = cli.analise?.potencial_economia_anual||0;
+    const score = cli.analise?.score_eficiencia||100;
+    const analisadas = cli.faturas.filter(f=>Array.isArray(f.faturas_analise)?f.faturas_analise.length>0:!!f.faturas_analise).length;
+    const scoreColor = score<60?'var(--red)':score<80?'var(--amber)':'var(--green)';
 
-function aplicarFiltro(f) {
-  filtered = f === 'todos' ? [...CLIENTES]
-    : f === 'c'      ? CLIENTES.filter(d => d.status === 'c')
-    : CLIENTES.filter(d => d.modelo === f);
-  renderPortfolio();
-}
+    // Histórico de consumo
+    const histData = cli.faturas.slice(-6).reverse().map(f=>f.consumo_total_kwh||0);
+    const histLabels = cli.faturas.slice(-6).reverse().map(f=>{
+      const [m] = (f.mes_referencia||'').split('/');
+      return MESES_ABREV[(parseInt(m||1)-1+12)%12];
+    });
+    // Demanda
+    const demCtda = cli.faturas[0]?.demanda_contratada_fora_ponta_kw||0;
+    const demMedi = cli.faturas[0]?.demanda_medida_fora_ponta_kw||0;
 
-// ── CORES ──
-function scoreColor(s){ return s<60?'var(--red)':s<80?'var(--amber)':'var(--green)'; }
-function sevColor(s){ return s==='c'?'var(--red)':s==='a'?'var(--amber)':'var(--muted)'; }
-function sevLabel(s){ return s==='c'?'crítico':s==='a'?'atenção':'info'; }
-function sevClass(s){ return s==='c'?'c':s==='a'?'a':'ok'; }
-
-// ── PORTFOLIO ──
-function renderPortfolio() {
-  const tb = document.getElementById('tbody');
-  if (!filtered.length) { tb.innerHTML = '<div class="empty">Nenhum cliente encontrado.</div>'; return; }
-  tb.innerHTML = filtered.map(d => `
-    <div class="trow" onclick="showUC('${d.id}')">
-      <div>
-        <div class="cname">${d.nome}</div>
-        <div class="cuc">UC ${d.uc}</div>
-      </div>
-      <div class="td r">R$ ${d.mediaFatura.toLocaleString('pt-BR')}<br><span style="font-size:10px;color:var(--hint)">${d.totalFaturas} fatura(s)</span></div>
-      <div class="td r green">R$ ${d.eco.toLocaleString('pt-BR')}</div>
-      <div class="td r">
-        <div class="score-cell">
-          <span class="score-num" style="color:${scoreColor(d.score)}">${d.score}/100</span>
-          <div class="score-bar"><div class="score-fill" style="width:${d.score}%;background:${scoreColor(d.score)}"></div></div>
-        </div>
-      </div>
-      <div class="td r"><span class="badge ${d.status}">${d.status==='c'?'crítico':d.status==='a'?'atenção':'ok'}</span></div>
-      <div class="td r"><span class="modelo ${d.modelo}">${d.modelo==='consul'?'consultoria':d.modelo==='assin'?'assinatura':'mercado livre'}</span></div>
-    </div>
-  `).join('');
-}
-
-// ── UC DETAIL ──
-function showUC(id) {
-  currentCliente = CLIENTES.find(c => String(c.id) === String(id));
-  if (!currentCliente) return;
-  const d = currentCliente;
-
-  document.getElementById('portfolioView').classList.add('hide');
-  document.getElementById('ucView').classList.add('show');
-  document.getElementById('backBtn').classList.add('show');
-  document.getElementById('pageTitle').textContent = d.nome;
-  document.getElementById('pageSub').textContent = `UC ${d.uc} · ${d.meses[d.meses.length-1]}/${d.meses[d.meses.length-1]==='mar'?'2026':'2026'}`;
-
-  // Métricas UC
-  document.getElementById('ucMetrics').innerHTML = `
-    <div class="metric"><div class="metric-label">fatura do mês</div><div class="metric-val">R$ ${d.fat.toLocaleString('pt-BR')}</div><div class="metric-sub">mês atual</div></div>
-    <div class="metric"><div class="metric-label">economia potencial / ano</div><div class="metric-val green">R$ ${d.eco.toLocaleString('pt-BR')}</div><div class="metric-sub">R$ ${Math.round(d.eco/12).toLocaleString('pt-BR')}/mês</div></div>
-    <div class="metric"><div class="metric-label">seu honorário (25%)</div><div class="metric-val amber">R$ ${d.honorario.toLocaleString('pt-BR')}</div><div class="metric-sub">modelo consultoria</div></div>
-    <div class="metric"><div class="metric-label">score de eficiência</div><div class="metric-val" style="color:${scoreColor(d.score)}">${d.score}/100</div><div class="metric-sub">${d.alertas.length} alerta(s)</div></div>
-  `;
-
-  // Histórico Chart
-  if(histChartInstance) histChartInstance.destroy();
-  const ctx = document.getElementById('histChart').getContext('2d');
-  const maxHist = Math.max(...d.hist);
-  histChartInstance = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: d.meses,
-      datasets: [{
-        data: d.hist,
-        backgroundColor: d.hist.map((v,i)=> i===d.hist.length-1 ? 'rgba(37,99,235,0.7)' : 'rgba(0,0,0,0.07)'),
-        borderColor: d.hist.map((v,i)=> i===d.hist.length-1 ? '#2563eb' : 'rgba(0,0,0,0.1)'),
-        borderWidth: 1, borderRadius: 3,
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: {
-        callbacks: { label: ctx => ` ${ctx.raw.toLocaleString('pt-BR')} kWh` }
-      }},
-      scales: {
-        x: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 9, family: 'DM Sans' }}},
-        y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { color: '#9ca3af', font: { size: 9 },
-          callback: v => v>=1000 ? (v/1000).toFixed(0)+'k' : v }}
-      }
-    }
-  });
-
-  // Demanda
-  const dem = d.dem;
-  const util = Math.round(dem.medi/dem.ctda*100);
-  const utilColor = util<70?'var(--red)':util<85?'var(--amber)':'var(--green)';
-  document.getElementById('demandaContent').innerHTML = `
-    <div class="dem-row">
-      <div class="dem-label">contratada</div>
-      <div class="dem-track"><div class="dem-fill" style="width:100%;background:rgba(239,69,69,.5)"></div></div>
-      <div class="dem-val">${dem.ctda} kW</div>
-    </div>
-    <div class="dem-row">
-      <div class="dem-label">medida (mês atual)</div>
-      <div class="dem-track"><div class="dem-fill" style="width:${util}%;background:var(--blue)"></div></div>
-      <div class="dem-val">${dem.medi} kW</div>
-    </div>
-    <div class="dem-row">
-      <div class="dem-label">pico histórico</div>
-      <div class="dem-track"><div class="dem-fill" style="width:${Math.round(dem.pico/dem.ctda*100)}%;background:var(--amber);opacity:.7"></div></div>
-      <div class="dem-val">${dem.pico} kW</div>
-    </div>
-    <div class="dem-note">
-      Utilização atual: <strong style="color:${utilColor}">${util}%</strong> · 
-      Redução segura: <strong>${Math.round(dem.pico*1.1)} kW</strong> (110% do pico)
-    </div>
-  `;
-
-  // Alertas
-  const alertasHtml = d.alertas.length
-    ? d.alertas.map(a=>`
-        <div class="alert-item">
-          <div class="alert-header">
-            <span class="badge ${sevClass(a.sev)}" style="font-size:9px;padding:1px 6px">${sevLabel(a.sev)}</span>
-            <span class="alert-title">${a.t}</span>
+    const cardId = 'cli-' + nome_id(cli.nome);
+    const div = document.createElement('div');
+    div.className = 'cliente-card';
+    div.innerHTML = `
+      <div class="cliente-card-header" onclick="toggleClienteCard('${cardId}')">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:34px;height:34px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🏢</div>
+          <div>
+            <div class="cliente-nome">${cli.nome.slice(0,60)}${cli.nome.length>60?'...':''}</div>
+            <div class="cliente-uc">UC ${cli.uc} • ${cli.faturas[0]?.subgrupo||''} • ${cli.faturas[0]?.modalidade||''}</div>
           </div>
-          ${a.e ? `<div class="alert-eco">${a.e}</div>` : ''}
-          ${a.a ? `<div class="alert-action">${a.a}</div>` : ''}
         </div>
-      `).join('')
-    : '<div style="font-size:12px;color:var(--green);padding:8px 0">Nenhum alerta. UC eficiente.</div>';
-  document.getElementById('alertasContent').innerHTML = alertasHtml;
-
-  // AI
-  document.getElementById('aiContent').innerHTML = `
-    <div class="ai-box">"${d.ai}"</div>
-    <div style="font-size:10px;color:var(--hint)">gerado por GPT-4o mini · análise automatizada</div>
-    <button class="btn primary" style="width:100%;margin-top:12px;text-align:center"
-      onclick="downloadPDF('${d.fatura_id}','${d.nome}','${d.mes}')">
-      ⬇ gerar relatório PDF
-    </button>
-  `;
-
-  // Score + Proposta
-  const novaCtda = Math.round(dem.pico * 1.1);
-  const economiaM = d.eco > 0 ? Math.round(d.eco/12) : 0;
-  const hon30a = Math.round(d.eco * 0.30);
-  const hon30m = Math.round(economiaM * 0.30);
-  const elegivel = dem.ctda >= 500;
-
-  document.getElementById('propostaContent').innerHTML = `
-    <div class="score-big">
-      <div class="score-circle" style="background:${scoreColor(d.score)}22;color:${scoreColor(d.score)};border:2px solid ${scoreColor(d.score)}44">
-        ${d.score}
-      </div>
-      <div class="score-info">
-        <div style="font-size:13px;font-weight:500;color:${scoreColor(d.score)}">
-          ${d.score>=85?'Eficiente':d.score>=70?'Atenção':'Crítico'}
+        <div style="display:flex;align-items:center;gap:10px">
+          <button class="btn" onclick="event.stopPropagation();downloadPDF('${cli.analise?.id||''}','${cli.nome}','${cli.faturas[0]?.mes_referencia||''}')">⬇ Baixar PDF</button>
+          <span style="color:var(--hint);font-size:18px" id="arrow-${cardId}">›</span>
         </div>
-        <div class="score-desc">${d.alertas.length} alerta(s) · ${d.subgrupo||'A4'} · ${d.modalidade||'HV'}</div>
       </div>
-    </div>
-
-    <!-- Serviço 1: Consultoria -->
-    <div class="proposta" style="margin-bottom:8px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <div class="proposta-title" style="margin:0">1. Consultoria por resultado</div>
-        <span class="modelo consul">disponível</span>
+      <div class="cliente-metrics">
+        <div><div class="cli-m-label">Faturas</div><div class="cli-m-val">${cli.faturas.length}</div></div>
+        <div><div class="cli-m-label">Total Pago</div><div class="cli-m-val">R$ ${totalPago.toLocaleString('pt-BR',{minimumFractionDigits:0})}</div></div>
+        <div><div class="cli-m-label">Economia</div><div class="cli-m-val" style="color:${eco>0?'var(--green)':'var(--muted)'}">R$ ${eco.toLocaleString('pt-BR',{minimumFractionDigits:0})}</div></div>
+        <div><div class="cli-m-label">Analisadas</div><div class="cli-m-val">${analisadas}</div></div>
       </div>
-      <div class="proposta-row"><span class="proposta-label">cobrança</span><span class="proposta-val">30% da economia gerada</span></div>
-      <div class="proposta-row"><span class="proposta-label">economia / mês</span><span class="proposta-val">R$ ${economiaM.toLocaleString('pt-BR')}</span></div>
-      <div class="proposta-row"><span class="proposta-label">economia / ano</span><span class="proposta-val">R$ ${d.eco.toLocaleString('pt-BR')}</span></div>
-      <div class="proposta-row"><span class="proposta-label">seu honorário / ano</span><span class="proposta-val green">R$ ${hon30a.toLocaleString('pt-BR')}</span></div>
-      <div class="proposta-row"><span class="proposta-label">seu honorário / mês</span><span class="proposta-val green">R$ ${hon30m.toLocaleString('pt-BR')}</span></div>
-      <hr class="proposta-divider">
-      <div style="font-size:10px;color:var(--hint)">Cliente paga somente se economizar. Risco zero.</div>
-    </div>
-
-    <!-- Serviço 2: Monitoramento -->
-    <div style="background:#f8f9fa;border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <div style="font-size:12px;font-weight:600;color:var(--blue)">2. Monitoramento e gestão de energia</div>
-        <span class="modelo assin">disponível</span>
-      </div>
-      <div class="proposta-row"><span class="proposta-label">valor</span><span class="proposta-val">R$ 300 / UC / mês</span></div>
-      <div class="proposta-row"><span class="proposta-label">inclui</span><span class="proposta-val" style="font-size:11px;text-align:right">análise mensal + alertas + relatório PDF</span></div>
-      <div class="proposta-row"><span class="proposta-label">contrato</span><span class="proposta-val">mensal · sem fidelidade</span></div>
-    </div>
-
-    <!-- Serviço 3: Mercado Livre -->
-    <div style="background:${elegivel?'rgba(13,148,136,.06)':'#f8f9fa'};border:1px solid ${elegivel?'rgba(13,148,136,.3)':'var(--border)'};border-radius:10px;padding:12px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <div style="font-size:12px;font-weight:600;color:${elegivel?'var(--teal)':'var(--hint)'}">3. Mercado Livre de Energia</div>
-        <span style="font-size:10px;padding:3px 9px;border-radius:20px;font-weight:500;
-          background:${elegivel?'rgba(13,148,136,.1)':'var(--bg3)'};
-          color:${elegivel?'var(--teal)':'var(--hint)'}">
-          ${elegivel?'elegível ACL':'não elegível'}
-        </span>
-      </div>
-      ${elegivel ? `
-        <div class="proposta-row"><span class="proposta-label">economia estimada</span><span class="proposta-val" style="color:var(--teal)">15–30% / ano</span></div>
-        <div class="proposta-row"><span class="proposta-label">modelo</span><span class="proposta-val">comissão de corretagem</span></div>
-        <div class="proposta-row"><span class="proposta-label">ticket estimado</span><span class="proposta-val">R$ 20k – R$ 80k</span></div>
-      ` : `
-        <div style="font-size:11px;color:var(--hint);line-height:1.5">
-          Requer demanda contratada ≥ 500 kW. Esta UC possui ${dem.ctda} kW.
-          ${dem.ctda >= 300 ? '<br><b style="color:var(--amber)">Próximo do limite — monitorar crescimento.</b>' : ''}
-        </div>
-      `}
-    </div>
-  `;
-
-  // ── Faturas individuais ──
-  const fi = document.getElementById('faturasIndividuais');
-  if (d.faturasList && d.faturasList.length > 0) {
-    fi.innerHTML = d.faturasList.slice().reverse().map((f, i) => {
-      const situBadge = f.situacao === 'ABER'
-        ? `<span class="badge a" style="font-size:9px">em aberto</span>`
-        : `<span class="badge ok" style="font-size:9px">paga</span>`;
-      const fScore = d.score;
-      const fAlertas = d.alertas;
-
-      return `
-        <div>
-          <div class="trow" style="grid-template-columns:1fr 1fr 1fr 80px 80px 90px 100px"
-               onclick="toggleFaturaDetalhe('fd_${i}', this)">
-            <div>
-              <div style="font-size:13px;font-weight:500;color:var(--text)">${f.mes}</div>
-              <div style="font-size:10px;color:var(--hint)">UC ${d.uc}</div>
-            </div>
-            <div class="td r" style="font-weight:500">R$ ${(f.total||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
-            <div class="td r">${(f.consumo||0).toLocaleString('pt-BR')} kWh</div>
-            <div class="td r">${dem.medi > 0 ? dem.medi+' kW' : '—'}</div>
-            <div class="td r">
-              <div class="score-cell">
-                <span class="score-num" style="color:${scoreColor(fScore)}">${fScore}/100</span>
-                <div class="score-bar"><div class="score-fill" style="width:${fScore}%;background:${scoreColor(fScore)}"></div></div>
-              </div>
-            </div>
-            <div class="td r">${situBadge}</div>
-            <div class="td r" onclick="event.stopPropagation()">
-              <button onclick="openFaturaDetail('${d.id}', ${i})"
-                style="font-size:11px;padding:4px 10px;border:1px solid var(--border2);border-radius:6px;background:transparent;cursor:pointer;color:var(--blue)">
-                ver detalhes ↗
-              </button>
-            </div>
+      <div id="${cardId}" style="display:none;padding:16px 18px;border-top:1px solid var(--border)">
+        <div class="chart-grid">
+          <div class="card" style="padding:14px">
+            <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px">Consumo (kWh)</div>
+            <div class="chart-wrap"><canvas id="chart-cons-${cardId}"></canvas></div>
           </div>
-          <div id="fd_${i}" style="display:none;padding:14px 16px;background:var(--bg3);border-bottom:1px solid var(--border)">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-              <div>
-                <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">alertas desta fatura</div>
-                ${fAlertas.length ? fAlertas.map(a => `
-                  <div style="padding:7px 0;border-bottom:1px solid var(--border)">
-                    <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
-                      <span class="badge ${a.sev}" style="font-size:9px;padding:1px 6px">${a.sev==='c'?'crítico':a.sev==='a'?'atenção':'info'}</span>
-                      <span style="font-size:12px;color:var(--text)">${a.t}</span>
-                    </div>
-                    ${a.e ? `<div style="font-size:11px;color:var(--green)">${a.e}</div>` : ''}
-                    ${a.a ? `<div style="font-size:11px;color:var(--muted);margin-top:2px">${a.a}</div>` : ''}
-                  </div>`).join('')
-                : '<div style="font-size:12px;color:var(--green);padding:8px 0">Nenhum alerta nesta fatura.</div>'}
-              </div>
-              <div>
-                <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">resumo desta fatura</div>
-                <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px">
-                  <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-                    <span style="font-size:12px;color:var(--muted)">Valor total</span>
-                    <span style="font-size:12px;font-weight:500">R$ ${(f.total||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>
-                  </div>
-                  <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-                    <span style="font-size:12px;color:var(--muted)">Consumo total</span>
-                    <span style="font-size:12px;font-weight:500">${(f.consumo||0).toLocaleString('pt-BR')} kWh</span>
-                  </div>
-                  <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-                    <span style="font-size:12px;color:var(--muted)">Demanda medida</span>
-                    <span style="font-size:12px;font-weight:500">${dem.medi} kW de ${dem.ctda} kW</span>
-                  </div>
-                  <div style="display:flex;justify-content:space-between">
-                    <span style="font-size:12px;color:var(--muted)">Score</span>
-                    <span style="font-size:12px;font-weight:500;color:${scoreColor(fScore)}">${fScore}/100</span>
-                  </div>
+          <div class="card" style="padding:14px">
+            <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px">Demanda (kW)</div>
+            <div class="chart-wrap" id="dem-chart-${cardId}">
+              ${demCtda>0?`
+              <div style="margin-top:8px">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                  <div style="font-size:11px;color:var(--muted);width:80px">Contratada</div>
+                  <div style="flex:1;height:8px;background:rgba(220,38,38,.2);border-radius:4px"><div style="height:100%;background:rgba(220,38,38,.6);border-radius:4px;width:100%"></div></div>
+                  <div style="font-size:11px;font-weight:600;width:50px">${demCtda} kW</div>
                 </div>
-                ${d.ai ? `
-                  <div style="margin-top:10px;font-size:11px;color:var(--muted);font-style:italic;line-height:1.6;background:var(--bg3);padding:10px;border-radius:6px;border:1px solid var(--border)">
-                    "${d.ai.slice(0,200)}${d.ai.length>200?'...':''}"
-                  </div>` : ''}
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                  <div style="font-size:11px;color:var(--muted);width:80px">Medida</div>
+                  <div style="flex:1;height:8px;background:var(--bg3);border-radius:4px"><div style="height:100%;background:var(--blue);border-radius:4px;width:${Math.min(demMedi/demCtda*100,100)}%"></div></div>
+                  <div style="font-size:11px;font-weight:600;width:50px">${demMedi} kW</div>
+                </div>
+                <div style="font-size:11px;color:var(--muted);margin-top:6px">Utilização: <b style="color:${(demMedi/demCtda)<0.7?'var(--red)':'var(--green)'}">${Math.round(demMedi/demCtda*100)}%</b></div>
+              </div>`:'<div style="color:var(--hint);font-size:12px;padding:20px 0">Dados de demanda não disponíveis</div>'}
+            </div>
+          </div>
+          <div class="card" style="padding:14px">
+            <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px">Score de Eficiência</div>
+            <div style="display:flex;align-items:center;gap:12px;margin-top:12px">
+              <div style="width:56px;height:56px;border-radius:50%;background:${scoreColor}18;border:2px solid ${scoreColor}40;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:${scoreColor}">${score}</div>
+              <div>
+                <div style="font-size:13px;font-weight:600;color:${scoreColor}">${score>=85?'Eficiente':score>=70?'Atenção':'Crítico'}</div>
+                <div style="font-size:11px;color:var(--muted)">${(cli.analise?.alertas||[]).length} alerta(s)</div>
               </div>
             </div>
           </div>
-        </div>`;
+        </div>
+        <!-- Alertas desta UC -->
+        ${(cli.analise?.alertas||[]).length>0?`
+        <div style="margin-top:4px">
+          <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px">ALERTAS IDENTIFICADOS</div>
+          ${(cli.analise?.alertas||[]).map(a=>`
+            <div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
+              <span class="badge ${a.severidade==='critico'?'critico':a.severidade==='atencao'?'atencao':'info'}" style="font-size:9px;flex-shrink:0">${a.severidade==='critico'?'CRÍTICO':a.severidade==='atencao'?'ATENÇÃO':'INFO'}</span>
+              <div>
+                <div style="font-size:12px;font-weight:500">${a.titulo||''}</div>
+                ${a.economia_mensal_r?`<div style="font-size:11px;color:var(--green)">R$ ${(a.economia_mensal_r||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}/mês</div>`:''}
+                <div style="font-size:11px;color:var(--muted)">${a.acao_recomendada||''}</div>
+              </div>
+            </div>`).join('')}
+        </div>`:''}
+        <!-- Análise IA -->
+        ${cli.analise?.analise_claude?`
+        <div style="margin-top:12px;background:var(--bg3);border-radius:8px;padding:12px;border-left:3px solid var(--green)">
+          <div style="font-size:10px;font-weight:600;color:var(--muted);margin-bottom:6px">ANÁLISE EXECUTIVA — IA</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.6;font-style:italic">"${cli.analise.analise_claude}"</div>
+        </div>`:''}
+      </div>
+    `;
+    cont.appendChild(div);
+    // Chart de consumo
+    setTimeout(()=>{
+      const ctx = document.getElementById('chart-cons-'+cardId);
+      if(ctx && histData.length>0){
+        if(_histCharts[cardId]) _histCharts[cardId].destroy();
+        _histCharts[cardId] = new Chart(ctx,{
+          type:'bar',
+          data:{labels:histLabels,datasets:[{data:histData,backgroundColor:histData.map((_,i)=>i===histData.length-1?'rgba(37,99,235,.7)':'rgba(0,0,0,.07)'),borderRadius:3}]},
+          options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:8},color:'#94a3b8'}},y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:8},color:'#94a3b8',callback:v=>v>=1000?(v/1000).toFixed(0)+'k':v}}}}
+        });
+      }
+    },100);
+  });
+}
+
+function toggleClienteCard(id){
+  const el = document.getElementById(id);
+  const arrow = document.getElementById('arrow-'+id);
+  if(!el) return;
+  const open = el.style.display!=='none';
+  el.style.display = open?'none':'block';
+  if(arrow) arrow.textContent = open?'›':'˅';
+}
+
+function nome_id(n){ return (n||'').replace(/[^a-zA-Z0-9]/g,'_').slice(0,20); }
+
+// ── FATURAS ──
+function renderFaturas(){
+  const cli = document.getElementById('filtro-cliente')?.value||'';
+  const uc  = document.getElementById('filtro-uc')?.value||'';
+  const st  = document.getElementById('filtro-status-fat')?.value||'';
+  let fat = DADOS.faturas.filter(f=>
+    (!cli || f.cliente_nome===cli) &&
+    (!uc  || f.uc===uc) &&
+    (!st  || f.situacao===st || (st==='PAGA'&&!f.situacao))
+  );
+  document.getElementById('fat-count').textContent = fat.length + ' fatura(s)';
+  // Agrupa por cliente
+  const porCli = {};
+  for(const f of fat){
+    const n = f.cliente_nome||f.uc;
+    if(!porCli[n]) porCli[n] = {nome:n, ucs:{}};
+    if(!porCli[n].ucs[f.uc]) porCli[n].ucs[f.uc] = [];
+    porCli[n].ucs[f.uc].push(f);
+  }
+  const cont = document.getElementById('faturas-lista');
+  cont.innerHTML = '';
+  Object.values(porCli).forEach(cli=>{
+    Object.entries(cli.ucs).forEach(([uc, faturas])=>{
+      const tipo = faturas[0]?.modalidade||'';
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.style.padding = '0';
+      div.style.marginBottom = '12px';
+      div.innerHTML = `
+        <div style="padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="font-size:16px">🏢</div>
+            <div>
+              <div style="font-size:13px;font-weight:600">${cli.nome.slice(0,50)}</div>
+              <div style="font-size:11px;color:var(--muted)">UC: ${uc} • ${tipo}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <span class="badge gray">${faturas.length} fatura(s)</span>
+            <button class="btn green" onclick="uploadLote('${uc}')">⬆ Upload em Lote</button>
+          </div>
+        </div>
+        <div class="table-wrap" style="border:none;border-radius:0">
+          <div class="table-head" style="grid-template-columns:80px 1fr 1fr 1fr 80px 80px 80px">
+            <div class="th">Arquivo</div>
+            <div class="th">Origem</div>
+            <div class="th">UC</div>
+            <div class="th">Mês</div>
+            <div class="th r">Valor</div>
+            <div class="th r">Status</div>
+            <div class="th r">Ação</div>
+          </div>
+          ${faturas.map(f=>{
+            const a = Array.isArray(f.faturas_analise)?f.faturas_analise[0]:(f.faturas_analise||{});
+            const analisada = !!a?.score_eficiencia;
+            return `<div class="table-row" style="grid-template-columns:80px 1fr 1fr 1fr 80px 80px 80px">
+              <div class="td" style="font-size:11px;font-family:monospace;color:var(--blue)">detalhada_${f.uc}_${(f.mes_referencia||'').replace('/','')}</div>
+              <div class="td"><span class="badge info" style="font-size:9px">PDF oficial</span></div>
+              <div class="td">${f.uc}</div>
+              <div class="td">${f.mes_referencia||''}</div>
+              <div class="td r">R$ ${(f.total_a_pagar||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+              <div class="td r"><span class="badge ${analisada?'ok':'gray'}" style="font-size:9px">${analisada?'Analisada':'Pendente'}</span></div>
+              <div class="td r" style="display:flex;gap:4px;justify-content:flex-end">
+                ${analisada?`<button class="btn" style="font-size:10px;padding:3px 8px" onclick="downloadPDF('${a.id||''}','${f.cliente_nome||''}','${f.mes_referencia||''}')">Estudo</button>`:''}
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      `;
+      cont.appendChild(div);
+    });
+  });
+  if(!cont.innerHTML) cont.innerHTML = '<div class="empty"><div class="empty-icon">📄</div><div class="empty-title">Nenhuma fatura encontrada</div></div>';
+}
+
+// ── ANÁLISE IA ──
+function renderAnaliseIA(){
+  const cont = document.getElementById('analise-ia-lista');
+  cont.innerHTML = '';
+  const porCliente = {};
+  for(const a of DADOS.analises){
+    // Encontra o nome do cliente
+    const fat = DADOS.faturas.find(f=>f.id===a.fatura_id);
+    const nome = fat?.cliente_nome || a.uc;
+    if(!porCliente[nome]) porCliente[nome] = {nome, insights:[]};
+    const alertas = Array.isArray(a.alertas)?a.alertas:[];
+    alertas.forEach(al=>porCliente[nome].insights.push({...al, uc:a.uc, mes:a.mes_referencia}));
+    if(a.analise_claude) porCliente[nome].insights.push({titulo:'Análise Executiva IA', descricao:a.analise_claude, severidade:'info', uc:a.uc, mes:a.mes_referencia, isIA:true});
+  }
+  Object.values(porCliente).forEach(cli=>{
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.style.marginBottom = '14px';
+    div.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="font-size:16px">🏢</div>
+          <div>
+            <div style="font-size:13px;font-weight:600">${cli.nome.slice(0,60)}</div>
+          </div>
+          <span class="badge info">${cli.insights.length} insights</span>
+        </div>
+        <button class="btn primary" onclick="downloadPDF('','${cli.nome}','')">⬇ Baixar PDF</button>
+      </div>
+      <div>
+        ${cli.insights.map(ins=>`
+          <div class="insight-item">
+            <div class="insight-header">
+              <span style="font-size:14px">${ins.isIA?'🤖':ins.severidade==='critico'?'🔴':ins.severidade==='atencao'?'🟡':'✅'}</span>
+              <span class="insight-titulo">${ins.titulo||''}</span>
+              <span class="insight-meta">UC ${ins.uc||''} • ${ins.mes||''}</span>
+            </div>
+            <div class="insight-desc">${ins.acao_recomendada||ins.descricao||''}</div>
+            ${ins.economia_mensal_r?`<div style="font-size:11px;color:var(--green);margin-top:4px;font-weight:500">Economia: R$ ${(ins.economia_mensal_r||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}/mês</div>`:''}
+          </div>`).join('')}
+      </div>
+    `;
+    cont.appendChild(div);
+  });
+  if(!cont.innerHTML) cont.innerHTML = '<div class="empty"><div class="empty-icon">🤖</div><div class="empty-title">Nenhuma análise disponível ainda</div></div>';
+}
+
+// ── CLIENTES ──
+function renderClientes(){
+  const cont = document.getElementById('clientes-lista');
+  const nomes = [...new Set(DADOS.faturas.map(f=>f.cliente_nome).filter(Boolean))];
+  cont.innerHTML = nomes.map(nome=>{
+    const fat = DADOS.faturas.filter(f=>f.cliente_nome===nome);
+    const a   = fat.map(f=>Array.isArray(f.faturas_analise)?f.faturas_analise[0]:(f.faturas_analise||null)).find(Boolean);
+    const cnpj = DADOS.empresas.find(e=>e.nome===nome)?.cnpj||'—';
+    const eco  = a?.potencial_economia_anual||0;
+    const score= a?.score_eficiencia||'—';
+    const sc   = typeof score==='number'?(score<60?'var(--red)':score<80?'var(--amber)':'var(--green)'):'var(--muted)';
+    return `<div class="table-row" style="grid-template-columns:2fr 1fr 1fr 1fr 100px">
+      <div>
+        <div style="font-size:13px;font-weight:500">${nome.slice(0,50)}</div>
+        <div style="font-size:10px;color:var(--hint)">${fat[0]?.subgrupo||''} • UC ${fat[0]?.uc||''}</div>
+      </div>
+      <div class="td muted">${cnpj.slice(0,18)}</div>
+      <div class="td r">${fat.length}</div>
+      <div class="td r green">R$ ${eco.toLocaleString('pt-BR',{minimumFractionDigits:0})}</div>
+      <div class="td r" style="color:${sc};font-weight:600">${score}${typeof score==='number'?'/100':''}</div>
+    </div>`;
+  }).join('');
+  if(!cont.innerHTML) cont.innerHTML = '<div class="empty">Nenhum cliente encontrado.</div>';
+}
+
+// ── ALERTAS ──
+function renderAlertas(){
+  const sev = document.getElementById('filtro-alerta-sev')?.value||'';
+  let al = DADOS.alertas.filter(a=>!sev||a.severidade===sev);
+  const cont = document.getElementById('alertas-lista');
+  if(!al.length){ cont.innerHTML='<div class="empty"><div class="empty-icon">✅</div><div class="empty-title">Nenhum alerta encontrado</div></div>'; return; }
+  cont.innerHTML = al.map(a=>{
+    const fat = DADOS.faturas.find(f=>f.id===a.fatura_id);
+    const bg = a.severidade==='critico'?'var(--red-bg)':a.severidade==='atencao'?'var(--amber-bg)':'var(--blue-bg)';
+    const ico = a.severidade==='critico'?'🔴':a.severidade==='atencao'?'🟡':'ℹ️';
+    return `<div class="alert-item">
+      <div class="alert-icon" style="background:${bg}">${ico}</div>
+      <div class="alert-content">
+        <div class="alert-titulo">${a.titulo||''}</div>
+        <div class="alert-desc">${a.descricao||''}</div>
+        <div class="alert-meta">${fat?.cliente_nome?.slice(0,40)||'UC '+a.uc} • UC ${a.uc} • ${fat?.mes_referencia||''} ${a.valor_r?'• R$ '+(a.valor_r||0).toLocaleString('pt-BR',{minimumFractionDigits:2})+'/mês':''}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+        <span class="badge ${a.severidade==='critico'?'critico':a.severidade==='atencao'?'atencao':'info'}">${a.severidade==='critico'?'Crítico':a.severidade==='atencao'?'Atenção':'Info'}</span>
+        <button class="btn" style="font-size:10px;padding:3px 8px" onclick="marcarResolvido('${a.id}',this)">✓ Resolver</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function marcarResolvido(id, btn){
+  btn.disabled = true;
+  await fetch(`${SUPABASE_URL}/rest/v1/alertas_de_fatura?id=eq.${id}`,{
+    method:'PATCH',headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json'},
+    body:JSON.stringify({resolvido:true})
+  });
+  await carregarDados();
+  renderAlertas();
+}
+
+// ── RECUPERAÇÃO TRIBUTÁRIA ──
+function renderRecup(){
+  const cont = document.getElementById('recup-lista');
+  const total = DADOS.faturas.reduce((s,f)=>s+(f.total_a_pagar||0),0);
+  document.getElementById('recup-casos').textContent = DADOS.recup.length;
+  document.getElementById('recup-faturado').textContent = 'R$ '+total.toLocaleString('pt-BR',{minimumFractionDigits:2});
+  const estimativa = total * 0.025; // ~2.5% estimativa base
+  document.getElementById('recup-estimativa').textContent = 'R$ '+estimativa.toLocaleString('pt-BR',{minimumFractionDigits:0});
+
+  if(!DADOS.recup.length){
+    // Gera casos automaticamente a partir das faturas
+    const ucsFat = [...new Set(DADOS.faturas.map(f=>f.uc))];
+    cont.innerHTML = ucsFat.map(uc=>{
+      const fat = DADOS.faturas.filter(f=>f.uc===uc);
+      const totalUC = fat.reduce((s,f)=>s+(f.total_a_pagar||0),0);
+      const est = totalUC * 0.025;
+      return `<div class="recup-card">
+        <div class="recup-header">
+          <span class="badge atencao" style="font-size:9px">Análise Técnica</span>
+          <span class="recup-uc">${uc}</span>
+          <span style="font-size:11px;color:var(--muted)">Confiança: Baixo</span>
+          <span style="font-size:11px;color:var(--muted)">Amazonas Energia</span>
+        </div>
+        <div class="recup-metrics">
+          <div class="recup-m"><div class="recup-m-label">Faturado</div><div class="recup-m-val">R$ ${totalUC.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>
+          <div class="recup-m"><div class="recup-m-label">Créditos</div><div class="recup-m-val" style="color:var(--green)">R$ 0,00</div></div>
+          <div class="recup-m"><div class="recup-m-label">Est. Base</div><div class="recup-m-val" style="color:var(--amber)">R$ ${est.toLocaleString('pt-BR',{minimumFractionDigits:0})}</div></div>
+        </div>
+      </div>`;
     }).join('');
   } else {
-    fi.innerHTML = '<div class="empty">Nenhuma fatura individual disponível.</div>';
+    cont.innerHTML = DADOS.recup.map(r=>`
+      <div class="recup-card">
+        <div class="recup-header">
+          <span class="badge atencao" style="font-size:9px">Análise Técnica</span>
+          <span class="recup-uc">${r.uc||''}</span>
+          <span style="font-size:11px;color:var(--muted)">Confiança: ${r.confianca||'Baixo'}</span>
+        </div>
+        <div class="recup-metrics">
+          <div class="recup-m"><div class="recup-m-label">Faturado</div><div class="recup-m-val">R$ ${(r.total_faturado||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>
+          <div class="recup-m"><div class="recup-m-label">Créditos</div><div class="recup-m-val" style="color:var(--green)">R$ ${(r.creditos_r||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>
+          <div class="recup-m"><div class="recup-m-label">Est. Base</div><div class="recup-m-val" style="color:var(--amber)">R$ ${(r.estimativa_base||0).toLocaleString('pt-BR',{minimumFractionDigits:0})}</div></div>
+        </div>
+      </div>`).join('');
   }
 }
 
-function openFaturaDetail(clienteId, faturaIdx) {
-  const d = CLIENTES.find(c => String(c.id) === String(clienteId));
-  if (!d) return;
+function novoRecup(){ alert('Em breve: adicionar caso de recuperação tributária manualmente.'); }
 
-  const faturas = d.faturasList.slice().reverse();
-  const f = faturas[faturaIdx];
-  if (!f) return;
+// ── CONSOLIDADO MULTI-UC ──
+function gerarMultiUC(){
+  const nome = document.getElementById('multi-uc-empresa').value;
+  if(!nome){ alert('Selecione uma empresa.'); return; }
+  const fat = DADOS.faturas.filter(f=>f.cliente_nome===nome);
+  const ucs = [...new Set(fat.map(f=>f.uc))];
+  const cont = document.getElementById('multi-uc-resultado');
+  const totalPago = fat.reduce((s,f)=>s+(f.total_a_pagar||0),0);
+  const analises  = fat.map(f=>Array.isArray(f.faturas_analise)?f.faturas_analise[0]:(f.faturas_analise||null)).filter(Boolean);
+  const ecoTotal  = analises.reduce((s,a)=>s+(a?.potencial_economia_anual||0),0);
+  const scoreMedia= analises.length?Math.round(analises.reduce((s,a)=>s+(a?.score_eficiencia||0),0)/analises.length):0;
+  const sc = scoreMedia<60?'var(--red)':scoreMedia<80?'var(--amber)':'var(--green)';
 
-  const dem = d.dem;
-  const score = d.score;
-  const economiaM = Math.round(d.eco / 12);
-
-  // Breadcrumb e título
-  document.getElementById('fdOverlayBreadcrumb').textContent =
-    `${d.nome} › UC ${d.uc}`;
-  document.getElementById('fdOverlayTitle').textContent =
-    `Fatura ${f.mes} — análise completa`;
-
-  // Métricas
-  document.getElementById('fdMetrics').innerHTML = `
-    <div class="metric"><div class="metric-label">valor da fatura</div>
-      <div class="metric-val">R$ ${(f.total||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
-      <div class="metric-sub">${f.mes}</div></div>
-    <div class="metric"><div class="metric-label">consumo total</div>
-      <div class="metric-val">${(f.consumo||0).toLocaleString('pt-BR')} kWh</div>
-      <div class="metric-sub">mês de referência</div></div>
-    <div class="metric"><div class="metric-label">economia potencial / ano</div>
-      <div class="metric-val green">R$ ${d.eco.toLocaleString('pt-BR')}</div>
-      <div class="metric-sub">R$ ${economiaM.toLocaleString('pt-BR')}/mês</div></div>
-    <div class="metric"><div class="metric-label">score de eficiência</div>
-      <div class="metric-val" style="color:${scoreColor(score)}">${score}/100</div>
-      <div class="metric-sub">${d.alertas.length} alerta(s)</div></div>
-  `;
-
-  // Grid: demanda + barras
-  const util = dem.ctda > 0 ? Math.round(dem.medi / dem.ctda * 100) : 0;
-  const utilColor = util < 70 ? 'var(--red)' : util < 85 ? 'var(--amber)' : 'var(--green)';
-  document.getElementById('fdGrid').innerHTML = `
+  cont.innerHTML = `
     <div class="card">
-      <div class="card-title">demanda contratada vs medida</div>
-      <div class="dem-row">
-        <div class="dem-label">contratada</div>
-        <div class="dem-track"><div class="dem-fill" style="width:100%;background:rgba(220,38,38,.5)"></div></div>
-        <div class="dem-val">${dem.ctda} kW</div>
-      </div>
-      <div class="dem-row">
-        <div class="dem-label">medida (este mês)</div>
-        <div class="dem-track"><div class="dem-fill" style="width:${util}%;background:var(--blue)"></div></div>
-        <div class="dem-val">${dem.medi} kW</div>
-      </div>
-      <div class="dem-row">
-        <div class="dem-label">pico histórico</div>
-        <div class="dem-track"><div class="dem-fill" style="width:${Math.round(dem.pico/dem.ctda*100)}%;background:var(--amber);opacity:.7"></div></div>
-        <div class="dem-val">${dem.pico} kW</div>
-      </div>
-      <div class="dem-note">
-        Utilização: <strong style="color:${utilColor}">${util}%</strong> ·
-        Redução segura: <strong>${Math.round(dem.pico*1.1)} kW</strong>
+      <div style="font-size:15px;font-weight:700;margin-bottom:16px">📊 Análise Consolidada — ${nome.slice(0,50)}</div>
+      <div class="metrics-grid" style="margin-bottom:0">
+        <div class="metric-card"><div class="metric-label">Total de UCs</div><div class="metric-val">${ucs.length}</div></div>
+        <div class="metric-card"><div class="metric-label">Total Pago</div><div class="metric-val">R$ ${totalPago.toLocaleString('pt-BR',{minimumFractionDigits:0})}</div></div>
+        <div class="metric-card"><div class="metric-label">Economia Potencial</div><div class="metric-val green">R$ ${ecoTotal.toLocaleString('pt-BR',{minimumFractionDigits:0})}</div></div>
+        <div class="metric-card"><div class="metric-label">Score Médio</div><div class="metric-val" style="color:${sc}">${scoreMedia}/100</div></div>
       </div>
     </div>
-    <div class="card">
-      <div class="card-title">dados financeiros</div>
-      <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
-        <div style="display:flex;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid var(--border)">
-          <span style="font-size:12px;color:var(--muted)">Total da fatura</span>
-          <span style="font-size:14px;font-weight:600;color:var(--text)">R$ ${(f.total||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between">
-          <span style="font-size:12px;color:var(--muted)">Economia potencial / mês</span>
-          <span style="font-size:13px;font-weight:500;color:var(--green)">R$ ${economiaM.toLocaleString('pt-BR')}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between">
-          <span style="font-size:12px;color:var(--muted)">Economia potencial / ano</span>
-          <span style="font-size:13px;font-weight:500;color:var(--green)">R$ ${d.eco.toLocaleString('pt-BR')}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between">
-          <span style="font-size:12px;color:var(--muted)">Seu honorário (25%)</span>
-          <span style="font-size:13px;font-weight:500;color:var(--amber)">R$ ${d.honorario.toLocaleString('pt-BR')}/ano</span>
-        </div>
-        <div style="margin-top:4px;padding:10px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">
-          <div style="font-size:10px;color:var(--muted);margin-bottom:4px">MODELO RECOMENDADO</div>
-          <span class="modelo ${d.modelo}">${d.modelo==='consul'?'consultoria':d.modelo==='assin'?'assinatura':'mercado livre'}</span>
-        </div>
+    <div class="table-wrap" style="margin-top:14px">
+      <div class="table-head" style="grid-template-columns:1fr 1fr 1fr 80px 80px">
+        <div class="th">UC</div>
+        <div class="th r">Total Pago</div>
+        <div class="th r">Economia/ano</div>
+        <div class="th r">Score</div>
+        <div class="th r">Alertas</div>
       </div>
-    </div>
-  `;
-
-  // Bottom: alertas + IA + proposta
-  const alertasHtml = d.alertas.length
-    ? d.alertas.map(a => `
-        <div class="alert-item">
-          <div class="alert-header">
-            <span class="badge ${a.sev}" style="font-size:9px;padding:1px 6px">${a.sev==='c'?'crítico':a.sev==='a'?'atenção':'info'}</span>
-            <span class="alert-title">${a.t}</span>
-          </div>
-          ${a.e ? `<div class="alert-eco">${a.e}</div>` : ''}
-          ${a.a ? `<div class="alert-action">${a.a}</div>` : ''}
-        </div>`).join('')
-    : '<div style="font-size:12px;color:var(--green);padding:8px 0">Nenhum alerta.</div>';
-
-  document.getElementById('fdBottom').innerHTML = `
-    <div class="card">
-      <div class="card-title">alertas identificados</div>
-      ${alertasHtml}
-    </div>
-    <div class="card">
-      <div class="card-title">análise executiva (IA)</div>
-      ${d.ai
-        ? `<div class="ai-box">"${d.ai}"</div>
-           <div style="font-size:10px;color:var(--hint)">gerado por GPT-4o mini</div>`
-        : '<div style="font-size:12px;color:var(--hint)">Análise IA não disponível para esta fatura.</div>'}
-    </div>
-    <div class="card">
-      <div class="card-title">serviços disponíveis</div>
-
-      <div class="proposta" style="margin-bottom:8px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <div class="proposta-title" style="margin:0">1. Consultoria por resultado</div>
-          <span class="modelo consul">disponível</span>
-        </div>
-        <div class="proposta-row"><span class="proposta-label">cobrança</span><span class="proposta-val">30% da economia</span></div>
-        <div class="proposta-row"><span class="proposta-label">economia / ano</span><span class="proposta-val">R$ ${d.eco.toLocaleString('pt-BR')}</span></div>
-        <div class="proposta-row"><span class="proposta-label">seu honorário / ano</span><span class="proposta-val green">R$ ${Math.round(d.eco*0.3).toLocaleString('pt-BR')}</span></div>
-        <hr class="proposta-divider">
-        <div style="font-size:10px;color:var(--hint)">Só paga se economizar. Risco zero.</div>
-      </div>
-
-      <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:10px;margin-bottom:8px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <div style="font-size:11px;font-weight:600;color:var(--blue)">2. Monitoramento e gestão</div>
-          <span class="modelo assin">disponível</span>
-        </div>
-        <div class="proposta-row"><span class="proposta-label">valor fixo</span><span class="proposta-val">R$ 300/UC/mês</span></div>
-        <div class="proposta-row"><span class="proposta-label">inclui</span><span style="font-size:10px;color:var(--muted);text-align:right">análise + alertas + PDF mensal</span></div>
-      </div>
-
-      <div style="background:${dem.ctda>=500?'rgba(13,148,136,.06)':'#f8f9fa'};border:1px solid ${dem.ctda>=500?'rgba(13,148,136,.3)':'var(--border)'};border-radius:8px;padding:10px;margin-bottom:12px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <div style="font-size:11px;font-weight:600;color:${dem.ctda>=500?'var(--teal)':'var(--hint)'}">3. Mercado Livre de Energia</div>
-          <span style="font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500;background:${dem.ctda>=500?'rgba(13,148,136,.1)':'var(--bg3)'};color:${dem.ctda>=500?'var(--teal)':'var(--hint)'}">
-            ${dem.ctda>=500?'elegível ACL':'não elegível'}
-          </span>
-        </div>
-        ${dem.ctda>=500
-          ? `<div class="proposta-row"><span class="proposta-label">economia</span><span style="color:var(--teal);font-weight:600;font-size:12px">15–30% / ano</span></div>`
-          : `<div style="font-size:10px;color:var(--hint)">Requer ≥ 500 kW. Esta UC: ${dem.ctda} kW.${dem.ctda>=300?' <b style="color:var(--amber)">Monitorar crescimento.</b>':''}</div>`
-        }
-      </div>
-
-      <button class="btn primary" style="width:100%;text-align:center"
-        onclick="downloadPDF('${d.fatura_id}','${d.nome}','${d.mes}')">
-        ⬇ gerar relatório PDF
-      </button>
-    </div>
-  `;
-
-  document.getElementById('faturaDetailOverlay').style.display = 'block';
-  document.body.style.overflow = 'hidden';
+      ${ucs.map(uc=>{
+        const f = fat.filter(x=>x.uc===uc);
+        const a = f.map(x=>Array.isArray(x.faturas_analise)?x.faturas_analise[0]:(x.faturas_analise||null)).find(Boolean)||{};
+        const total = f.reduce((s,x)=>s+(x.total_a_pagar||0),0);
+        const eco   = a?.potencial_economia_anual||0;
+        const sc2   = (a?.score_eficiencia||100);
+        const scC   = sc2<60?'var(--red)':sc2<80?'var(--amber)':'var(--green)';
+        return `<div class="table-row" style="grid-template-columns:1fr 1fr 1fr 80px 80px">
+          <div class="td">${uc}<div class="td muted">${f[0]?.subgrupo||''}</div></div>
+          <div class="td r">R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:0})}</div>
+          <div class="td r green">R$ ${eco.toLocaleString('pt-BR',{minimumFractionDigits:0})}</div>
+          <div class="td r" style="color:${scC};font-weight:600">${sc2}/100</div>
+          <div class="td r">${(a?.alertas||[]).length}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
 }
 
-function closeFaturaDetail() {
-  document.getElementById('faturaDetailOverlay').style.display = 'none';
-  document.body.style.overflow = '';
-}
+// ── CONTESTAÇÃO ──
+function renderContestacao(){
+  const cont = document.getElementById('contestacao-lista');
+  // Gera contestações automáticas dos alertas
+  const alertasContestáveis = DADOS.alertas.filter(a=>
+    ['DEMANDA_SUPERDIMENSIONADA','DEMANDA_ULTRAPASSAGEM','FATOR_POTENCIA_BAIXO','COSIP_ELEVADA'].includes(a.tipo||a.titulo?.toUpperCase())
+    || (a.titulo||'').toLowerCase().includes('reativo')
+    || (a.titulo||'').toLowerCase().includes('demanda')
+    || (a.titulo||'').toLowerCase().includes('cosip')
+  );
+  const todasContestacoes = [...DADOS.contestacoes, ...alertasContestáveis.map((a,i)=>({
+    id:`CONT-${Date.now()-i*1000}-${Math.random().toString(36).slice(2,6).toUpperCase()}`,
+    uc:a.uc,
+    tipo:a.titulo?.toLowerCase().includes('reativo')?'reativo indevido':a.titulo?.toLowerCase().includes('cosip')?'cobrança indevida':'demanda excessiva',
+    valor_r:a.valor_r||0,
+    status:'gerado',
+    _auto:true
+  }))];
 
-function toggleFaturaDetalhe(id, row) {
-  const el = document.getElementById(id);
-  const isOpen = el.style.display !== 'none';
-  // Fecha todos
-  document.querySelectorAll('[id^="fd_"]').forEach(e => e.style.display = 'none');
-  document.querySelectorAll('.trow-ativo').forEach(r => r.classList.remove('trow-ativo'));
-  // Abre o clicado (se estava fechado)
-  if (!isOpen) {
-    el.style.display = 'block';
-    row.style.background = 'var(--bg3)';
-  } else {
-    row.style.background = '';
-  }
-}
+  document.getElementById('cont-total').textContent = todasContestacoes.length;
+  document.getElementById('cont-valor').textContent = 'R$ '+todasContestacoes.reduce((s,c)=>s+(c.valor_r||0),0).toLocaleString('pt-BR',{minimumFractionDigits:2});
+  document.getElementById('cont-gerados').textContent = todasContestacoes.filter(c=>c.status==='gerado').length;
+  document.getElementById('cont-concluidos').textContent = todasContestacoes.filter(c=>c.status==='concluido').length;
 
-function showPortfolio() {
-  document.getElementById('portfolioView').classList.remove('hide');
-  document.getElementById('ucView').classList.remove('show');
-  document.getElementById('backBtn').classList.remove('show');
-  document.getElementById('pageTitle').textContent = 'Portfólio de clientes';
-  document.getElementById('pageSub').textContent = 'abril 2026 · Manaus';
-  currentCliente = null;
-}
-
-// ── Sidebar active ────────────────────────────────────────────────────────────
-function setSbActive(el) {
-  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
-  el.classList.add('active');
-}
-
-// ── Modal Faturas ─────────────────────────────────────────────────────────────
-let _pollInterval = null;
-
-function openFaturasModal() {
-  document.getElementById('faturasModal').style.display = 'block';
-  document.getElementById('faturasForm').style.display = 'block';
-  document.getElementById('faturasStatus').style.display = 'none';
-  document.getElementById('fm-cpf').value = '';
-  document.getElementById('fm-senha').value = '';
-  document.getElementById('fm-ucs').value = '';
-  document.getElementById('fm-error').style.display = 'none';
-  const tog = document.getElementById('fm-toggle');
-  tog.classList.remove('on');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeFaturasModal() {
-  document.getElementById('faturasModal').style.display = 'none';
-  document.body.style.overflow = '';
-  if (_pollInterval) { clearInterval(_pollInterval); _pollInterval = null; }
-}
-
-async function enviarExtracao() {
-  const cpfRaw = document.getElementById('fm-cpf').value.replace(/\D/g,'');
-  const senha  = document.getElementById('fm-senha').value;
-  const meses  = parseInt(document.getElementById('fm-meses').value);
-  const ucsStr = document.getElementById('fm-ucs').value;
-  const monitorar = document.getElementById('fm-toggle').classList.contains('on');
-  const errEl  = document.getElementById('fm-error');
-
-  if (!cpfRaw || !senha) {
-    errEl.textContent = 'Preencha CPF/CNPJ e senha.';
-    errEl.style.display = 'block';
+  if(!todasContestacoes.length){
+    cont.innerHTML = '<div class="empty"><div class="empty-icon">⚖️</div><div class="empty-title">Nenhum caso de contestação ainda</div><div style="font-size:12px;color:var(--hint)">Clique em "Gerar Automaticamente" para criar casos com base nos alertas</div></div>';
     return;
   }
-  errEl.style.display = 'none';
+  cont.innerHTML = todasContestacoes.map(c=>`
+    <div class="cont-item">
+      <div style="width:32px;height:32px;background:var(--red-bg);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0">⚠️</div>
+      <div>
+        <div class="cont-id">${c.id}</div>
+        <div class="cont-tipo">${c.tipo||''}</div>
+      </div>
+      <span class="badge gray" style="margin-left:auto;margin-right:8px">${c.status||'gerado'}</span>
+      <div class="cont-valor">R$ ${(c.valor_r||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+    </div>`).join('');
+}
 
-  const btn = document.getElementById('fm-btn');
-  btn.textContent = 'Enviando...';
-  btn.disabled = true;
-
-  const creds = { cpf_cnpj: cpfRaw, senha, meses, monitorar };
-  if (ucsStr.trim()) {
-    creds.selected_ucs = ucsStr.split(',').map(u => u.trim()).filter(Boolean);
+async function gerarContestacoes(){
+  const alertasContestáveis = DADOS.alertas.filter(a=>
+    (a.titulo||'').toLowerCase().includes('reativo') ||
+    (a.titulo||'').toLowerCase().includes('demanda') ||
+    (a.titulo||'').toLowerCase().includes('cosip')
+  );
+  for(const a of alertasContestáveis){
+    const tipo = (a.titulo||'').toLowerCase().includes('reativo')?'reativo indevido':(a.titulo||'').toLowerCase().includes('cosip')?'cobrança indevida':'demanda excessiva';
+    await sbPost('contestacoes',{fatura_id:a.fatura_id,uc:a.uc,tipo,valor_r:a.valor_r||0,status:'gerado',descricao:a.descricao});
   }
-
-  try {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/extraction_requests`, {
-      method: 'POST',
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`,
-        'Content-Type': 'application/json',
-        Prefer: 'return=representation',
-      },
-      body: JSON.stringify({
-        concessionaria: 'amazonas_energia',
-        credentials: creds,
-        status: 'pendente',
-      }),
-    });
-
-    const data = await r.json();
-    if (!r.ok || !data[0]) throw new Error(data.message || 'Erro ao criar tarefa.');
-
-    const taskId = data[0].id;
-
-    // Muda para tela de status
-    document.getElementById('faturasForm').style.display = 'none';
-    document.getElementById('faturasStatus').style.display = 'block';
-    setFsState('loading', 'Aguardando o worker...', `Tarefa criada · ID: ${taskId.slice(0,8)}...`);
-    addFsLog('✓ Tarefa criada no banco');
-    addFsLog('⏳ Worker vai pegar em até 15 segundos...');
-
-    // Poll status
-    _pollInterval = setInterval(async () => {
-      await pollTaskStatus(taskId);
-    }, 5000);
-
-  } catch(e) {
-    btn.textContent = '⚡ Buscar Faturas';
-    btn.disabled = false;
-    errEl.textContent = e.message;
-    errEl.style.display = 'block';
-  }
+  await carregarDados();
+  renderContestacao();
 }
 
-async function pollTaskStatus(taskId) {
-  try {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/extraction_requests?id=eq.${taskId}&select=status,status_detail,pdf_links`, {
-      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
-    });
-    const data = await r.json();
-    const task = data[0];
-    if (!task) return;
+// ── PDF ──
+function downloadPDF(faturaId, nome, mes){
+  if(!faturaId){ alert('Fatura não encontrada.'); return; }
+  const url = `${RAILWAY_URL}/relatorio/${faturaId}`;
+  const a = document.createElement('a');
+  a.href=url; a.download=`relatorio_${(nome||'').slice(0,20).replace(/\s+/g,'_')}_${(mes||'').replace('/','')}.pdf`;
+  a.target='_blank'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
 
-    const ST = {
-      pendente:             { icon:'⏳', title:'Na fila...', sub:'Aguardando o worker processar.' },
-      em_progresso:         { icon:'🔄', title:'Baixando faturas...', sub:'Fazendo login e extraindo PDFs.' },
-      concluido:            { icon:'✅', title:'Concluído!', sub:`${task.pdf_links?.length||0} fatura(s) extraída(s) e analisada(s).` },
-      erro_extracao:        { icon:'❌', title:'Erro na extração', sub: task.status_detail || 'Tente novamente.' },
-      credenciais_invalidas:{ icon:'🔒', title:'CPF ou senha inválidos', sub:'Verifique os dados e tente novamente.' },
-    };
+function uploadLote(uc){ alert('Upload em lote para UC '+uc+' — em breve!'); }
 
-    const s = ST[task.status] || ST.pendente;
-
-    if (task.status === 'em_progresso') {
-      setFsState('loading', s.title, s.sub);
-      addFsLog('🔄 Worker iniciou a extração...');
+// ── MODAL EXTRAÇÃO ──
+function openFaturasModal(){
+  document.getElementById('faturasModal').style.display='block';
+  document.getElementById('faturasForm').style.display='block';
+  document.getElementById('faturasStatus').style.display='none';
+  document.getElementById('fm-cpf').value='';
+  document.getElementById('fm-senha').value='';
+  document.getElementById('fm-ucs').value='';
+  document.getElementById('fm-error').style.display='none';
+  document.getElementById('fm-toggle').classList.remove('on');
+  document.body.style.overflow='hidden';
+}
+function closeFaturasModal(){
+  document.getElementById('faturasModal').style.display='none';
+  document.body.style.overflow='';
+  if(_pollInterval){clearInterval(_pollInterval);_pollInterval=null;}
+}
+async function enviarExtracao(){
+  const cpf=document.getElementById('fm-cpf').value.replace(/\D/g,'');
+  const senha=document.getElementById('fm-senha').value;
+  const meses=parseInt(document.getElementById('fm-meses').value);
+  const ucsStr=document.getElementById('fm-ucs').value;
+  const monitorar=document.getElementById('fm-toggle').classList.contains('on');
+  const errEl=document.getElementById('fm-error');
+  if(!cpf||!senha){errEl.textContent='Preencha CPF/CNPJ e senha.';errEl.style.display='block';return;}
+  errEl.style.display='none';
+  const btn=document.getElementById('fm-btn');
+  btn.textContent='Enviando...';btn.disabled=true;
+  const creds={cpf_cnpj:cpf,senha,meses,monitorar};
+  if(ucsStr.trim()) creds.selected_ucs=ucsStr.split(',').map(u=>u.trim()).filter(Boolean);
+  try{
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/extraction_requests`,{method:'POST',headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({concessionaria:'amazonas_energia',credentials:creds,status:'pendente'})});
+    const data=await r.json();
+    if(!r.ok||!data[0]) throw new Error(data.message||'Erro.');
+    const taskId=data[0].id;
+    document.getElementById('faturasForm').style.display='none';
+    document.getElementById('faturasStatus').style.display='block';
+    setFsState('loading','Aguardando worker...',`Tarefa criada · ${taskId.slice(0,8)}...`);
+    addFsLog('✓ Tarefa criada');addFsLog('⏳ Worker pega em até 15s...');
+    _pollInterval=setInterval(async()=>await pollTask(taskId),5000);
+  }catch(e){btn.textContent='⚡ Buscar Faturas';btn.disabled=false;errEl.textContent=e.message;errEl.style.display='block';}
+}
+async function pollTask(taskId){
+  try{
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/extraction_requests?id=eq.${taskId}&select=status,status_detail,pdf_links`,{headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`}});
+    const d=await r.json();const t=d[0];if(!t) return;
+    if(t.status==='em_progresso') addFsLog('🔄 Extraindo faturas...');
+    if(t.status==='concluido'){clearInterval(_pollInterval);_pollInterval=null;setFsState('success','Concluído!',`${t.pdf_links?.length||0} fatura(s) extraída(s).`);addFsLog(`✓ ${t.pdf_links?.length||0} fatura(s)`);addFsLog('✓ Parse e análise OK');document.getElementById('fs-close-btn').style.display='block';}
+    if(t.status==='erro_extracao'||t.status==='credenciais_invalidas'){
+      clearInterval(_pollInterval);_pollInterval=null;
+      const d=t.status_detail||'';
+      const msg=d.includes('Limite')||d.includes('Timeout')?'Limite diário atingido (1x/dia por fatura). Tente amanhã.':d||'Erro desconhecido.';
+      setFsState('error',t.status==='credenciais_invalidas'?'CPF ou senha inválidos':'Erro na extração',msg);
+      addFsLog('❌ '+msg);document.getElementById('fs-close-btn').style.display='block';document.getElementById('fs-close-btn').textContent='Fechar';
     }
-
-    if (task.status === 'concluido') {
-      clearInterval(_pollInterval); _pollInterval = null;
-      setFsState('success', s.title, s.sub);
-      addFsLog(`✓ ${task.pdf_links?.length||0} fatura(s) baixada(s)`);
-      addFsLog('✓ Parse e análise concluídos');
-      addFsLog('✓ Dados disponíveis no portfólio');
-      document.getElementById('fs-close-btn').style.display = 'block';
-      document.getElementById('sbFaturasbadge').style.display = '';
-    }
-
-    if (task.status === 'erro_extracao' || task.status === 'credenciais_invalidas') {
-      clearInterval(_pollInterval); _pollInterval = null;
-      const detail = task.status_detail || '';
-      let titulo = s.title;
-      let sub = detail || 'Verifique os logs do Railway para mais detalhes.';
-
-      // Mensagens amigáveis para erros comuns
-      if (!detail || detail === 'null') {
-        sub = 'Erro inesperado. Tente novamente em alguns minutos.';
-      } else if (detail.toLowerCase().includes('limite diário') || detail.toLowerCase().includes('limite diario') || detail.toLowerCase().includes('timeout')) {
-        titulo = '⏰ Limite diário atingido';
-        sub = 'A Amazonas Energia permite apenas 1 download por fatura por dia. Tente novamente amanhã.';
-      } else if (detail.toLowerCase().includes('email')) {
-        sub = 'Email da fatura não chegou no tempo limite. Tente novamente em alguns minutos.';
-      } else if (detail.toLowerCase().includes('nenhuma fatura')) {
-        sub = 'Nenhuma fatura encontrada para este período. Verifique o CPF/CNPJ e o período selecionado.';
-      } else if (detail.toLowerCase().includes('instável') || detail.toLowerCase().includes('instavel')) {
-        sub = 'Portal da Amazonas Energia instável. Tente novamente em alguns minutos.';
-      }
-
-      setFsState('error', titulo, sub);
-      addFsLog(`❌ ${detail || 'Erro interno no worker'}`);
-      document.getElementById('fs-close-btn').style.display = 'block';
-      document.getElementById('fs-close-btn').textContent = 'Fechar';
-    }
-  } catch(e) {}
+  }catch(e){}
 }
+function setFsState(type,title,sub){const icons={loading:'🔄',success:'✅',error:'❌'};document.getElementById('fs-icon').textContent=icons[type]||'⏳';document.getElementById('fs-title').textContent=title;document.getElementById('fs-sub').textContent=sub;}
+const _fsLogs=new Set();
+function addFsLog(msg){if(_fsLogs.has(msg))return;_fsLogs.add(msg);const el=document.getElementById('fs-log');el.innerHTML+=`<div>${msg}</div>`;}
 
-function setFsState(type, title, sub) {
-  const icons = { loading:'🔄', success:'✅', error:'❌' };
-  document.getElementById('fs-icon').textContent  = icons[type] || '⏳';
-  document.getElementById('fs-title').textContent = title;
-  document.getElementById('fs-sub').textContent   = sub;
-}
+// ── UTILS ──
+function formatCpf(v){const n=v.replace(/\D/g,'').slice(0,14);if(n.length<=3)return n;if(n.length<=6)return n.slice(0,3)+'.'+n.slice(3);if(n.length<=9)return n.slice(0,3)+'.'+n.slice(3,6)+'.'+n.slice(6);if(n.length<=11)return n.slice(0,3)+'.'+n.slice(3,6)+'.'+n.slice(6,9)+'-'+n.slice(9);return n.slice(0,2)+'.'+n.slice(2,5)+'.'+n.slice(5,8)+'/'+n.slice(8,12)+'-'+n.slice(12);}
 
-const _fsLogs = new Set();
-function addFsLog(msg) {
-  if (_fsLogs.has(msg)) return;
-  _fsLogs.add(msg);
-  const el = document.getElementById('fs-log');
-  el.innerHTML += `<div>${msg}</div>`;
-}
-
-// Carrega dados reais do Supabase ao iniciar
+// ── INIT ──
 carregarDados();
-// Atualiza a cada 30 segundos
 setInterval(carregarDados, 30000);
 </script>
 </body>

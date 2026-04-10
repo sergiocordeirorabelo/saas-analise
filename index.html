@@ -1252,8 +1252,6 @@ function addFsLog(msg){if(_fsLogs.has(msg))return;_fsLogs.add(msg);const el=docu
 function formatCpf(v){const n=v.replace(/\D/g,'').slice(0,14);if(n.length<=3)return n;if(n.length<=6)return n.slice(0,3)+'.'+n.slice(3);if(n.length<=9)return n.slice(0,3)+'.'+n.slice(3,6)+'.'+n.slice(6);if(n.length<=11)return n.slice(0,3)+'.'+n.slice(3,6)+'.'+n.slice(6,9)+'-'+n.slice(9);return n.slice(0,2)+'.'+n.slice(2,5)+'.'+n.slice(5,8)+'/'+n.slice(8,12)+'-'+n.slice(12);}
 
 
-let _ucClienteMap = {};
-
 function _gcContrato(nome, ucs, sub){ gerarContrato(nome, ucs, sub); }
 function _openAnalise(uc){ abrirAnaliseUC(uc, _ucClienteMap[uc] || uc); }
 
@@ -1470,61 +1468,38 @@ async function abrirAnaliseUC(uc, nomeCliente){
   var fmtBR = function(v){ return v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); };
   var alertasSample = alertas.slice(0,5).map(function(a){return {tipo:a.titulo,sev:a.severidade,val:a.valor_r};});
   var analisesClaude = analises.slice(0,3).map(function(a){return a.analise_claude||'';}).filter(Boolean).join(' | ').slice(0,400);
-  var prompt = 'Você é especialista em eficiência energética no Brasil, focado em clientes da Amazonas Energia em Manaus.
-
-'
-    +'Gere um DIAGNÓSTICO EXECUTIVO COMPLETO da UC abaixo. Profissional, direto, orientado a negócios.
-
-'
-    +'DADOS DA UC:
-'
-    +'- Cliente: '+nomeCliente+'
-'
-    +'- UC: '+uc+'
-'
-    +'- Subgrupo: '+(f0.subgrupo||'—')+' | Modalidade: '+(f0.modalidade||'—')+'
-'
-    +'- Demanda Contratada: '+(demCtda>0?demCtda+' kW':'—')+'
-'
-    +'- Demanda Medida: '+(demMedi>0?demMedi+' kW':'—')+'
-'
-    +'- Consumo Médio: '+Math.round(consumoMedio).toLocaleString('pt-BR')+' kWh/mês
-'
-    +'- Custo Médio: R$ '+fmtBR(custoMedio)+'/mês
-'
-    +'- Gasto 12 meses: R$ '+fmtBR(custoTotal12)+'
-'
-    +'- Score Eficiência: '+(a0.score_eficiencia||'—')+'/100
-'
-    +'- Geração Distribuída: '+(hasGD?'SIM':'Não')+'
-'
-    +'- Energia Reativa: '+(hasReativo?'SIM — cobranças detectadas':'Normal')+'
-'
-    +'- Elegível ML: '+(elegML?'SIM':'Verificar')+'
-'
-    +'- Alertas: '+JSON.stringify(alertasSample)+'
-'
-    +'- Análise IA anterior: '+analisesClaude+'
-
-'
-    +'ESTRUTURA OBRIGATÓRIA (use markdown ## para seções):
-'
-    +'## 🔍 Diagnóstico Atual
-'
-    +'## ⚡ Oportunidades Identificadas
-'
-    +'## 🚨 Ações Urgentes
-'
-    +'## 🏭 Adequação ao Mercado Livre
-'
-    +'## 📋 Escopo de Serviços Recomendado
-'
-    +'## 💰 Estimativa de Resultado
-'
-    +'## 📅 Próximos Passos
-
-'
-    +'Use os números reais. Escreva de forma que convença o cliente a fechar contrato.';
+  var prompt = [
+    'Você é especialista em eficiência energética no Brasil, focado em clientes da Amazonas Energia em Manaus.',
+    '',
+    'Gere um DIAGNÓSTICO EXECUTIVO COMPLETO da UC abaixo. Profissional, direto, orientado a negócios.',
+    '',
+    'DADOS DA UC:',
+    '- Cliente: '+nomeCliente,
+    '- UC: '+uc,
+    '- Subgrupo: '+(f0.subgrupo||'?')+' | Modalidade: '+(f0.modalidade||'?'),
+    '- Demanda Contratada: '+(demCtda>0?demCtda+' kW':'nao disponivel'),
+    '- Demanda Medida: '+(demMedi>0?demMedi+' kW':'nao disponivel'),
+    '- Consumo Medio: '+Math.round(consumoMedio).toLocaleString('pt-BR')+' kWh/mes',
+    '- Custo Medio: R$ '+fmtBR(custoMedio)+'/mes',
+    '- Gasto 12 meses: R$ '+fmtBR(custoTotal12),
+    '- Score Eficiencia: '+(a0.score_eficiencia||'?')+'/100',
+    '- Geracao Distribuida: '+(hasGD?'SIM':'Nao'),
+    '- Energia Reativa: '+(hasReativo?'SIM - cobrancas detectadas':'Normal'),
+    '- Elegivel ML: '+(elegML?'SIM':'Verificar'),
+    '- Alertas: '+JSON.stringify(alertasSample),
+    '- Analise IA anterior: '+analisesClaude,
+    '',
+    'ESTRUTURA OBRIGATORIA (use markdown ## para secoes):',
+    '## 🔍 Diagnostico Atual',
+    '## ⚡ Oportunidades Identificadas',
+    '## 🚨 Acoes Urgentes',
+    '## 🏭 Adequacao ao Mercado Livre',
+    '## 📋 Escopo de Servicos Recomendado',
+    '## 💰 Estimativa de Resultado',
+    '## 📅 Proximos Passos',
+    '',
+    'Use os numeros reais. Escreva de forma que convenca o cliente a fechar contrato.'
+  ].join('\n');
   try{
     var resp = await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
@@ -1538,9 +1513,8 @@ async function abrirAnaliseUC(uc, nomeCliente){
       .replace(/^### (.+)$/gm,'<h3 style="font-size:14px;font-weight:600;margin:16px 0 8px">$1</h3>')
       .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
       .replace(/^- (.+)$/gm,'<li style="margin-bottom:4px">$1</li>')
-      .replace(/
-
-/g,'<br><br>');
+      .replace(/\n\n/g,'<br><br>')
+      .replace(/\n/g,'<br>');
     loading.style.display = 'none';
     texto.style.display = 'block';
     var ucConf = JSON.stringify(uc);

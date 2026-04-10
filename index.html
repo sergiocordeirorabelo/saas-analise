@@ -215,7 +215,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
   </div>
   <div class="sb-item" id="sb-relatorios" onclick="navegar('relatorios',this)">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12l4-4 3 3 5-6"/></svg>
-    Relatórios Mensais
+    Acompanhamento Mensal
   </div>
 
   <div class="sb-section">Comercial</div>
@@ -501,7 +501,7 @@ function navegar(page, el){
   document.querySelectorAll('.sb-item').forEach(function(i){i.classList.remove('active');});
   document.getElementById('page-'+page).classList.add('active');
   if(el) el.classList.add('active');
-  var titles = {pipeline:'Kanban Clientes',analises:'Análises',faturas:'Faturas',alertas:'Alertas',relatorios:'Relatórios Mensais',propostas:'Propostas Comerciais',contratos:'Contratos'};
+  var titles = {pipeline:'Kanban Clientes',analises:'Análises',faturas:'Faturas',alertas:'Alertas',relatorios:'Acompanhamento Mensal',propostas:'Propostas Comerciais',contratos:'Contratos'};
   document.getElementById('topbar-title').textContent = titles[page]||page;
   if(page==='pipeline') renderKanban();
   else if(page==='analises') renderAnalises();
@@ -2596,35 +2596,126 @@ function renderAlertas(){
 // ── RELATÓRIOS MENSAIS ────────────────────────────────────────────────────────
 function renderRelatorios(){
   var cont = document.getElementById('relatorios-lista');
-  if(!D.relatorios.length){
-    cont.innerHTML='<div class="empty"><div class="empty-icon">📋</div><div>Nenhum relatório ainda</div><div style="font-size:12px;color:var(--hint);margin-top:8px">Clique em "Gerar Relatórios do Mês" para criar relatórios dos clientes ativos</div></div>';
+  var mesAtual = new Date().toLocaleDateString('pt-BR',{month:'2-digit',year:'numeric'});
+  var ativos = D.clientes.filter(function(c){return c.status==='ativo';});
+  var todos  = D.clientes.filter(function(c){return c.status!=='inativo';});
+
+  if(!todos.length){
+    cont.innerHTML='<div class="empty"><div class="empty-icon">📡</div><div>Nenhum cliente cadastrado ainda</div><div style="font-size:12px;color:var(--hint);margin-top:8px">Cadastre clientes e feche contratos para monitorar aqui</div></div>';
     return;
   }
-  cont.innerHTML = '<div class="table-wrap"><div class="table-head" style="grid-template-columns:2fr 1fr 1fr 80px 80px"><div class="th">Cliente</div><div class="th">Mês</div><div class="th">Status</div><div class="th r">Custo</div><div class="th r">Ação</div></div>'
-    +D.relatorios.map(function(r){
+
+  var html = '';
+
+  // ── Clientes Ativos (contrato assinado — monitoramento automático) ──────
+  if(ativos.length){
+    html += '<div style="margin-bottom:20px">';
+    html += '<div style="font-size:13px;font-weight:700;color:#0d2137;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">';
+    html += '<span>✅ Contratos Ativos — Monitoramento Automático</span>';
+    html += '<span style="font-size:11px;color:var(--muted);font-weight:400">Mês atual: '+mesAtual+'</span>';
+    html += '</div>';
+    html += '<div class="table-wrap">';
+    html += '<div class="table-head" style="grid-template-columns:2fr 1fr 1fr 1fr 100px"><div class="th">Cliente</div><div class="th">UCs</div><div class="th">Última Fatura</div><div class="th">Status do Mês</div><div class="th r">Ação</div></div>';
+    ativos.forEach(function(cl){
+      var fat = D.faturas.filter(function(f){return (cl.ucs||[]).includes(f.uc);})
+        .sort(function(a,b){return b.mes_referencia>a.mes_referencia?1:-1;});
+      var ultimaFat = fat[0];
+      var ultimoMes = ultimaFat ? ultimaFat.mes_referencia : '—';
+      var temMesAtual = fat.some(function(f){return f.mes_referencia===mesAtual;});
+      var statusMes = temMesAtual ? 'ok' : 'pendente';
+      var statusLabel = temMesAtual ? '✅ Extraída' : '⏳ Aguardando';
+      var custoUltimo = ultimaFat ? parseFloat(ultimaFat.total_a_pagar||0) : 0;
+      var cIdJ = JSON.stringify(cl.id);
+      html += '<div class="table-row" style="grid-template-columns:2fr 1fr 1fr 1fr 100px">';
+      html += '<div class="td"><div style="font-weight:600">'+cl.nome.slice(0,40)+'</div><div class="td muted">'+cl.cnpj+'</div></div>';
+      html += '<div class="td">'+(cl.ucs||[]).join(', ')+'</div>';
+      html += '<div class="td">'+ultimoMes+(custoUltimo>0?' · R$ '+custoUltimo.toLocaleString('pt-BR',{minimumFractionDigits:0}):'')+'</div>';
+      html += '<div class="td"><span class="badge '+(temMesAtual?'ok':'alerta')+'">'+statusLabel+'</span></div>';
+      html += '<div class="td r" style="display:flex;gap:4px;justify-content:flex-end">';
+      if(!temMesAtual) html += '<button class="btn amber" style="font-size:10px;padding:4px 8px" onclick="extrairMesAtual('+cIdJ+')">⚡ Extrair</button>';
+      html += '<button class="btn" style="font-size:10px;padding:4px 8px" onclick="navegarAnalise('+cIdJ+')">🔍 Ver</button>';
+      html += '</div></div>';
+    });
+    html += '</div></div>';
+  }
+
+  // ── Clientes em Pipeline (prospecto/analisando/proposta/negociando) ─────
+  var pipeline = todos.filter(function(c){return c.status!=='ativo';});
+  if(pipeline.length){
+    html += '<div style="margin-bottom:20px">';
+    html += '<div style="font-size:13px;font-weight:700;color:#0d2137;margin-bottom:12px">📊 Em Pipeline</div>';
+    html += '<div class="table-wrap">';
+    html += '<div class="table-head" style="grid-template-columns:2fr 1fr 1fr 100px"><div class="th">Cliente</div><div class="th">Status</div><div class="th">Última Fatura</div><div class="th r">Ação</div></div>';
+    pipeline.forEach(function(cl){
+      var fat = D.faturas.filter(function(f){return (cl.ucs||[]).includes(f.uc);})
+        .sort(function(a,b){return b.mes_referencia>a.mes_referencia?1:-1;});
+      var ultimoMes = fat[0] ? fat[0].mes_referencia : '—';
+      var statusLabel = getStatusLabel(cl.status);
+      var cIdJ = JSON.stringify(cl.id);
+      html += '<div class="table-row" style="grid-template-columns:2fr 1fr 1fr 100px">';
+      html += '<div class="td"><div style="font-weight:600">'+cl.nome.slice(0,40)+'</div><div class="td muted">'+(cl.ucs||[]).join(', ')+'</div></div>';
+      html += '<div class="td"><span class="badge '+getStatusClass(cl.status)+'">'+statusLabel+'</span></div>';
+      html += '<div class="td">'+ultimoMes+'</div>';
+      html += '<div class="td r"><button class="btn" style="font-size:10px;padding:4px 8px" onclick="navegarAnalise('+cIdJ+')">🔍 Analisar</button></div>';
+      html += '</div>';
+    });
+    html += '</div></div>';
+  }
+
+  // ── Histórico de extrações mensais ──────────────────────────────────────
+  if(D.relatorios.length){
+    html += '<div>';
+    html += '<div style="font-size:13px;font-weight:700;color:#0d2137;margin-bottom:12px">📋 Histórico</div>';
+    html += '<div class="table-wrap">';
+    html += '<div class="table-head" style="grid-template-columns:2fr 1fr 1fr 80px 80px"><div class="th">Cliente</div><div class="th">Mês</div><div class="th">Status</div><div class="th r">Custo</div><div class="th r">PDF</div></div>';
+    D.relatorios.forEach(function(r){
+      var cl = D.clientes.find(function(x){return x.id===r.cliente_id;})||{};
+      var nome = cl.nome||r.cliente_id;
       var st = r.status==='ok'?'ok':r.status==='alerta'?'alerta':'gray';
-      return '<div class="table-row" style="grid-template-columns:2fr 1fr 1fr 80px 80px">'
-        +'<div class="td">'+r.cliente_id+'</div>'
-        +'<div class="td">'+r.mes_referencia+'</div>'
-        +'<div class="td"><span class="badge '+st+'">'+r.status+'</span></div>'
-        +'<div class="td r">R$ '+(parseFloat(r.custo_total)||0).toLocaleString('pt-BR',{minimumFractionDigits:0})+'</div>'
-        +'<div class="td r"><button class="btn" style="font-size:10px;padding:3px 8px">PDF</button></div>'
-        +'</div>';
-    }).join('')+'</div>';
+      html += '<div class="table-row" style="grid-template-columns:2fr 1fr 1fr 80px 80px">';
+      html += '<div class="td">'+nome.slice(0,40)+'</div>';
+      html += '<div class="td">'+r.mes_referencia+'</div>';
+      html += '<div class="td"><span class="badge '+st+'">'+r.status+'</span></div>';
+      html += '<div class="td r">R$ '+(parseFloat(r.custo_total)||0).toLocaleString('pt-BR',{minimumFractionDigits:0})+'</div>';
+      html += '<div class="td r"><button class="btn" style="font-size:10px;padding:3px 8px" onclick="imprimirAnaliseCompleta()">PDF</button></div>';
+      html += '</div>';
+    });
+    html += '</div></div>';
+  }
+
+  cont.innerHTML = html;
+}
+
+async function extrairMesAtual(clienteId){
+  var cl = D.clientes.find(function(x){return x.id===clienteId;});
+  if(!cl||!cl.portal_cpf_cnpj) { alert('Credenciais não disponíveis. Recadastre o cliente.'); return; }
+  if(!confirm('Iniciar extração da fatura do mês atual para '+cl.nome.slice(0,40)+'?')) return;
+  var meses = parseInt(document.getElementById('nc-meses') ? document.getElementById('nc-meses').value : 1)||1;
+  await sbPost('extraction_requests',{
+    concessionaria:'amazonas_energia',
+    credentials:{cpf_cnpj:cl.portal_cpf_cnpj, senha:'', meses:1, monitorar:true},
+    status:'pendente'
+  });
+  alert('✅ Extração solicitada! O worker irá baixar a fatura em breve.');
+  await carregarDados();
 }
 
 async function gerarRelatoriosMensais(){
   var ativos = D.clientes.filter(function(c){return c.status==='ativo';});
-  if(!ativos.length){ alert('Nenhum cliente ativo ainda.'); return; }
-  var mes = new Date().toLocaleDateString('pt-BR',{month:'2-digit',year:'numeric'}).replace('/','/');
-  for(var c of ativos){
-    var existe = D.relatorios.find(function(r){return r.cliente_id===c.id && r.mes_referencia===mes;});
+  if(!ativos.length){ alert('Nenhum cliente ativo ainda. Feche contratos primeiro.'); return; }
+  var mes = new Date().toLocaleDateString('pt-BR',{month:'2-digit',year:'numeric'});
+  var criados = 0;
+  for(var i=0;i<ativos.length;i++){
+    var cl = ativos[i];
+    var existe = D.relatorios.find(function(r){return r.cliente_id===cl.id && r.mes_referencia===mes;});
     if(!existe){
-      await sbPost('relatorios_mensais',{cliente_id:c.id,mes_referencia:mes,ucs:c.ucs,status:'pendente'});
+      await sbPost('relatorios_mensais',{cliente_id:cl.id,mes_referencia:mes,ucs:cl.ucs,status:'pendente'});
+      criados++;
     }
   }
   await carregarDados();
-  alert('✅ Relatórios de '+mes+' criados para '+ativos.length+' cliente(s) ativos!');
+  if(criados>0) alert('✅ Acompanhamento de '+mes+' iniciado para '+criados+' cliente(s)!');
+  else alert('Acompanhamento de '+mes+' já existe para todos os clientes ativos.');
 }
 
 // ── PROPOSTAS ────────────────────────────────────────────────────────────────

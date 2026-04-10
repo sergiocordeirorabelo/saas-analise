@@ -2136,246 +2136,257 @@ function renderAnalises(){
 async function abrirAnaliseCliente(clienteId){
   var cl = D.clientes.find(function(x){return x.id===clienteId;});
   if(!cl) return;
-  _analiseAtualId = clienteId;
+  _analiseAtualId  = clienteId;
   _analiseAtualNome = cl.nome;
-  _analiseAtualUC = (cl.ucs||[])[0]||'';
+  _analiseAtualUC  = (cl.ucs||[])[0]||'';
   renderAnalises();
 
   var painel = document.getElementById('analise-painel');
   if(!painel) return;
   painel.innerHTML = '<div style="text-align:center;padding:80px 20px"><div class="spinner" style="margin:0 auto 16px"></div><div style="font-size:14px;font-weight:600">Carregando análise completa...</div></div>';
 
-  // Gather all data for this client
-  var ucs = cl.ucs||[];
-  var fat = D.faturas.filter(function(f){return ucs.includes(f.uc);})
-    .sort(function(a,b){return b.mes_referencia > a.mes_referencia ? 1 : -1;});
-  var alertasAll = D.alertas.filter(function(a){return ucs.includes(a.uc);});
-  var analises = D.analises.filter(function(a){return ucs.includes(a.uc);})
-    .sort(function(a,b){return (b.mes_referencia||'') > (a.mes_referencia||'') ? 1 : -1;});
+  // ── Dados brutos ──────────────────────────────────────────────────────────
+  var ucs    = cl.ucs||[];
+  var fat    = D.faturas.filter(function(f){return ucs.includes(f.uc);})
+                .sort(function(a,b){return b.mes_referencia>a.mes_referencia?1:-1;});
+  var alerts = D.alertas.filter(function(a){return ucs.includes(a.uc);});
+  var ans    = D.analises.filter(function(a){return ucs.includes(a.uc);});
 
-  // Enrich: join analise data to each fatura
+  // Enriquecer cada fatura com sua análise
   fat.forEach(function(f){
-    var fa = Array.isArray(f.faturas_analise) ? f.faturas_analise[0] : f.faturas_analise;
-    if(!fa){
-      fa = analises.find(function(a){return a.fatura_id===f.id;}) || {};
-    }
-    f._analise = fa || {};
+    var fa = Array.isArray(f.faturas_analise)?f.faturas_analise[0]:(f.faturas_analise||null);
+    if(!fa) fa = ans.find(function(a){return a.fatura_id===f.id;})||{};
+    f._a = fa;
   });
 
-  var n = Math.min(fat.length,12)||1;
-  var custoTotal = fat.slice(0,n).reduce(function(s,f){return s+parseFloat(f.total_a_pagar||0);},0);
-  var custoMedio = custoTotal/n;
-  var custoAnual = custoMedio*12;
-  var ecoAnualTotal = fat.reduce(function(s,f){return s+parseFloat((f._analise.potencial_economia_anual)||0);},0)/Math.max(fat.length,1);
-  var scoreMedia = Math.round(fat.reduce(function(s,f){return s+(f._analise.score_eficiencia||0);},0)/Math.max(fat.length,1));
-  var f0 = fat[0]||{};
-  var a0 = f0._analise||{};
-  var subg = f0.subgrupo||'?'; var mod = f0.modalidade||'?';
-  var demCtda = parseFloat(f0.demanda_contratada_fora_ponta_kw)||0;
-  var cosipTotal = fat.reduce(function(s,f){return s+parseFloat(f.cosip_valor||0);},0);
-  var cosipMedio = cosipTotal/Math.max(fat.length,1);
+  var f0  = fat[0]||{};
+  var a0  = f0._a||{};
+  var n   = Math.min(fat.length,12)||1;
   var fmtR = function(v){return 'R$ '+parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2});};
-  var sc = scoreMedia>=85?'#6ee7b7':scoreMedia>=70?'#fcd34d':'#fca5a5';
 
-  // Collect all unique alerts across all faturas
-  var alertasMap = {};
+  // ── KPIs ──────────────────────────────────────────────────────────────────
+  var custoMedio   = fat.slice(0,n).reduce(function(s,f){return s+parseFloat(f.total_a_pagar||0);},0)/n;
+  var custoAnual   = custoMedio*12;
+  var scoreArr     = fat.map(function(f){return f._a.score_eficiencia||0;}).filter(Boolean);
+  var scoreMedio   = scoreArr.length?Math.round(scoreArr.reduce(function(s,v){return s+v;},0)/scoreArr.length):null;
+  var subg         = f0.subgrupo || cl.subgrupo || '?';
+  var mod          = f0.modalidade || cl.modalidade || '?';
+  var demCtda      = parseFloat(f0.demanda_contratada_fora_ponta_kw)||parseFloat(cl.demanda_kw)||0;
+  var demMedi      = parseFloat(f0.demanda_medida_fora_ponta_kw)||0;
+  var utilDem      = demCtda>0?Math.round(demMedi/demCtda*100):null;
+  var cosipMedio   = fat.slice(0,n).reduce(function(s,f){return s+parseFloat(f.cosip_valor||0);},0)/n;
+  var temGD        = fat.some(function(f){return parseFloat(f.credito_geracao||0)<0;});
+  var temReativo   = fat.some(function(f){return parseFloat(f.ufer_fora_ponta_kvarh||0)>0;});
+  var temGrupoA    = subg.startsWith('A');
+
+  // ── MERCADO LIVRE ─────────────────────────────────────────────────────────
+  // Lei: desde 01/01/2024 (Portaria 50/2022), TODOS Grupo A são elegíveis
+  // Grupo B: elegível a partir de 01/08/2026 (MP 1.300/2025)
+  var mlElegivel   = temGrupoA;
+  var mlTipo       = demCtda>=500?'Consumidor Livre (CCEE direto)':'Consumidor Especial/Varejista (via comercializadora)';
+  var mlEcoEst     = custoMedio*0.20; // 20% economia típica no ACL
+  var mlEcoAnual   = mlEcoEst*12;
+
+  // ── ALERTAS unificados de todas as faturas ─────────────────────────────────
+  var alertMap = {};
   fat.forEach(function(f){
-    var als = f._analise.alertas;
-    if(typeof als === 'string') try{als=JSON.parse(als);}catch(e){als=[];}
-    (als||[]).forEach(function(a){
-      var key = a.codigo||a.titulo;
-      if(!alertasMap[key] || a.severidade==='critico') alertasMap[key]=a;
+    var al = f._a.alertas;
+    if(typeof al==='string'){try{al=JSON.parse(al);}catch(e){al=[];}}
+    (al||[]).forEach(function(a){
+      var k=a.codigo||a.titulo;
+      if(!alertMap[k]||(a.severidade==='critico'&&alertMap[k].severidade!=='critico')) alertMap[k]=a;
     });
   });
-  var alertasUnicos = Object.values(alertasMap)
-    .sort(function(a,b){ var order={critico:0,atencao:1,info:2}; return (order[a.severidade]||3)-(order[b.severidade]||3); });
+  var alertas = Object.values(alertMap)
+    .sort(function(a,b){var o={critico:0,atencao:1,info:2};return (o[a.severidade]||3)-(o[b.severidade]||3);});
 
-  // Recent analise_claude texts
-  var analiseTextos = fat.slice(0,3).map(function(f){
-    return {mes: f.mes_referencia, texto: f._analise.analise_claude||'', resumo: f._analise.resumo_executivo||''};
-  }).filter(function(x){return x.texto||x.resumo;});
+  // ── Economia total identificada ───────────────────────────────────────────
+  var ecoAnualAlerts = alertas.reduce(function(s,a){
+    return s+(parseFloat(a.economia_anual_r||0)||parseFloat(a.economia_mensal_r||0)*12||0);},0);
+  var ecoAnualDB = parseFloat(a0.potencial_economia_anual||0);
+  var ecoAnual   = Math.max(ecoAnualAlerts,ecoAnualDB);
+  var ecoMensal  = ecoAnual/12;
 
-  // Economy breakdown from alerts
-  var ecoItems = [];
-  alertasUnicos.forEach(function(a){
-    if(a.economia_mensal_r) ecoItems.push({desc: a.titulo, mensal: parseFloat(a.economia_mensal_r), anual: parseFloat(a.economia_anual_r||a.economia_mensal_r*12)});
-    else if(a.economia_anual_r) ecoItems.push({desc: a.titulo, mensal: parseFloat(a.economia_anual_r)/12, anual: parseFloat(a.economia_anual_r)});
-  });
-  var ecoMensalReal = ecoItems.reduce(function(s,e){return s+e.mensal;},0);
-  var ecoAnualReal = ecoItems.reduce(function(s,e){return s+e.anual;},0);
-  if(ecoAnualReal===0) ecoAnualReal = ecoAnualTotal;
+  // ── Análise IA por fatura (últimas 3) ─────────────────────────────────────
+  var analiseTextos = fat.slice(0,3)
+    .filter(function(f){return f._a.analise_claude||f._a.resumo_executivo;})
+    .map(function(f){return {mes:f.mes_referencia,resumo:f._a.resumo_executivo||'',ia:f._a.analise_claude||''};});
 
+  // ── Cor do score ──────────────────────────────────────────────────────────
+  var sc = !scoreMedio?'#94a3b8':scoreMedio>=85?'#6ee7b7':scoreMedio>=70?'#fcd34d':'#fca5a5';
   var cId = clienteId;
 
-  // ── BUILD HTML ──────────────────────────────────────────────────────────────
-  var html = '';
+  // ══════════════════════════════════════════════════════════════════════════
+  // RENDER
+  // ══════════════════════════════════════════════════════════════════════════
+  var H = ''; // HTML buffer
 
-  // 1. SCORE & KPIs header
-  html += '<div style="background:linear-gradient(135deg,#0d2137,#1e3a5f);border-radius:14px;padding:22px 26px;margin-bottom:20px">';
-  html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">';
-  html += '<div><div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Diagnóstico · Trianon Gestão de Energia</div>';
-  html += '<div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:5px">'+cl.nome+'</div>';
-  html += '<div style="font-size:12px;color:rgba(255,255,255,.5)">'+ucs.map(function(u){return 'UC '+u;}).join(' · ')+(subg!=='?'?' · '+subg:'')+(mod!=='?'?' · '+mod:'')+'</div></div>';
-  html += '<div style="display:flex;gap:10px">';
-  html += '<div style="text-align:center;background:rgba(255,255,255,.12);border-radius:10px;padding:12px 18px"><div style="font-size:28px;font-weight:700;color:'+sc+'">'+scoreMedia+'</div><div style="font-size:9px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.06em">Score /100</div></div>';
-  html += '<div style="text-align:center;background:rgba(255,255,255,.12);border-radius:10px;padding:12px 18px"><div style="font-size:28px;font-weight:700;color:#fca5a5">'+alertasUnicos.filter(function(a){return a.severidade==='critico';}).length+'</div><div style="font-size:9px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.06em">Críticos</div></div>';
-  html += '</div></div>';
-  html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px">';
-  html += '<div style="background:rgba(255,255,255,.09);border-radius:10px;padding:12px;text-align:center"><div style="font-size:15px;font-weight:700;color:#fff">'+fmtR(custoMedio)+'</div><div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:3px">Custo/mês</div></div>';
-  html += '<div style="background:rgba(255,255,255,.09);border-radius:10px;padding:12px;text-align:center"><div style="font-size:15px;font-weight:700;color:#fff">'+fmtR(custoAnual)+'</div><div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:3px">Gasto/ano</div></div>';
-  html += '<div style="background:rgba(255,255,255,.09);border-radius:10px;padding:12px;text-align:center"><div style="font-size:15px;font-weight:700;color:#6ee7b7">'+fmtR(ecoAnualReal)+'</div><div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:3px">Economia/ano</div></div>';
-  html += '<div style="background:rgba(255,255,255,.09);border-radius:10px;padding:12px;text-align:center"><div style="font-size:15px;font-weight:700;color:#fff">'+fat.length+'</div><div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:3px">Faturas</div></div>';
-  html += '</div></div>';
+  // ── 1. HEADER ─────────────────────────────────────────────────────────────
+  H += '<div style="background:linear-gradient(135deg,#0d2137,#1e3a5f);border-radius:14px;padding:22px 26px;margin-bottom:22px">';
+  H += '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">';
+  H += '<div><div style="font-size:10px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Diagnóstico Executivo · Trianon Gestão de Energia</div>';
+  H += '<div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:5px">'+cl.nome+'</div>';
+  H += '<div style="font-size:12px;color:rgba(255,255,255,.45)">'+ucs.map(function(u){return 'UC '+u;}).join(' · ')+(subg!=='?'?' · '+subg:'')+(mod!=='?'?' · '+mod:'')+'</div></div>';
+  H += '<div style="display:flex;gap:10px">';
+  if(scoreMedio) H += '<div style="text-align:center;background:rgba(255,255,255,.12);border-radius:10px;padding:12px 18px"><div style="font-size:28px;font-weight:700;color:'+sc+'">'+scoreMedio+'</div><div style="font-size:9px;color:rgba(255,255,255,.4);text-transform:uppercase;margin-top:2px">Score</div></div>';
+  var nCrit = alertas.filter(function(a){return a.severidade==='critico';}).length;
+  if(nCrit>0) H += '<div style="text-align:center;background:rgba(220,38,38,.25);border-radius:10px;padding:12px 18px"><div style="font-size:28px;font-weight:700;color:#fca5a5">'+nCrit+'</div><div style="font-size:9px;color:rgba(255,255,255,.4);text-transform:uppercase;margin-top:2px">Críticos</div></div>';
+  H += '</div></div>';
+  H += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px">';
+  var kpis=[['Custo/mês',fmtR(custoMedio),'#fff'],['Gasto/ano',fmtR(custoAnual),'#fff'],['Economia/ano',fmtR(ecoAnual),'#6ee7b7'],['Faturas',fat.length,'#fff']];
+  kpis.forEach(function(k){
+    H += '<div style="background:rgba(255,255,255,.09);border-radius:10px;padding:12px;text-align:center"><div style="font-size:15px;font-weight:700;color:'+k[2]+'">'+k[1]+'</div><div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:3px">'+k[0]+'</div></div>';
+  });
+  H += '</div></div>';
 
-  // 2. ALERTAS DETALHADOS
-  if(alertasUnicos.length>0){
-    html += '<div style="margin-bottom:20px">';
-    html += '<div style="font-size:13px;font-weight:700;color:#0d2137;margin-bottom:12px;display:flex;align-items:center;gap:8px"><span style="font-size:18px">🚨</span> Alertas e Oportunidades Identificadas</div>';
-    alertasUnicos.forEach(function(a){
-      var isCrit = a.severidade==='critico';
-      var isAtenc = a.severidade==='atencao';
-      var bg = isCrit?'#fff5f5':isAtenc?'#fefce8':'#f0f9ff';
-      var bc = isCrit?'#dc2626':isAtenc?'#d97706':'#0284c7';
-      var ico = isCrit?'🔴':isAtenc?'🟡':'🔵';
-      html += '<div style="border:1px solid '+bc+'33;border-left:4px solid '+bc+';border-radius:8px;padding:14px 16px;margin-bottom:10px;background:'+bg+'">';
-      html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">';
-      html += '<div style="display:flex;align-items:center;gap:8px"><span>'+ico+'</span><span style="font-size:13px;font-weight:700;color:#1a1a1a">'+a.titulo+'</span>';
-      if(a.economia_mensal_r) html += '<span style="background:'+bc+';color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">-'+fmtR(a.economia_mensal_r)+'/mês</span>';
-      html += '</div>';
-      if(a.economia_anual_r) html += '<span style="font-size:12px;font-weight:700;color:'+bc+'">Economia potencial: '+fmtR(a.economia_anual_r)+'/ano</span>';
-      html += '</div>';
-      if(a.descricao) html += '<div style="font-size:12px;color:#374151;margin-top:8px;line-height:1.6">'+a.descricao+'</div>';
-      if(a.acao_recomendada) html += '<div style="font-size:12px;color:'+bc+';margin-top:8px;padding:8px 10px;background:'+bc+'15;border-radius:6px;font-weight:500">💡 '+a.acao_recomendada+'</div>';
-      html += '</div>';
-    });
-    html += '</div>';
+  // ── 2. MERCADO LIVRE ──────────────────────────────────────────────────────
+  if(mlElegivel){
+    H += '<div style="border:2px solid #059669;border-radius:12px;padding:16px 20px;margin-bottom:20px;background:#f0fdf4">';
+    H += '<div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px">';
+    H += '<div><div style="font-size:15px;font-weight:700;color:#065f46;margin-bottom:4px">🏭 Mercado Livre de Energia — ELEGÍVEL</div>';
+    H += '<div style="font-size:12px;color:#166534;margin-bottom:6px">'+mlTipo+'</div>';
+    H += '<div style="font-size:12px;color:#374151;line-height:1.6">';
+    H += '<b>Base legal:</b> Portaria 50/2022 + Resolução ANEEL — desde 01/01/2024, <b>todo Grupo A é elegível</b> independente da demanda contratada.<br>';
+    H += 'No ACL, a empresa compra energia direto de geradores/comercializadoras, reduzindo o custo da tarifa de energia (TE) em <b>15-30%</b>.';
+    if(demCtda<500) H += '<br><span style="color:#d97706;font-weight:600">⚠️ Demanda abaixo de 500 kW: migração via comercializadora varejista — processo simplificado, sem necessidade de aderir à CCEE diretamente.</span>';
+    H += '</div></div>';
+    H += '<div style="text-align:center;background:#059669;border-radius:10px;padding:14px 18px;flex-shrink:0">';
+    H += '<div style="font-size:20px;font-weight:700;color:#fff">'+fmtR(mlEcoAnual)+'</div>';
+    H += '<div style="font-size:10px;color:rgba(255,255,255,.7);margin-top:3px">Economia estimada/ano</div>';
+    H += '<div style="font-size:10px;color:rgba(255,255,255,.6)">'+fmtR(mlEcoEst)+'/mês</div>';
+    H += '</div></div></div>';
+  } else {
+    H += '<div style="border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:20px;background:var(--bg3)">';
+    H += '<div style="font-size:14px;font-weight:700;color:var(--muted);margin-bottom:6px">🏭 Mercado Livre de Energia — Ainda não elegível</div>';
+    H += '<div style="font-size:12px;color:var(--muted);line-height:1.6">';
+    H += 'Clientes do <b>Grupo B</b> ('+subg+') terão acesso ao Mercado Livre a partir de <b>01/08/2026</b> (indústria/comércio) e <b>01/12/2027</b> (demais) conforme MP 1.300/2025.<br>';
+    H += 'Recomendamos preparar a empresa para a migração com antecedência — levantamento de carga, adequação do SMF e análise de comercializadoras.';
+    H += '</div></div>';
   }
 
-  // 3. RESUMO DA ÚLTIMA ANÁLISE IA
+  // ── 3. ALERTAS ───────────────────────────────────────────────────────────
+  if(alertas.length>0){
+    H += '<div style="font-size:13px;font-weight:700;color:#0d2137;margin-bottom:12px;display:flex;align-items:center;gap:8px"><span style="font-size:18px">🚨</span> Irregularidades e Oportunidades ('+alertas.length+')</div>';
+    alertas.forEach(function(a){
+      var isCrit=a.severidade==='critico',isAt=a.severidade==='atencao';
+      var bg=isCrit?'#fff5f5':isAt?'#fefce8':'#f0f9ff';
+      var bc=isCrit?'#dc2626':isAt?'#d97706':'#0284c7';
+      var ico=isCrit?'🔴':isAt?'🟡':'🔵';
+      H += '<div style="border:1px solid '+bc+'33;border-left:4px solid '+bc+';border-radius:8px;padding:14px 16px;margin-bottom:10px;background:'+bg+'">';
+      H += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">';
+      H += '<div style="display:flex;gap:8px;align-items:center"><span>'+ico+'</span><b style="font-size:13px">'+a.titulo+'</b>';
+      if(a.economia_mensal_r) H += '<span style="background:'+bc+';color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">-'+fmtR(a.economia_mensal_r)+'/mês</span>';
+      H += '</div>';
+      if(a.economia_anual_r) H += '<span style="font-size:12px;font-weight:700;color:'+bc+'">'+fmtR(a.economia_anual_r)+'/ano</span>';
+      H += '</div>';
+      if(a.descricao) H += '<div style="font-size:12px;color:#374151;margin-top:8px;line-height:1.6">'+a.descricao+'</div>';
+      if(a.acao_recomendada) H += '<div style="font-size:12px;color:'+bc+';margin-top:8px;padding:8px 10px;background:'+bc+'15;border-radius:6px;font-weight:500">💡 Ação: '+a.acao_recomendada+'</div>';
+      H += '</div>';
+    });
+  }
+
+  // ── 4. ANÁLISE IA POR FATURA ──────────────────────────────────────────────
   if(analiseTextos.length>0){
-    html += '<div style="margin-bottom:20px">';
-    html += '<div style="font-size:13px;font-weight:700;color:#0d2137;margin-bottom:12px;display:flex;align-items:center;gap:8px"><span style="font-size:18px">🤖</span> Análises IA por Fatura</div>';
-    analiseTextos.forEach(function(at){
-      html += '<div style="border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:10px;background:var(--bg2)">';
-      html += '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">'+at.mes+'</div>';
-      if(at.resumo) html += '<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px">'+at.resumo+'</div>';
-      if(at.texto) html += '<div style="font-size:13px;color:#374151;line-height:1.7">'+at.texto+'</div>';
-      html += '</div>';
+    H += '<div style="margin-top:20px"><div style="font-size:13px;font-weight:700;color:#0d2137;margin-bottom:12px;display:flex;align-items:center;gap:8px"><span style="font-size:18px">🤖</span> Análise IA — Últimas Faturas</div>';
+    analiseTextos.forEach(function(x){
+      H += '<div style="border:1px solid var(--border);border-left:3px solid #059669;border-radius:8px;padding:14px 16px;margin-bottom:10px;background:var(--bg2)">';
+      H += '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">'+x.mes+'</div>';
+      if(x.resumo) H += '<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px">'+x.resumo+'</div>';
+      if(x.ia) H += '<div style="font-size:13px;color:#374151;line-height:1.7;font-style:italic">"'+x.ia+'"</div>';
+      H += '</div>';
     });
-    html += '</div>';
+    H += '</div>';
   }
 
-  // 4. DADOS DETALHADOS DA ÚLTIMA FATURA
-  html += '<div style="margin-bottom:20px">';
-  html += '<div style="font-size:13px;font-weight:700;color:#0d2137;margin-bottom:12px;display:flex;align-items:center;gap:8px"><span style="font-size:18px">📊</span> Dados da Última Fatura ('+f0.mes_referencia+')</div>';
-  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
-
-  var leftItems = [
-    ['Subgrupo / Modalidade', subg+' · '+mod],
-    ['Consumo Total', (f0.consumo_total_kwh||0)+' kWh'],
-    ['Consumo Ponta', (f0.consumo_ponta_kwh||0)+' kWh'],
-    ['Consumo Fora Ponta', (f0.consumo_fora_ponta_kwh||0)+' kWh'],
-    ['Total a Pagar', fmtR(f0.total_a_pagar)],
-  ];
-  var rightItems = [
-    ['Demanda Contratada', demCtda?demCtda+' kW':'—'],
-    ['Demanda Medida', (f0.demanda_medida_fora_ponta_kw||'—')+' kW'],
-    ['COSIP', fmtR(f0.cosip_valor)],
-    ['Energia Reativa', f0.ufer_fora_ponta_kvarh?(f0.ufer_fora_ponta_kvarh+' kVArh'):'Sem cobrança'],
-    ['Geração Distribuída', f0.credito_geracao?fmtR(Math.abs(f0.credito_geracao))+' crédito':'Não possui'],
-  ];
-
-  html += '<div>';
-  leftItems.forEach(function(i){
-    html += '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px">'
-      +'<span style="color:var(--muted)">'+i[0]+'</span>'
-      +'<span style="font-weight:600;color:var(--text)">'+i[1]+'</span></div>';
+  // ── 5. DADOS DA ÚLTIMA FATURA ─────────────────────────────────────────────
+  H += '<div style="margin-top:20px"><div style="font-size:13px;font-weight:700;color:#0d2137;margin-bottom:12px;display:flex;align-items:center;gap:8px"><span style="font-size:18px">📊</span> Dados da Última Fatura ('+(f0.mes_referencia||'—')+')</div>';
+  H += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div>';
+  [['Subgrupo / Modalidade',subg+' · '+mod],
+   ['Consumo Total',(f0.consumo_total_kwh||0).toLocaleString('pt-BR')+' kWh'],
+   ['Consumo Ponta',(f0.consumo_ponta_kwh||0).toLocaleString('pt-BR')+' kWh'],
+   ['Consumo Fora Ponta',(f0.consumo_fora_ponta_kwh||0).toLocaleString('pt-BR')+' kWh'],
+   ['Total a Pagar',fmtR(f0.total_a_pagar)],
+  ].forEach(function(r){
+    H += '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px"><span style="color:var(--muted)">'+r[0]+'</span><span style="font-weight:600">'+r[1]+'</span></div>';
   });
-  html += '</div><div>';
-  rightItems.forEach(function(i){
-    html += '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px">'
-      +'<span style="color:var(--muted)">'+i[0]+'</span>'
-      +'<span style="font-weight:600;color:var(--text)">'+i[1]+'</span></div>';
+  H += '</div><div>';
+  [['Demanda Contratada',demCtda?demCtda+' kW':'—'],
+   ['Demanda Medida',demMedi?(demMedi+' kW'+(utilDem?' ('+utilDem+'%)':'')):'—'],
+   ['COSIP',fmtR(f0.cosip_valor)],
+   ['Energia Reativa',f0.ufer_fora_ponta_kvarh?(f0.ufer_fora_ponta_kvarh+' kVArh'):'Sem cobrança ✅'],
+   ['Geração Distribuída',f0.credito_geracao?(fmtR(Math.abs(f0.credito_geracao))+' crédito ✅'):'Não possui'],
+  ].forEach(function(r){
+    H += '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px"><span style="color:var(--muted)">'+r[0]+'</span><span style="font-weight:600">'+r[1]+'</span></div>';
   });
-  html += '</div></div></div>';
+  H += '</div></div></div>';
 
-  // 5. RESUMO FINANCEIRO
-  html += '<div style="margin-bottom:20px">';
-  html += '<div style="font-size:13px;font-weight:700;color:#0d2137;margin-bottom:12px;display:flex;align-items:center;gap:8px"><span style="font-size:18px">💰</span> Resumo Financeiro</div>';
-  html += '<table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:10px;overflow:hidden">';
-  var finRows = [
-    ['Gasto Médio Mensal', fmtR(custoMedio), false],
-    ['Gasto Anual Estimado', fmtR(custoAnual), false],
-    ['COSIP Médio/mês', fmtR(cosipMedio), false],
+  // ── 6. RESUMO FINANCEIRO ──────────────────────────────────────────────────
+  H += '<div style="margin-top:20px"><div style="font-size:13px;font-weight:700;color:#0d2137;margin-bottom:12px;display:flex;align-items:center;gap:8px"><span style="font-size:18px">💰</span> Resumo Financeiro</div>';
+  H += '<table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:10px;overflow:hidden">';
+  var finRows=[
+    ['Gasto Médio Mensal',fmtR(custoMedio),false],
+    ['Gasto Anual Estimado',fmtR(custoAnual),false],
+    ['COSIP Médio/mês',fmtR(cosipMedio),false],
   ];
-  if(ecoItems.length>0){
-    ecoItems.forEach(function(e){
-      finRows.push([e.desc, '-'+fmtR(e.mensal)+'/mês | -'+fmtR(e.anual)+'/ano', true]);
-    });
-  }
-  finRows.push(['Economia Total Identificada', fmtR(ecoAnualReal)+'/ano ('+fmtR(ecoMensalReal||ecoAnualReal/12)+'/mês)', true]);
-  finRows.push(['Investimento no Serviço', 'R$ 500,00/UC/mês (R$ '+(500*ucs.length).toLocaleString('pt-BR',{minimumFractionDigits:2})+'/mês)', false]);
-
+  alertas.forEach(function(a){
+    if(a.economia_mensal_r||a.economia_anual_r){
+      var m=parseFloat(a.economia_mensal_r||0)||parseFloat(a.economia_anual_r||0)/12;
+      var an=parseFloat(a.economia_anual_r||0)||m*12;
+      finRows.push([a.titulo,fmtR(m)+'/mês · '+fmtR(an)+'/ano',true]);
+    }
+  });
+  if(mlElegivel) finRows.push(['Economia Mercado Livre (estimada)',fmtR(mlEcoEst)+'/mês · '+fmtR(mlEcoAnual)+'/ano',true]);
+  finRows.push(['Economia Total Identificada',fmtR(ecoMensal+(mlElegivel?mlEcoEst:0))+'/mês · '+fmtR(ecoAnual+(mlElegivel?mlEcoAnual:0))+'/ano',true]);
+  finRows.push(['Investimento no Serviço','R$ '+(500*ucs.length).toLocaleString('pt-BR',{minimumFractionDigits:2})+'/mês (R$ 500/UC)',false]);
   finRows.forEach(function(r,i){
-    var bg = r[2]?'#f0fdf4':i%2===0?'var(--bg3)':'var(--bg2)';
-    var color = r[2]?'var(--green)':'var(--text)';
-    html += '<tr style="background:'+bg+'"><td style="padding:10px 14px;font-size:13px;color:var(--muted)">'+r[0]+'</td>'
-      +'<td style="padding:10px 14px;font-size:13px;font-weight:700;text-align:right;color:'+color+'">'+r[1]+'</td></tr>';
+    var bg=r[2]?'#f0fdf4':i%2===0?'var(--bg3)':'var(--bg2)';
+    var co=r[2]?'var(--green)':'var(--text)';
+    H += '<tr style="background:'+bg+'"><td style="padding:10px 14px;font-size:13px;color:var(--muted)">'+r[0]+'</td><td style="padding:10px 14px;font-size:13px;font-weight:700;text-align:right;color:'+co+'">'+r[1]+'</td></tr>';
   });
-  html += '</table></div>';
+  H += '</table></div>';
 
-  // 6. SERVIÇOS DO CONTRATO
-  html += '<div style="margin-bottom:20px">';
-  html += '<div style="font-size:13px;font-weight:700;color:#0d2137;margin-bottom:12px;display:flex;align-items:center;gap:8px"><span style="font-size:18px">📋</span> Escopo de Serviços Recomendados</div>';
-  var servicos = [
-    {ico:'⚡',titulo:'Gestão de Energia Completa',desc:'Levantamento tarifário, revisão de enquadramento, relatório mensal auditando cada fatura antes do pagamento.',preco:'R$ 500/UC/mês',inc:true},
-    {ico:'🔎',titulo:'Auditoria Retroativa (120 meses)',desc:'Revisão de todos os 10 anos de faturas. ICMS s/ TUSD/TUST (Lei 14.385/2022), COSIP, reativo, multas prescritas.',preco:'30% s/ recuperado',inc:true},
-    {ico:'🔧',titulo:'Revisão junto à Distribuidora',desc:'Grupo, subgrupo, modalidade, CIP, demanda, reativo. Faremos todas as alterações junto à Amazonas Energia.',preco:'Incluído',inc:true},
-    {ico:'🏗',titulo:'Vistoria Técnica',desc:'Inspeção da rede elétrica interna, fator de potência, perdas, equipamentos. Relatório técnico completo.',preco:'Incluído',inc:true},
+  // ── 7. SERVIÇOS DO CONTRATO ───────────────────────────────────────────────
+  H += '<div style="margin-top:20px"><div style="font-size:13px;font-weight:700;color:#0d2137;margin-bottom:12px;display:flex;align-items:center;gap:8px"><span style="font-size:18px">📋</span> Serviços Recomendados</div>';
+  var servs=[
+    {ico:'⚡',t:'Gestão de Energia Completa',d:'Levantamento tarifário, revisão de enquadramento, relatório mensal auditando cada fatura antes do pagamento.',p:'R$ 500/UC/mês',ok:true},
+    {ico:'🔎',t:'Auditoria Retroativa (120 meses)',d:'Revisão de 10 anos de faturas — ICMS s/ TUSD/TUST (Lei 14.385/2022 + ADI 7324/STF), COSIP, reativo, multas prescritas.',p:'30% sobre recuperado',ok:true},
+    {ico:'🔧',t:'Revisão junto à Distribuidora',d:'Grupo, subgrupo, modalidade, CIP, demanda, reativo — todas as alterações necessárias junto à Amazonas Energia.',p:'Incluído',ok:true},
+    {ico:'🏗',t:'Vistoria Técnica',d:'Inspeção completa da rede elétrica interna, fator de potência, perdas, equipamentos ineficientes.',p:'Incluído',ok:true},
   ];
-  if((f0.subgrupo||'').startsWith('A')||demCtda>=300){
-    servicos.push({ico:'🏭',titulo:'Migração para o Mercado Livre',desc:'Análise de comercializadoras, negociação, acompanhamento da migração junto à CCEE.',preco:'Sob consulta',inc:false});
-  }
-  if(fat.some(function(f){return f.credito_geracao;})){
-    servicos.push({ico:'☀️',titulo:'Otimização de Geração Distribuída',desc:'Gestão de créditos, compensação entre UCs, análise de expansão do sistema.',preco:'Incluído',inc:true});
-  }
-  servicos.forEach(function(s){
-    html += '<div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">';
-    html += '<div style="width:36px;height:36px;background:var(--bg3);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">'+s.ico+'</div>';
-    html += '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text)">'+s.titulo+'</div>';
-    html += '<div style="font-size:12px;color:var(--muted);margin-top:3px;line-height:1.5">'+s.desc+'</div></div>';
-    html += '<div style="font-size:12px;font-weight:700;color:'+(s.inc?'var(--green)':'var(--blue)')+'">'+s.preco+'</div>';
-    html += '</div>';
+  if(mlElegivel) servs.push({ico:'🏭',t:'Migração para o Mercado Livre',d:'Análise de propostas de comercializadoras, negociação, acompanhamento da migração junto à CCEE. Economia estimada: '+fmtR(mlEcoEst)+'/mês.',p:'Sob consulta',ok:false});
+  if(temGD) servs.push({ico:'☀️',t:'Otimização de GD',d:'Gestão de créditos acumulados, compensação entre UCs, estudo de expansão do sistema.',p:'Incluído',ok:true});
+  servs.forEach(function(s){
+    H += '<div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">';
+    H += '<div style="width:36px;height:36px;background:var(--bg3);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">'+s.ico+'</div>';
+    H += '<div style="flex:1"><div style="font-size:13px;font-weight:600">'+s.t+'</div><div style="font-size:12px;color:var(--muted);margin-top:2px;line-height:1.5">'+s.d+'</div></div>';
+    H += '<div style="font-size:12px;font-weight:700;color:'+(s.ok?'var(--green)':'var(--blue)')+'">'+s.p+'</div></div>';
   });
-  html += '</div>';
+  H += '</div>';
 
-  // 7. CTA
-  html += '<div style="padding:20px 22px;background:linear-gradient(135deg,#f0fdf4,#eff6ff);border-radius:12px;border:1px solid #bbf7d0">';
-  html += '<div style="font-size:15px;font-weight:700;color:#0d2137;margin-bottom:4px">🎯 Pronto para fechar?</div>';
-  html += '<div style="font-size:12px;color:#64748b;margin-bottom:14px">Gere a proposta PDF para enviar ou feche o contrato diretamente</div>';
-  html += '<div style="display:flex;gap:10px;flex-wrap:wrap" id="analise-btns"></div>';
-  html += '</div>';
+  // ── 8. CTA ────────────────────────────────────────────────────────────────
+  H += '<div style="margin-top:24px;padding:20px 22px;background:linear-gradient(135deg,#f0fdf4,#eff6ff);border-radius:12px;border:1px solid #bbf7d0">';
+  H += '<div style="font-size:15px;font-weight:700;color:#0d2137;margin-bottom:4px">🎯 Próximos Passos</div>';
+  H += '<div style="font-size:12px;color:#64748b;margin-bottom:14px">Gere o PDF profissional (relatório + proposta) ou feche o contrato</div>';
+  H += '<div style="display:flex;gap:10px;flex-wrap:wrap" id="analise-btns-cta"></div></div>';
 
-  painel.innerHTML = html;
+  painel.innerHTML = H;
 
-  // Buttons via DOM (no quote issues)
-  var btns = document.getElementById('analise-btns');
-  if(btns){
+  // Botões via DOM — sem problema de aspas
+  var btnsEl = document.getElementById('analise-btns-cta');
+  if(btnsEl){
     [
-      {label:'📧 Gerar Proposta PDF', cls:'btn primary', fn: function(){gerarProposta(cId);}},
-      {label:'🎯 Fechar Contrato', cls:'btn green', fn: function(){fecharContrato(cId);}},
-      {label:'📥 Relatório PDF Profissional', cls:'btn', fn: function(){window.open(RW+'/relatorio/uc/'+_analiseAtualUC,'_blank');}},
-      {label:'📄 Contrato PDF', cls:'btn', fn: function(){gerarContratoPDF(cId);}},
+      {l:'📧 Gerar Proposta PDF', cls:'btn primary', style:'padding:12px 22px;font-size:13px;font-weight:700', fn:function(){gerarProposta(cId);}},
+      {l:'🎯 Fechar Contrato',    cls:'btn green',   style:'padding:12px 22px;font-size:13px;font-weight:700', fn:function(){fecharContrato(cId);}},
+      {l:'📥 Relatório PDF',      cls:'btn',         style:'padding:12px 18px', fn:function(){window.open(RW+'/relatorio/uc/'+_analiseAtualUC,'_blank');}},
+      {l:'📄 Contrato PDF',       cls:'btn',         style:'padding:12px 18px', fn:function(){gerarContratoPDF(cId);}},
     ].forEach(function(b){
-      var el = document.createElement('button');
-      el.className = b.cls;
-      el.style.cssText = 'padding:12px 22px;font-size:13px;font-weight:700';
-      el.textContent = b.label;
-      el.onclick = b.fn;
-      btns.appendChild(el);
+      var el=document.createElement('button');
+      el.className=b.cls; el.style.cssText=b.style; el.textContent=b.l; el.onclick=b.fn;
+      btnsEl.appendChild(el);
     });
   }
 
+  // Avança pipeline
   if(cl.status==='prospecto') mudarStatus(cId,'analisando');
 }
 

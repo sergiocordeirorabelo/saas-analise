@@ -227,6 +227,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h12M8 2l4 6-4 6"/></svg>
     Recup. Tributária
   </div>
+  <div class="sb-item" id="sb-estrategico" onclick="navegar('estrategico',this)">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12l4-4 3 3 5-6"/></svg>
+    Estratégico
+  </div>
   <div class="sb-item" id="sb-multi-uc" onclick="navegar('multi-uc',this)">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="10" rx="1"/><path d="M5 7h6M5 10h4"/></svg>
     Consolidado Multi-UC
@@ -382,6 +386,14 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       <button class="btn green" onclick="novoRecup()">+ Novo Caso</button>
     </div>
     <div id="recup-lista"></div>
+  </div>
+
+  <!-- ══ ESTRATÉGICO ══ -->
+  <div id="page-estrategico" class="page">
+    <div style="margin-bottom:20px">
+      <p style="font-size:13px;color:var(--muted)">Análise por cliente — quais serviços se encaixam e proposta de contrato personalizada.</p>
+    </div>
+    <div id="estrategico-lista"></div>
   </div>
 
   <!-- ══ CONSOLIDADO MULTI-UC ══ -->
@@ -1212,6 +1224,331 @@ function addFsLog(msg){if(_fsLogs.has(msg))return;_fsLogs.add(msg);const el=docu
 
 // ── UTILS ──
 function formatCpf(v){const n=v.replace(/\D/g,'').slice(0,14);if(n.length<=3)return n;if(n.length<=6)return n.slice(0,3)+'.'+n.slice(3);if(n.length<=9)return n.slice(0,3)+'.'+n.slice(3,6)+'.'+n.slice(6);if(n.length<=11)return n.slice(0,3)+'.'+n.slice(3,6)+'.'+n.slice(6,9)+'-'+n.slice(9);return n.slice(0,2)+'.'+n.slice(2,5)+'.'+n.slice(5,8)+'/'+n.slice(8,12)+'-'+n.slice(12);}
+
+
+// ── ESTRATÉGICO ──
+function renderEstrategico(){
+  const cont = document.getElementById('estrategico-lista');
+  cont.innerHTML = '';
+
+  // Agrupa faturas por cliente
+  const porCliente = {};
+  for(const f of DADOS.faturas){
+    const nome = f.cliente_nome || f.uc;
+    if(!porCliente[nome]) porCliente[nome] = {nome, ucs:[], cnpj:''};
+    if(!porCliente[nome].ucs.find(u=>u.uc===f.uc)){
+      const analise = Array.isArray(f.faturas_analise)?f.faturas_analise[0]:(f.faturas_analise||{});
+      porCliente[nome].ucs.push({
+        uc:f.uc, subgrupo:f.subgrupo, modalidade:f.modalidade,
+        demanda_ctda:f.demanda_contratada_fora_ponta_kw||0,
+        demanda_medi:f.demanda_medida_fora_ponta_kw||0,
+        consumo:f.consumo_total_kwh||0,
+        total_pago:f.total_a_pagar||0,
+        score:analise?.score_eficiencia||100,
+        alertas:Array.isArray(analise?.alertas)?analise.alertas:[],
+        eco:analise?.potencial_economia_anual||0,
+      });
+    }
+  }
+
+  Object.values(porCliente).forEach(cli=>{
+    // Determina serviços recomendados por UC
+    cli.ucs.forEach(uc=>{
+      const alertas = uc.alertas;
+      const hasGD    = alertas.some(a=>(a.codigo||'').includes('GD'));
+      const hasReativo= alertas.some(a=>(a.codigo||'').includes('FATOR_POTENCIA')||a.titulo?.toLowerCase().includes('reativo'));
+      const hasCOSIP = alertas.some(a=>(a.codigo||'').includes('COSIP'));
+      const isGrupoA = uc.subgrupo?.startsWith('A');
+      const demandaOK= uc.demanda_ctda>=300;
+
+      uc.servicos = [];
+
+      // Serviço 1 — Gestão completa (sempre)
+      uc.servicos.push({
+        icone:'⚡', nome:'Gestão de Energia Completa',
+        descricao:'Levantamento tarifário, revisão de enquadramento, multas e adequações. Inclui relatório mensal e dashboard.',
+        fit:'alto', valor:'R$ 500/mês'
+      });
+
+      // Serviço 2 — Auditoria retroativa (sempre vale a pena)
+      uc.servicos.push({
+        icone:'🔍', nome:'Auditoria Retroativa (até 120 meses)',
+        descricao:'Revisão de faturas dos últimos 10 anos. Identifica cobranças indevidas, ICMS sobre TUSD/TUST e recuperação de créditos.',
+        fit:'alto', valor:'30% sobre valores recuperados'
+      });
+
+      // Serviço 3 — Correção reativo (se detectado)
+      if(hasReativo){
+        uc.servicos.push({
+          icone:'🔋', nome:'Correção de Fator de Potência',
+          descricao:'Instalação de banco de capacitores para eliminar cobranças de energia reativa. ROI em 6-18 meses.',
+          fit:'critico', valor:'Incluído na gestão'
+        });
+      }
+
+      // Serviço 4 — COSIP (se elevada)
+      if(hasCOSIP){
+        uc.servicos.push({
+          icone:'💡', nome:'Contestação de COSIP',
+          descricao:'Verificação e contestação junto à Prefeitura de Manaus do cálculo da Contribuição de Iluminação Pública.',
+          fit:'alto', valor:'Incluído na gestão'
+        });
+      }
+
+      // Serviço 5 — Mercado Livre (se Grupo A ou demanda >= 300kW)
+      if(isGrupoA || demandaOK){
+        uc.servicos.push({
+          icone:'🏭', nome:'Migração para Mercado Livre (ACL)',
+          descricao:`Grupo ${uc.subgrupo} com demanda${uc.demanda_ctda>0?' de '+uc.demanda_ctda+' kW — ':' '}elegível para contratação livre. Economia potencial de 15-30% na conta.`,
+          fit:'alto', valor:'Comissão sobre economia gerada'
+        });
+      }
+
+      // Serviço 6 — GD (se tem geração distribuída)
+      if(hasGD){
+        uc.servicos.push({
+          icone:'☀️', nome:'Otimização de Geração Distribuída',
+          descricao:'Gestão de créditos acumulados, verificação de compensação entre UCs e análise de expansão do sistema GD.',
+          fit:'medio', valor:'Incluído na gestão'
+        });
+      }
+
+      // Serviço 7 — Autoprodução (se não tem GD ainda ou tem espaço)
+      if(!hasGD && uc.consumo > 500){
+        uc.servicos.push({
+          icone:'🌱', nome:'Análise de Autoprodução',
+          descricao:'Estudo de viabilidade para instalação de geração própria (solar/GDIS). Cotações e relatório comparativo.',
+          fit:'medio', valor:'Incluído na gestão'
+        });
+      }
+    });
+
+    // Total UCs e valor mensal
+    const totalMensal = cli.ucs.length * 500;
+    const totalAnual  = totalMensal * 12;
+    const criticos    = cli.ucs.reduce((s,u)=>s+u.servicos.filter(sv=>sv.fit==='critico').length,0);
+
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.style.marginBottom = '20px';
+    div.innerHTML = `
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <div>
+          <div style="font-size:15px;font-weight:700;color:var(--text)">${cli.nome.slice(0,60)}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:3px">${cli.ucs.length} UC(s) • ${cli.ucs.map(u=>u.subgrupo).filter((v,i,a)=>a.indexOf(v)===i).join(', ')}</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          ${criticos>0?`<span class="badge critico">⚠ ${criticos} ação urgente</span>`:''}
+          <div style="text-align:right">
+            <div style="font-size:18px;font-weight:700;color:var(--green)">R$ ${totalMensal.toLocaleString('pt-BR')}/mês</div>
+            <div style="font-size:11px;color:var(--muted)">R$ ${totalAnual.toLocaleString('pt-BR')}/ano</div>
+          </div>
+          <button class="btn green" onclick="gerarContrato('${cli.nome}','${cli.ucs.map(u=>u.uc).join(',')}','${cli.ucs[0]?.subgrupo||''}')">📄 Gerar Contrato</button>
+        </div>
+      </div>
+
+      ${cli.ucs.map(uc=>`
+        <div style="border:1px solid var(--border);border-radius:8px;margin-bottom:10px;overflow:hidden">
+          <div style="padding:10px 14px;background:var(--bg3);display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)">
+            <span style="font-size:12px;font-weight:600">UC ${uc.uc}</span>
+            <span class="badge gray" style="font-size:9px">${uc.subgrupo} • ${uc.modalidade}</span>
+            ${uc.demanda_ctda>0?`<span class="badge info" style="font-size:9px">Demanda ${uc.demanda_ctda} kW</span>`:''}
+            <span class="badge ${uc.score>=85?'ok':uc.score>=70?'atencao':'critico'}" style="font-size:9px">Score ${uc.score}/100</span>
+            <span style="margin-left:auto;font-size:11px;font-weight:600;color:var(--text)">R$ ${(uc.total_pago||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}/mês</span>
+          </div>
+          <div style="padding:12px 14px">
+            <div style="font-size:10px;font-weight:700;color:var(--hint);text-transform:uppercase;margin-bottom:10px">Serviços recomendados</div>
+            <div style="display:grid;gap:8px">
+              ${uc.servicos.map(sv=>`
+                <div style="display:flex;gap:10px;padding:10px;background:${sv.fit==='critico'?'#fff5f5':sv.fit==='alto'?'#f0fdf4':'var(--bg3)'};border-radius:8px;border:1px solid ${sv.fit==='critico'?'#fecaca':sv.fit==='alto'?'#bbf7d0':'var(--border)'}">
+                  <span style="font-size:20px;flex-shrink:0">${sv.icone}</span>
+                  <div style="flex:1">
+                    <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap">
+                      <span style="font-size:12px;font-weight:600;color:var(--text)">${sv.nome}</span>
+                      <span class="badge ${sv.fit==='critico'?'critico':sv.fit==='alto'?'ok':'info'}" style="font-size:9px">${sv.fit==='critico'?'URGENTE':sv.fit==='alto'?'Recomendado':'Opcional'}</span>
+                      <span style="font-size:10px;color:var(--muted);margin-left:auto">${sv.valor}</span>
+                    </div>
+                    <div style="font-size:11px;color:var(--muted);line-height:1.5">${sv.descricao}</div>
+                  </div>
+                </div>`).join('')}
+            </div>
+          </div>
+        </div>`).join('')}
+    `;
+    cont.appendChild(div);
+  });
+
+  if(!cont.innerHTML) cont.innerHTML = '<div class="empty"><div class="empty-icon">📊</div><div class="empty-title">Nenhum cliente para analisar</div></div>';
+}
+
+// ── GERADOR DE CONTRATO ──
+function gerarContrato(nomeCliente, ucsStr, subgrupo){
+  const ucs = ucsStr.split(',');
+  const fat = DADOS.faturas.find(f=>f.cliente_nome===nomeCliente);
+  const empresa = DADOS.empresas.find(e=>e.nome===nomeCliente);
+  const cnpj = empresa?.cnpj || '';
+  const cnpjFmt = cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,'$1.$2.$3/$4-$5');
+
+  // Endereço (pega do cliente se disponível)
+  const endereco = fat ? '' : '';
+  const totalMensal = ucs.length * 500;
+  const dataHoje = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+
+  // Determina serviços conforme perfil
+  const temGrupoA = subgrupo?.startsWith('A');
+  const servicos = [
+    'a) Gestão de energia completa, contemplando levantamento contratual, levantamento de multas e adequações de enquadramentos tarifários, levantamento de possíveis economias nas faturas de energia, levantamento de carga e visita técnica para detectar pontos de melhorias.',
+    'b) Auditoria retroativa completa nas faturas dos últimos 120 meses.',
+    'c) Prestação de contas mensal através de relatórios, sistema de gestão, dashboard e presencial se necessário.',
+    'e) Revisão e ajustes junto à distribuidora: grupo, subgrupo, classe, modalidade, COSIP, demanda, reativo e mudança de titularidade caso necessário.',
+  ];
+  if(temGrupoA) servicos.splice(2,0,'d) Migração do Ambiente de Contratação Regulada (ACR) para o Ambiente de Contratação Livre (ACL).');
+
+  const win = window.open('','_blank');
+  win.document.write(`<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Contrato — ${nomeCliente}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',Arial,sans-serif;font-size:12px;color:#1a1a1a;background:#fff;padding:0}
+  .page{width:210mm;min-height:297mm;margin:0 auto;padding:20mm 20mm 20mm 20mm}
+  .logo-area{display:flex;align-items:center;gap:12px;margin-bottom:28px;padding-bottom:16px;border-bottom:2px solid #0d2137}
+  .logo-box{width:48px;height:48px;background:#0d2137;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff}
+  .logo-nome{font-size:18px;font-weight:700;color:#0d2137}
+  .logo-sub{font-size:11px;color:#64748b}
+  h1{font-size:14px;font-weight:700;text-align:center;text-transform:uppercase;letter-spacing:.08em;margin-bottom:24px;color:#0d2137}
+  .partes-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+  .parte-box{border:1px solid #e2e8f0;border-radius:8px;padding:12px}
+  .parte-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#64748b;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #e2e8f0}
+  .parte-nome{font-size:12px;font-weight:600;margin-bottom:4px}
+  .parte-info{font-size:11px;color:#64748b;line-height:1.6}
+  .intro{font-size:12px;line-height:1.7;margin-bottom:18px;color:#374151}
+  h2{font-size:12px;font-weight:700;margin:16px 0 8px;color:#0d2137}
+  .servico-item{display:flex;gap:8px;margin-bottom:6px;font-size:11px;line-height:1.6;color:#374151}
+  .clausula{margin-bottom:12px}
+  .clausula-titulo{font-size:12px;font-weight:700;margin-bottom:6px}
+  .clausula-item{font-size:11px;line-height:1.7;color:#374151;margin-bottom:4px;padding-left:12px}
+  .highlight{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:10px 12px;margin:12px 0}
+  .highlight-val{font-size:16px;font-weight:700;color:#059669}
+  .assinaturas{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:32px}
+  .assinatura{text-align:center}
+  .linha-assinatura{border-top:1px solid #1a1a1a;padding-top:6px;font-size:11px;color:#374151}
+  .footer{margin-top:16px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:10px;color:#94a3b8;text-align:center}
+  .ucs-lista{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .uc-badge{background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600}
+  @media print{.no-print{display:none!important}body{padding:0}}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="logo-area">
+    <div class="logo-box">⚡</div>
+    <div>
+      <div class="logo-nome">TRIANON GESTÃO DE ENERGIA</div>
+      <div class="logo-sub">Gestão Inteligente de Energia · Manaus, AM</div>
+    </div>
+    <button class="no-print" onclick="window.print()" style="margin-left:auto;padding:8px 18px;background:#0d2137;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600">🖨 Imprimir / Salvar PDF</button>
+  </div>
+
+  <h1>Instrumento Particular de Contrato de Prestação de Serviços</h1>
+
+  <div class="partes-grid">
+    <div class="parte-box">
+      <div class="parte-label">Contratante</div>
+      <div class="parte-nome">${nomeCliente}</div>
+      <div class="parte-info">
+        ${cnpjFmt?'CNPJ: '+cnpjFmt+'<br>':''}
+        ${ucs.map(u=>'UC: '+u).join(' · ')}
+      </div>
+    </div>
+    <div class="parte-box">
+      <div class="parte-label">Contratada</div>
+      <div class="parte-nome">TRIANON GESTÃO DE ENERGIA LTDA</div>
+      <div class="parte-info">
+        CNPJ: 58.843.586/0001-36<br>
+        Rua Dom José Moraes Torres, 69 – Flores, Manaus, AM
+      </div>
+    </div>
+  </div>
+
+  <div class="intro">
+    As Partes acima identificadas, doravante denominadas como <strong>CONTRATANTE</strong> e <strong>CONTRATADA</strong>,
+    têm entre si justo e acertado o presente Contrato de Prestação de Serviços, que se regerá pelas cláusulas e
+    condições a seguir expostas:
+  </div>
+
+  <h2>Objeto do Contrato</h2>
+  <div class="intro">O presente Contrato tem por objeto a prestação de serviços pela CONTRATADA, incluindo:</div>
+  ${servicos.map(s=>`<div class="servico-item"><span>•</span><span>${s}</span></div>`).join('')}
+
+  <div class="highlight">
+    <div style="font-size:11px;color:#065f46;margin-bottom:4px;font-weight:600">💰 REMUNERAÇÃO MENSAL</div>
+    <div class="highlight-val">R$ ${totalMensal.toLocaleString('pt-BR',{minimumFractionDigits:2})}/mês</div>
+    <div style="font-size:11px;color:#065f46;margin-top:4px">${ucs.length} UC(s) × R$ 500,00 — pagamento até o dia 05 de cada mês</div>
+  </div>
+
+  <div class="clausula">
+    <div class="clausula-titulo">1. Auditoria Retroativa</div>
+    <div class="clausula-item">1.1 A CONTRATADA realizará auditoria nas faturas dos últimos 120 meses (10 anos), identificando cobranças indevidas, ICMS sobre TUSD/TUST e demais irregularidades.</div>
+    <div class="clausula-item">1.2 Em caso de êxito, a CONTRATADA fará jus a <strong>30% de comissão</strong> sobre os valores efetivamente recuperados e creditados ao CONTRATANTE.</div>
+  </div>
+
+  <div class="clausula">
+    <div class="clausula-titulo">2. Vigência e Renovação</div>
+    <div class="clausula-item">2.1 Vigência de 1 (um) ano a contar da assinatura, com renovação automática por igual período, salvo manifestação contrária do CONTRATANTE.</div>
+    <div class="clausula-item">2.2 Reajuste anual pelo IPCA.</div>
+  </div>
+
+  <div class="clausula">
+    <div class="clausula-titulo">3. Rescisão</div>
+    <div class="clausula-item">3.1 O contrato poderá ser rescindido sem penalidade pelo CONTRATANTE quando o custo do serviço for maior que a economia proporcionada.</div>
+    <div class="clausula-item">3.2 Rescisão por outros motivos: multa de 30% sobre o valor total restante até o término da vigência.</div>
+  </div>
+
+  <div class="clausula">
+    <div class="clausula-titulo">4. Confidencialidade e LGPD</div>
+    <div class="clausula-item">4.1 As PARTES comprometem-se a manter sigilo sobre todas as informações obtidas, em conformidade com a Lei nº 13.709/2018 (LGPD).</div>
+  </div>
+
+  <div class="clausula">
+    <div class="clausula-titulo">5. Foro</div>
+    <div class="clausula-item">5.1 Fica eleito o foro da Comarca de Manaus, Estado do Amazonas.</div>
+  </div>
+
+  <div style="text-align:center;margin:20px 0;font-size:12px;color:#374151">
+    Manaus, ${dataHoje}.
+  </div>
+
+  <div class="assinaturas">
+    <div class="assinatura">
+      <div style="height:40px"></div>
+      <div class="linha-assinatura">TRIANON GESTÃO DE ENERGIA LTDA<br><span style="font-size:10px;color:#64748b">Contratada</span></div>
+    </div>
+    <div class="assinatura">
+      <div style="height:40px"></div>
+      <div class="linha-assinatura">${nomeCliente}<br><span style="font-size:10px;color:#64748b">Contratante</span></div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:24px">
+    <div class="assinatura">
+      <div style="height:40px"></div>
+      <div class="linha-assinatura">Testemunha 1<br>Nome: ___________________<br>CPF: ____________________</div>
+    </div>
+    <div class="assinatura">
+      <div style="height:40px"></div>
+      <div class="linha-assinatura">Testemunha 2<br>Nome: ___________________<br>CPF: ____________________</div>
+    </div>
+  </div>
+
+  <div class="footer">TRIANON GESTÃO DE ENERGIA LTDA · CNPJ: 58.843.586/0001-36 · Manaus, AM</div>
+</div>
+</body></html>`);
+  win.document.close();
+}
 
 // ── INIT ──
 carregarDados();

@@ -1336,7 +1336,7 @@ function simularML(){
     +'<div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">'
     +'<div><div style="font-size:15px;font-weight:700">'+(elegivel?'✅':'⚠️')+' '+nome.slice(0,50)+' — UC '+uc+'</div>'
     +'<div style="font-size:12px;color:var(--muted);margin-top:4px">Subgrupo '+subgrupo+' • Demanda '+(demCtda>0?demCtda+' kW':'—')+
-    ' • <span style="color:'+(elegivel?'var(--green)':'var(--amber)');+'">'+( elegivel?'✅ Elegível ML':'⚠️ Verificar elegibilidade')+'</span></div></div>'
+    ' • <span style="color:'+(elegivel?'var(--green)':'var(--amber)')+'">'+( elegivel?'✅ Elegível ML':'⚠️ Verificar elegibilidade')+'</span></div></div>'
     +'<div style="text-align:right"><div style="font-size:22px;font-weight:700;color:'+(econMensal>0?'var(--green)':'var(--red)')+'">R$ '+fmtBR(Math.abs(econMensal),2)+'/mês</div>'
     +'<div style="font-size:11px;color:var(--muted)">Economia estimada ('+desconto+'% desconto)</div></div></div>'
     +'<div class="metrics-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">'

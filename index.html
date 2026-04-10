@@ -181,15 +181,20 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
     </div>
   </div>
 
-  <div class="sb-section">Pipeline</div>
+  <!-- STEP 1: Novo Cliente em destaque -->
+  <div onclick="abrirModalNovoCliente()" style="margin:10px 10px 4px;padding:11px 14px;background:#059669;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:9px;transition:opacity .15s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="2"><circle cx="8" cy="8" r="6"/><path d="M8 5v6M5 8h6"/></svg>
+    <div>
+      <div style="font-size:12px;font-weight:700;color:#fff">+ Novo Cliente</div>
+      <div style="font-size:9px;color:rgba(255,255,255,.6)">Cadastrar e extrair faturas</div>
+    </div>
+  </div>
+
+  <div class="sb-section" style="margin-top:6px">Pipeline</div>
   <div class="sb-item active" id="sb-pipeline" onclick="navegar('pipeline',this)">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="3" height="12" rx="1"/><rect x="6" y="2" width="3" height="9" rx="1"/><rect x="11" y="2" width="4" height="6" rx="1"/></svg>
     Kanban Clientes
     <span class="sb-badge green" id="sb-n-ativos">0</span>
-  </div>
-  <div class="sb-item" id="sb-novo" onclick="abrirModalNovoCliente()">
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v6M5 8h6"/></svg>
-    + Novo Cliente
   </div>
 
   <div class="sb-section">Análise</div>
@@ -2084,54 +2089,54 @@ async function pollExtracao(taskId, email){
       extLog('✓ Parse e análise IA concluídos');
       extLog('🔄 Registrando cliente no pipeline...');
 
-      // Busca dados do cliente das faturas recém-extraídas
-      var cpfVal = document.getElementById('nc-cpf').value.replace(/\D/g,'');
+      // Registra cliente automaticamente na tabela clientes
+      var cpfEl = document.getElementById('nc-cpf');
+      var cpfVal = cpfEl ? cpfEl.value.replace(/[^0-9]/g,'') : '';
+      var monitorarVal = document.getElementById('nc-toggle') ? document.getElementById('nc-toggle').classList.contains('on') : true;
       try{
-        // Busca faturas do request
-        var fatReq = await fetch(SB+'/rest/v1/faturas_parsed?extraction_id=eq.'+taskId+'&select=*&limit=1',
-          {headers:{apikey:KEY,Authorization:'Bearer '+KEY}});
-        var fatData = await fatReq.json();
-        if(!fatData||!fatData[0]) throw new Error('faturas não encontradas');
-        var f0 = fatData[0];
+        // 1. Busca TODAS as faturas desta extração (pode ter várias UCs)
+        var r1 = await sbGet('faturas_parsed?extraction_id=eq.'+taskId+'&select=uc,cliente_nome,cnpj,subgrupo,modalidade,demanda_contratada_fora_ponta_kw,consumo_total_kwh,total_a_pagar&order=parsed_at.desc');
+        var faturas = Array.isArray(r1) ? r1 : [];
+        if(!faturas.length) throw new Error('Aguardando parse...');
 
-        // Busca TODAS as UCs deste CNPJ
-        var allFatReq = await fetch(SB+'/rest/v1/faturas_parsed?extraction_id=eq.'+taskId+'&select=uc,subgrupo,modalidade,demanda_contratada_fora_ponta_kw,consumo_total_kwh,total_a_pagar',
-          {headers:{apikey:KEY,Authorization:'Bearer '+KEY}});
-        var allFat = await allFatReq.json()||[];
-        var ucs = [...new Set(allFat.map(function(f){return f.uc;}).filter(Boolean))];
-        var custoMedio = allFat.reduce(function(s,f){return s+parseFloat(f.total_a_pagar||0);},0)/Math.max(allFat.length,1);
+        var f0 = faturas[0];
+        var ucs = [...new Set(faturas.map(function(f){return f.uc;}).filter(Boolean))];
+        var nMeses = Math.max(faturas.length, 1);
+        var custoMedio = faturas.reduce(function(s,f){return s+parseFloat(f.total_a_pagar||0);},0)/nMeses;
+        var cnpjFinal = f0.cnpj || cpfVal;
+        var nomeFinal = f0.cliente_nome || cpfVal;
 
-        // Verifica se já existe na tabela clientes
-        var existeReq = await fetch(SB+'/rest/v1/clientes?portal_cpf_cnpj=eq.'+cpfVal+'&select=id',
-          {headers:{apikey:KEY,Authorization:'Bearer '+KEY}});
-        var existe = await existeReq.json();
+        // 2. Verifica se já existe (por CNPJ ou portal_cpf_cnpj)
+        var r2 = await sbGet('clientes?or=(cnpj.eq.'+cnpjFinal+',portal_cpf_cnpj.eq.'+cpfVal+')&select=id&limit=1');
+        var existente = Array.isArray(r2) && r2[0] ? r2[0] : null;
 
-        if(!existe||!existe[0]){
-          // Cria novo cliente
-          var novoCliente = {
-            nome: f0.cliente_nome||cpfVal,
-            cnpj: cpfVal,
+        if(!existente){
+          // Cria novo cliente com todos os dados da fatura
+          var novo = {
+            nome: nomeFinal,
+            cnpj: cnpjFinal,
             ucs: ucs,
             subgrupo: f0.subgrupo||'',
             modalidade: f0.modalidade||'',
             demanda_kw: parseFloat(f0.demanda_contratada_fora_ponta_kw)||null,
             consumo_medio: parseFloat(f0.consumo_total_kwh)||null,
-            custo_medio: custoMedio||null,
-            portal_cpf_cnpj: cpfVal,
-            status: 'prospecto',
-            monitorar: document.getElementById('nc-toggle').classList.contains('on'),
+            custo_medio: parseFloat(custoMedio.toFixed(2))||null,
+            portal_cpf_cnpj: cpfVal||cnpjFinal,
+            status: 'prospecto'
           };
-          if(email) novoCliente.email_contato = email;
-          await sbPost('clientes', novoCliente);
-          extLog('✅ Cliente registrado no Kanban como Prospecto!');
+          if(email) novo.email_contato = email;
+          await sbPost('clientes', novo);
+          extLog('✅ '+nomeFinal.slice(0,40)+' registrado como Prospecto!');
         } else {
-          // Atualiza UCs e dados
-          await sbPatch('clientes?id=eq.'+existe[0].id, {ucs:ucs, custo_medio:custoMedio});
-          if(email) await sbPatch('clientes?id=eq.'+existe[0].id, {email_contato:email});
-          extLog('✅ Cliente atualizado no Kanban!');
+          // Atualiza dados existentes
+          var update = {ucs:ucs, custo_medio:parseFloat(custoMedio.toFixed(2))};
+          if(nomeFinal && nomeFinal!==cpfVal) update.nome = nomeFinal;
+          if(email) update.email_contato = email;
+          await sbPatch('clientes?id=eq.'+existente.id, update);
+          extLog('✅ '+nomeFinal.slice(0,40)+' atualizado no Kanban!');
         }
       } catch(err){
-        extLog('⚠️ Cliente nas faturas mas não no Kanban — atualize a página');
+        extLog('⚠️ '+err.message+' — cliente pode aparecer após atualizar');
       }
 
       await carregarDados();

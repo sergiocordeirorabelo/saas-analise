@@ -1116,6 +1116,624 @@ function imprimirAnalise(){
 
 // ── PROPOSTA ─────────────────────────────────────────────────────────────────
 async function gerarPropostaParaCliente(clienteId){
+  var cl = D.clientes.find(function(x){return x.id===clienteId;});
+  if(!cl) return;
+  var ucs = cl.ucs||[];
+
+  // Tenta usar o PDF profissional do Railway (gerar_relatorio.py com ReportLab)
+  // Se Railway offline, cai para o HTML próprio
+  for(var i=0;i<ucs.length;i++){
+    var uc = ucs[i];
+    var pdfUrl = RW+'/relatorio/uc/'+uc;
+    try{
+      var test = await fetch(RW+'/health',{signal:AbortSignal.timeout(5000)});
+      if(test.ok){
+        // Railway online — abre o PDF profissional direto
+        window.open(pdfUrl,'_blank');
+        // Muda status para proposta
+        if(cl.status==='analisando'||cl.status==='prospecto') await mudarStatus(clienteId,'proposta');
+        await sbPatch('propostas?cliente_id=eq.'+clienteId,{status:'enviada',enviada_em:new Date().toISOString()});
+        await carregarDados();
+        return;
+      }
+    }catch(e){}
+  }
+
+  // Fallback: Railway offline — gera HTML próprio
+  var uc = ucs[0];
+  var analise = _analiseCache[uc]||'Diagnóstico executivo disponível no sistema.';
+  var fat = D.faturas.filter(function(f){return ucs.includes(f.uc);});
+  var n = Math.min(fat.length,12)||1;
+  var custoMedio = fat.slice(0,n).reduce(function(s,f){return s+parseFloat(f.total_a_pagar||0);},0)/n;
+  var ecoEstimada = custoMedio * 0.15 * 12;
+  var valorMensal = ucs.length * 500;
+  var dataHoje = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+  var fmtR = function(v){return 'R$ '+parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2});};
+  var analiseHtml = analise.replace(/^## (.+)$/gm,'<h3 style="margin:12px 0 6px;color:#0d2137">$1</h3>').replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>');
+
+  var w = window.open('','_blank');
+  w.document.write('<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">'
+    +'<title>Proposta — '+cl.nome+'</title>'
+    +'<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:12px;color:#1a1a1a;padding:18mm 20mm}'
+    +'.logo{display:flex;align-items:center;gap:12px;margin-bottom:22px;padding-bottom:12px;border-bottom:3px solid #059669}'
+    +'h1{font-size:18px;font-weight:700;color:#0d2137;text-align:center;margin-bottom:6px}'
+    +'h2{font-size:13px;font-weight:700;color:#0d2137;margin:16px 0 8px;border-left:3px solid #059669;padding-left:8px}'
+    +'h3{font-size:12px;font-weight:700;margin:10px 0 4px}'
+    +'.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}'
+    +'.box{border:1px solid #e2e8f0;border-radius:6px;padding:10px}'
+    +'.hl{background:#f0fdf4;border:1px solid #6ee7b7;border-radius:8px;padding:14px;margin:14px 0;text-align:center}'
+    +'.row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #e2e8f0;font-size:11px}'
+    +'.sigs{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:28px}'
+    +'.sig-line{border-top:1px solid #1a1a1a;padding-top:5px;font-size:10px;text-align:center}'
+    +'@media print{.no-print{display:none}}</style></head><body>'
+    +'<div class="logo"><div style="width:44px;height:44px;background:#059669;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff">⚡</div>'
+    +'<div><div style="font-size:16px;font-weight:700;color:#0d2137">TRIANON GESTÃO DE ENERGIA</div><div style="font-size:10px;color:#64748b">Gestão Inteligente · Manaus, AM</div></div>'
+    +'<button class="no-print" onclick="window.print()" style="margin-left:auto;padding:8px 16px;background:#059669;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600">🖨 Salvar PDF</button>'
+    +'</div>'
+    +'<h1>PROPOSTA COMERCIAL</h1>'
+    +'<p style="text-align:center;font-size:11px;color:#64748b;margin-bottom:18px">Gestão de Energia e Eficiência Energética</p>'
+    +'<div class="grid">'
+    +'<div class="box"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#64748b;margin-bottom:5px">Cliente</div><b>'+cl.nome+'</b><br><span style="font-size:10px;color:#64748b">'+ucs.map(function(u){return 'UC: '+u;}).join(' · ')+'</span></div>'
+    +'<div class="box"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#64748b;margin-bottom:5px">Fornecedor</div><b>TRIANON GESTÃO DE ENERGIA LTDA</b><br><span style="font-size:10px;color:#64748b">CNPJ: 58.843.586/0001-36 · Manaus, AM</span></div>'
+    +'</div>'
+    +'<div class="hl"><div style="font-size:22px;font-weight:700;color:#059669">'+fmtR(valorMensal)+'/mês</div>'
+    +'<div style="font-size:11px;color:#065f46;margin-top:4px">'+ucs.length+' UC(s) × R$ 500,00 · Economia estimada: '+fmtR(ecoEstimada)+'/ano</div></div>'
+    +'<h2>Diagnóstico e Justificativa</h2>'
+    +'<div style="font-size:11px;line-height:1.7;color:#374151;max-height:300px;overflow:hidden">'+analiseHtml.slice(0,2000)+'</div>'
+    +'<h2>Serviços Incluídos</h2>'
+    +'<div class="row"><span>✅ Gestão de energia completa (levantamento, revisão tarifária, relatórios)</span><span style="color:#059669;font-weight:700">'+fmtR(valorMensal)+'/mês</span></div>'
+    +'<div class="row"><span>✅ Auditoria retroativa 120 meses</span><span style="color:#059669;font-weight:700">30% sobre recuperado</span></div>'
+    +'<div class="row"><span>✅ Dashboard e relatório mensal</span><span style="color:#059669;font-weight:700">Incluído</span></div>'
+    +'<div class="row" style="border:none"><span>✅ Suporte técnico contínuo</span><span style="color:#059669;font-weight:700">Incluído</span></div>'
+    +'<h2>Condições</h2>'
+    +'<div style="font-size:11px;line-height:1.8">• <b>Vigência:</b> 12 meses · reajuste anual pelo IPCA<br>• <b>Rescisão sem multa:</b> quando custo superar economia<br>• <b>Foro:</b> Comarca de Manaus, AM</div>'
+    +'<p style="text-align:center;margin:18px 0;font-size:11px">Manaus, '+dataHoje+'</p>'
+    +'<div class="sigs"><div><div style="height:40px"></div><div class="sig-line">TRIANON GESTÃO DE ENERGIA LTDA<br>Fornecedor</div></div>'
+    +'<div><div style="height:40px"></div><div class="sig-line">'+cl.nome.slice(0,40)+'<br>Contratante</div></div></div>'
+    +'</body></html>');
+  w.document.close();
+
+  // Salva proposta no banco
+  await sbPost('propostas',{cliente_id:clienteId,cliente_nome:cl.nome,ucs:ucs,valor_mensal:valorMensal,economia_anual:ecoEstimada,diagnostico:analise,status:'enviada',enviada_em:new Date().toISOString()});
+  if(cl.status==='analisando'||cl.status==='prospecto') await mudarStatus(clienteId,'proposta');
+  await carregarDados();
+}
+
+
+async function gerarProposta(clienteId){
+  var c = D.clientes.find(function(x){return x.id===clienteId;});
+  if(!c) return;
+  abrirCliente(clienteId, 'proposta');
+}
+
+async function fecharContrato(clienteId){
+  var c = D.clientes.find(function(x){return x.id===clienteId;});
+  if(!c) return;
+  if(!confirm('Confirma fechamento do contrato com '+c.nome.slice(0,40)+'?')) return;
+  var hoje = new Date();
+  var fim = new Date(hoje); fim.setFullYear(fim.getFullYear()+1);
+  var fmt = function(d){ return d.toISOString().split('T')[0]; };
+  var ucs = c.ucs||[];
+  var valorMensal = ucs.length * 500;
+  // Cria contrato
+  await sbPost('contratos',{
+    cliente_id: clienteId, cliente_nome: c.nome, cnpj: c.cnpj,
+    ucs: ucs, valor_mensal: valorMensal,
+    inicio: fmt(hoje), fim: fmt(fim), status: 'ativo'
+  });
+  // Muda status cliente
+  await sbPatch('clientes?id=eq.'+clienteId, {
+    status:'ativo', contrato_inicio: fmt(hoje), contrato_fim: fmt(fim), valor_mensal: valorMensal
+  });
+  await carregarDados();
+  alert('🎉 Contrato fechado! Cliente '+c.nome.slice(0,30)+' agora é um cliente ativo.');
+  // Abre a tela de contratos
+  navegar('contratos', document.getElementById('sb-contratos'));
+}
+
+// ── MODAL CLIENTE (detalhes) ──────────────────────────────────────────────────
+function abrirCliente(clienteId, tab){
+  var cl = D.clientes.find(function(x){return x.id===clienteId;});
+  if(!cl) return;
+  var fat = D.faturas.filter(function(f){return (cl.ucs||[]).includes(f.uc);});
+  var alertas = D.alertas.filter(function(a){return (cl.ucs||[]).includes(a.uc)&&!a.resolvido;});
+  var analises = D.analises.filter(function(a){return (cl.ucs||[]).includes(a.uc);});
+  var custo = parseFloat(cl.custo_medio)||0;
+  var eco = analises.reduce(function(s,a){return s+parseFloat(a.potencial_economia_anual||0);},0);
+  var ucs = (cl.ucs||[]).join(', ');
+  var uc0 = (cl.ucs||[])[0]||'';
+  var idJ = JSON.stringify(cl.id);
+  var nomeJ = JSON.stringify(cl.nome);
+  var ucJ = JSON.stringify(uc0);
+
+  document.getElementById('mc-titulo').textContent = cl.nome.slice(0,50);
+  document.getElementById('mc-sub').textContent = 'UC '+ucs+(cl.subgrupo?' · '+cl.subgrupo:'')+(cl.modalidade?' · '+cl.modalidade:'');
+
+  // Status badge + pipeline buttons
+  var statusLabel = getStatusLabel(cl.status);
+  var pipelineBtns = '';
+  if(cl.status==='prospecto')
+    pipelineBtns = '<button class="btn amber" onclick="mudarStatus('+idJ+',\'analisando\');fecharModal(\'modalCliente\')">📊 Mover para Analisando</button>';
+  if(cl.status==='analisando')
+    pipelineBtns = '<button class="btn primary" onclick="mudarStatus('+idJ+',\'proposta\');fecharModal(\'modalCliente\')">📧 Proposta Enviada</button>';
+  if(cl.status==='proposta')
+    pipelineBtns = '<button class="btn" onclick="mudarStatus('+idJ+',\'negociando\');fecharModal(\'modalCliente\')">🤝 Em Negociação</button>';
+
+  // KPI bar
+  var kpis = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px">'
+    +'<div class="metric-card" style="padding:12px"><div class="metric-label">Custo Médio</div><div style="font-size:18px;font-weight:700">R$ '+custo.toLocaleString('pt-BR',{minimumFractionDigits:0})+'</div><div class="metric-sub">/mês</div></div>'
+    +'<div class="metric-card" style="padding:12px"><div class="metric-label">Faturas</div><div style="font-size:18px;font-weight:700">'+fat.length+'</div></div>'
+    +'<div class="metric-card" style="padding:12px"><div class="metric-label">Economia Potencial</div><div style="font-size:18px;font-weight:700;color:var(--green)">R$ '+eco.toLocaleString('pt-BR',{minimumFractionDigits:0})+'</div><div class="metric-sub">/ano</div></div>'
+    +'<div class="metric-card" style="padding:12px"><div class="metric-label">Alertas</div><div style="font-size:18px;font-weight:700;color:'+(alertas.length>0?'var(--red)':'var(--green)')+'">'+alertas.length+'</div></div>'
+    +'</div>';
+
+  // Alertas list
+  var alertasHtml = alertas.length>0
+    ? alertas.slice(0,4).map(function(a){
+        return '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px">'
+          +'<span class="badge '+(a.severidade==='critico'?'critico':'alerta')+'">'+a.severidade+'</span>'
+          +'<span>'+a.titulo+'</span>'
+          +(a.valor_r?'<span style="margin-left:auto;color:var(--red);font-weight:600">R$ '+parseFloat(a.valor_r).toLocaleString('pt-BR',{minimumFractionDigits:2})+'</span>':'')
+          +'</div>';
+      }).join('')
+    : '<div style="font-size:12px;color:var(--hint)">Nenhum alerta crítico ✅</div>';
+
+  // Análise section — loads when tab is clicked
+  var analiseSection = '<div id="mc-analise-area">'
+    +'<div style="text-align:center;padding:30px">'
+    +'<div style="font-size:40px;margin-bottom:10px">🔍</div>'
+    +'<div style="font-size:14px;font-weight:600;margin-bottom:6px">Diagnóstico Executivo</div>'
+    +'<div style="font-size:12px;color:var(--muted);margin-bottom:16px">Análise estruturada pelos serviços do contrato Trianon</div>'
+    +'<button class="btn primary" style="padding:12px 28px;font-size:14px;font-weight:700" onclick="carregarAnaliseNoModal('+ucJ+','+nomeJ+','+idJ+')">⚡ Gerar Análise Completa</button>'
+    +'</div>'
+    +'</div>';
+
+  // Comercial section
+  var comercialSection = '<div style="background:linear-gradient(135deg,#f0fdf4,#eff6ff);border-radius:10px;padding:16px;border:1px solid #bbf7d0">'
+    +'<div style="font-size:13px;font-weight:700;color:#0d2137;margin-bottom:12px">💼 Ações Comerciais</div>'
+    +'<div style="display:flex;gap:10px;flex-wrap:wrap">'
+    +'<button class="btn primary" style="padding:11px 20px;font-size:13px;font-weight:600" onclick="gerarProposta('+idJ+')">📧 Gerar Proposta PDF</button>'
+    +'<button class="btn green" style="padding:11px 20px;font-size:13px;font-weight:600" onclick="fecharModal(\'modalCliente\');fecharContrato('+idJ+')">🎯 Fechar Contrato</button>'
+    +'<button class="btn" style="padding:11px 16px" onclick="gerarContratoPDF('+idJ+')">📄 Ver Contrato</button>'
+    +'</div>'
+    +'</div>';
+
+  document.getElementById('mc-body').innerHTML =
+    // Status
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap">'
+    +'<span class="badge '+getStatusClass(cl.status)+'">'+statusLabel+'</span>'
+    +(pipelineBtns?pipelineBtns:'')
+    +'</div>'
+    // KPIs
+    + kpis
+    // 2 colunas: dados + alertas
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">'
+    +'<div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Dados da UC</div>'
+    +'<div style="font-size:12px;line-height:1.9">'
+    +(cl.cnpj?'CNPJ: <b>'+formatCNPJ(cl.cnpj)+'</b><br>':'')
+    +'UC: <b>'+ucs+'</b><br>'
+    +'Subgrupo: <b>'+cl.subgrupo+'</b> · Modalidade: <b>'+cl.modalidade+'</b>'
+    +(cl.demanda_kw?'<br>Demanda: <b>'+cl.demanda_kw+' kW</b>':'')
+    +'</div></div>'
+    +'<div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Alertas Ativos</div>'+alertasHtml+'</div>'
+    +'</div>'
+    // Análise
+    + analiseSection
+    +'<div style="margin-top:16px"></div>'
+    // Comercial
+    + comercialSection;
+
+  document.getElementById('modalCliente').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+
+async function carregarAnaliseNoModal(uc, nome, clienteId){
+  var area = document.getElementById('mc-analise-area');
+  if(!area) return;
+  area.innerHTML = '<div style="text-align:center;padding:30px"><div class="spinner"></div><div style="font-size:13px;color:var(--muted)">Gerando diagnóstico...</div></div>';
+
+  // Tenta Railway, fallback Supabase
+  try{
+    var resp = await fetch(RW+'/analise/uc/'+uc, {signal: AbortSignal.timeout(12000)});
+    if(!resp.ok) throw new Error('offline');
+    var data = await resp.json();
+    if(data.error) throw new Error(data.error);
+    _analiseCache[uc] = data.analise;
+  } catch(e){
+    // Fallback local
+    if(!_analiseCache[uc]) gerarAnaliseFallback(uc, nome);
+  }
+
+  if(!_analiseCache[uc]){
+    area.innerHTML = '<div style="color:var(--red);padding:16px;font-size:13px">Erro ao gerar análise. Tente novamente.</div>';
+    return;
+  }
+
+  var idJ = JSON.stringify(clienteId||'');
+  var md = _analiseCache[uc];
+  var html = md
+    .replace(/^## (.+)$/gm, function(m,t){
+      var icones = {'Diagn':'🔍','Oportunidad':'⚡','Ações':'🚨','Urgentes':'🚨','Mercado':'🏭','Escopo':'📋','Estimativa':'💰','Próximos':'📅','Adequa':'🏭','Gestão':'⚡','Auditoria':'🔎','Revisão':'🔧','Vistoria':'🏗','Recomend':'✅','Resumo':'💰'};
+      var ico = '●';
+      Object.keys(icones).forEach(function(k){ if(t.indexOf(k)>=0) ico=icones[k]; });
+      return '<div style="display:flex;align-items:center;gap:8px;margin:18px 0 8px;padding-bottom:6px;border-bottom:2px solid #e2e8f0"><span style="font-size:16px">'+ico+'</span><h2 style="font-size:14px;font-weight:700;color:#0d2137;margin:0">'+t+'</h2></div>';
+    })
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/^- (.+)$/gm,'<div style="display:flex;gap:8px;padding:6px 8px;background:#f8fafc;border-radius:5px;border-left:3px solid #059669;margin-bottom:4px;font-size:12px"><span style="color:#059669;flex-shrink:0">→</span><span>$1</span></div>')
+    .replace(/^(\d+)\. (.+)$/gm,'<div style="display:flex;gap:8px;margin-bottom:5px;align-items:flex-start"><span style="min-width:20px;height:20px;background:#0d2137;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">$1</span><span style="font-size:12px;line-height:1.5">$2</span></div>')
+    .replace(/\n\n/g,'<br>').replace(/\n/g,' ');
+
+  // Header com métricas
+  var fat = D.faturas.filter(function(f){return f.uc===uc;});
+  var an = D.analises.filter(function(a){return a.uc===uc;});
+  var custo = fat.slice(0,12).reduce(function(s,f){return s+parseFloat(f.total_a_pagar||0);},0)/Math.max(fat.length,1);
+  var eco = an[0] ? parseFloat(an[0].potencial_economia_anual||0) : 0;
+  var score = an[0] ? an[0].score_eficiencia : null;
+  var sc = !score?'#94a3b8':score>=85?'#6ee7b7':score>=70?'#fcd34d':'#fca5a5';
+  var f0 = fat[0]||{};
+
+  area.innerHTML =
+    '<div style="background:linear-gradient(135deg,#0d2137,#1e3a5f);border-radius:10px;padding:16px 20px;margin-bottom:16px">'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">'
+    +'<div><div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.07em">Diagnóstico Executivo · IA</div>'
+    +'<div style="font-size:16px;font-weight:700;color:#fff;margin:3px 0">'+nome.slice(0,50)+'</div>'
+    +'<div style="font-size:11px;color:rgba(255,255,255,.45)">UC '+uc+(f0.subgrupo?' · '+f0.subgrupo:'')+'</div></div>'
+    +(score!==null?'<div style="text-align:center;background:rgba(255,255,255,.1);border-radius:8px;padding:8px 14px"><div style="font-size:22px;font-weight:700;color:'+sc+'">'+score+'</div><div style="font-size:9px;color:rgba(255,255,255,.4)">Score</div></div>':'')
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px">'
+    +'<div style="background:rgba(255,255,255,.08);border-radius:7px;padding:8px;text-align:center"><div style="font-size:13px;font-weight:700;color:#fff">R$ '+custo.toLocaleString('pt-BR',{minimumFractionDigits:0})+'</div><div style="font-size:9px;color:rgba(255,255,255,.35)">Custo/mês</div></div>'
+    +'<div style="background:rgba(255,255,255,.08);border-radius:7px;padding:8px;text-align:center"><div style="font-size:13px;font-weight:700;color:#6ee7b7">R$ '+eco.toLocaleString('pt-BR',{minimumFractionDigits:0})+'</div><div style="font-size:9px;color:rgba(255,255,255,.35)">Economia/ano</div></div>'
+    +'<div style="background:rgba(255,255,255,.08);border-radius:7px;padding:8px;text-align:center"><div style="font-size:13px;font-weight:700;color:#fff">'+fat.length+'</div><div style="font-size:9px;color:rgba(255,255,255,.35)">Faturas</div></div>'
+    +'</div></div>'
+    +'<div style="font-size:13px;line-height:1.8;color:#374151;max-height:400px;overflow-y:auto;padding-right:4px">'+html+'</div>'
+    +'<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap">'
+    +(clienteId?'<button class="btn green" style="padding:10px 18px;font-size:13px;font-weight:700" onclick="fecharModal(\'modalCliente\');gerarProposta('+idJ+')">📧 Gerar Proposta PDF</button>':'')
+    +'<button class="btn" onclick="imprimirAnaliseModal()">🖨 Imprimir</button>'
+    +'</div>';
+
+  if(clienteId){
+    var cl2 = D.clientes.find(function(x){return x.id===clienteId;});
+    if(cl2 && cl2.status==='prospecto') mudarStatus(clienteId,'analisando');
+  }
+}
+
+function gerarAnaliseFallback(uc, nome){
+  var fat = D.faturas.filter(function(f){return f.uc===uc;});
+  var analises = D.analises.filter(function(a){return a.uc===uc;});
+  var alertas = D.alertas.filter(function(a){return a.uc===uc&&!a.resolvido;});
+  if(!fat.length){ _analiseCache[uc]='Nenhuma fatura encontrada para UC '+uc+'.'; return; }
+  var f0=fat[0]; var a0=analises[0]||{};
+  var n=Math.min(fat.length,12)||1;
+  var custoMedio=fat.slice(0,n).reduce(function(s,f){return s+parseFloat(f.total_a_pagar||0);},0)/n;
+  var custoAnual=custoMedio*12;
+  var demCtda=parseFloat(f0.demanda_contratada_fora_ponta_kw)||0;
+  var demMedi=parseFloat(f0.demanda_medida_fora_ponta_kw)||0;
+  var utilDem=demCtda>0?Math.round(demMedi/demCtda*100):null;
+  var temGrupoA=(f0.subgrupo||'').startsWith('A');
+  var hasGD=alertas.some(function(a){return (a.tipo||'').includes('GD');});
+  var hasReativo=alertas.some(function(a){return (a.titulo||'').toLowerCase().includes('reativo');});
+  var elegML=temGrupoA||demCtda>=300;
+  var fmtR=function(v){return 'R$ '+parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2});};
+
+  var p=[];
+  p.push('## Diagnóstico Executivo — '+nome);
+  p.push('');
+  p.push('**UC '+uc+'** | '+(f0.subgrupo||'?')+' | '+(f0.modalidade||'?')+' | Gasto anual: **'+fmtR(custoAnual)+'**');
+  p.push('');
+  p.push('## 1. Gestão de Energia Completa');
+  p.push('');
+  p.push('**Situação atual:** Custo médio de **'+fmtR(custoMedio)+'/mês**.'
+    +(a0.score_eficiencia?' Score de eficiência: **'+a0.score_eficiencia+'/100**.':'')
+    +' Enquadramento: **'+(f0.subgrupo||'?')+' — '+(f0.modalidade||'?')+'**.');
+  p.push('');
+  p.push('**O que faremos:** Revisar enquadramento tarifário (grupo, subgrupo, modalidade, sazonalidade).'
+    +(utilDem!==null?' Demanda contratada '+demCtda+' kW com utilização de **'+utilDem+'%**'+(utilDem<70?' — possível superdimensionamento.':' — adequada.'):'')
+    +' Relatório mensal com análise das faturas antes do pagamento.');
+  p.push('');
+  p.push('**Resultado esperado:** Redução estrutural dos custos + segurança que cada fatura está correta antes de ser paga.');
+  p.push('');
+  p.push('## 2. Auditoria Retroativa (120 meses)');
+  p.push('');
+  p.push('**Situação atual:** '+fat.length+' fatura(s) analisada(s).'
+    +(alertas.length>0?' **'+alertas.length+' irregularidade(s) identificada(s):** '+alertas.slice(0,3).map(function(a){return a.titulo;}).join(', ')+'.':' Dados disponíveis para revisão retroativa.'));
+  p.push('');
+  p.push('**O que faremos:** Revisar todas as faturas dos últimos 10 anos. Identificar cobranças indevidas, erro de enquadramento, ICMS sobre TUSD/TUST (Lei 14.385/2022), COSIP incorreta, reativo indevido.');
+  p.push('');
+  p.push('**Base legal:** Lei 14.385/2022 | ADI 7324 STF | **Remuneração:** 30% sobre valores recuperados (sem êxito, sem custo).');
+  p.push('');
+  p.push('## 3. Revisão e Ajustes Junto à Distribuidora');
+  p.push('');
+  var rev=[];
+  if(hasReativo) rev.push('- **Fator de potência:** cobranças de reativo identificadas — correção via banco de capacitores');
+  if(utilDem!==null&&utilDem<70) rev.push('- **Demanda superdimensionada:** '+demCtda+' kW contratado vs '+utilDem+'% utilizado — reduzir para economizar');
+  if(alertas.some(function(a){return (a.titulo||'').toLowerCase().includes('cosip');})) rev.push('- **COSIP:** valor elevado — contestação junto à Prefeitura de Manaus');
+  if(!rev.length) rev.push('- Revisão completa: grupo, subgrupo, classe, modalidade, CIP, demanda e reativo');
+  rev.forEach(function(r){p.push(r);});
+  p.push('');
+  p.push('## 4. Vistoria Técnica');
+  p.push('');
+  p.push('**O que faremos:** Inspeção da rede elétrica interna para identificar perdas e equipamentos ineficientes. Relatório com diagnóstico e orçamento de adequações.');
+  if(elegML){
+    p.push('');
+    p.push('## 5. Migração para o Mercado Livre (ACL)');
+    p.push('');
+    p.push('✅ **Elegível** — '+(temGrupoA?'Grupo A ('+f0.subgrupo+')':'Demanda '+demCtda+' kW ≥ 300 kW'));
+    p.push('**Economia estimada:** R$ '+Math.round(custoMedio*0.15).toLocaleString('pt-BR')+' a R$ '+Math.round(custoMedio*0.25).toLocaleString('pt-BR')+'/mês (10-25% da fatura atual).');
+  }
+  if(hasGD||custoMedio>800){
+    p.push('');
+    p.push('## '+(elegML?'6':'5')+'. '+(hasGD?'Otimização de Geração Distribuída':'Análise de Autoprodução'));
+    p.push('');
+    p.push(hasGD
+      ?'✅ UC possui GD ativo. Faremos gestão de créditos, compensação entre UCs e estudo de expansão.'
+      :'Com gasto de '+fmtR(custoMedio)+'/mês, geração solar/GD pode ser viável. Realizaremos estudo econômico completo.');
+  }
+  p.push('');
+  p.push('## Resumo Financeiro');
+  p.push('');
+  p.push('- Gasto atual: **'+fmtR(custoMedio)+'/mês** | **'+fmtR(custoAnual)+'/ano**');
+  p.push('- Economia potencial: **'+fmtR(parseFloat(a0.potencial_economia_anual||0))+'/ano**');
+  p.push('- Investimento: **R$ 500,00/mês** por UC');
+  var ecoAno=parseFloat(a0.potencial_economia_anual||0);
+  p.push('- ROI: '+(ecoAno>6000?'**Positivo** — economia supera o investimento':'Análise retroativa necessária para confirmar potencial'));
+  p.push('');
+  p.push('## Recomendação');
+  p.push('');
+  p.push('Contratação imediata recomendada. O modelo de **30% sobre o recuperado** na auditoria garante que não há risco financeiro — pagamos a nós mesmos apenas com o que recuperamos para o cliente.');
+  _analiseCache[uc] = p.join('\n');
+}
+
+function imprimirAnaliseModal(){
+  var area = document.getElementById('mc-analise-area');
+  var titulo = document.getElementById('mc-titulo');
+  if(!area) return;
+  var w = window.open('','_blank');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+(titulo?titulo.textContent:'Análise')+'</title>'
+    +'<style>body{font-family:Arial,sans-serif;font-size:13px;padding:30px;max-width:800px;margin:0 auto}h2{color:#0d2137;border-bottom:2px solid #e2e8f0;padding-bottom:5px;margin:18px 0 8px}@media print{button{display:none}}</style></head>'
+    +'<body>'+area.innerHTML+'<br><button onclick="window.print()">Imprimir</button></body></html>');
+  w.document.close();
+}
+
+
+// ── ANÁLISE COMPLETA ─────────────────────────────────────────────────────────
+async function abrirAnaliseCompleta(uc, nomeCliente, clienteId){
+  document.getElementById('ma-titulo').textContent = 'Análise — '+nomeCliente.slice(0,40);
+  document.getElementById('ma-body').innerHTML = '<div style="text-align:center;padding:40px"><div class="spinner"></div><div style="font-size:13px;color:var(--muted)">Gerando diagnóstico...</div></div>';
+  document.getElementById('modalAnalise').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+
+  if(_analiseCache[uc]){
+    renderAnaliseTexto(_analiseCache[uc], uc, nomeCliente, clienteId);
+    return;
+  }
+
+  // 1. Tenta Railway (IA completa)
+  try{
+    var resp = await fetch(RW+'/analise/uc/'+uc, {signal: AbortSignal.timeout(12000)});
+    if(!resp.ok) throw new Error('Railway offline');
+    var data = await resp.json();
+    if(data.error) throw new Error(data.error);
+    _analiseCache[uc] = data.analise;
+    renderAnaliseTexto(data.analise, uc, nomeCliente, clienteId);
+    if(clienteId){
+      var cl = D.clientes.find(function(x){return x.id===clienteId;});
+      if(cl && cl.status==='prospecto') await mudarStatus(clienteId,'analisando');
+    }
+    return;
+  } catch(e){ /* Railway offline — usa dados locais */ }
+
+  // 2. Fallback: monta análise com dados já no Supabase
+  try{
+    var faturas  = D.faturas.filter(function(f){return f.uc===uc;});
+    var analises = D.analises.filter(function(a){return a.uc===uc;});
+    var alertas  = D.alertas.filter(function(a){return a.uc===uc && !a.resolvido;});
+    if(!faturas.length) throw new Error('Nenhuma fatura encontrada para UC '+uc);
+
+    var f0 = faturas[0];
+    var a0 = analises[0]||{};
+    var n  = Math.min(faturas.length,12);
+    var custoMedio   = faturas.slice(0,n).reduce(function(s,f){return s+parseFloat(f.total_a_pagar||0);},0)/n;
+    var consumoMedio = faturas.slice(0,n).reduce(function(s,f){return s+parseFloat(f.consumo_total_kwh||0);},0)/n;
+    var demCtda = parseFloat(f0.demanda_contratada_fora_ponta_kw)||0;
+    var demMedi = parseFloat(f0.demanda_medida_fora_ponta_kw)||0;
+    var elegML  = (f0.subgrupo||'').startsWith('A') || demCtda>=300;
+    var hasGD   = alertas.some(function(a){return (a.tipo||'').includes('GD');});
+    var hasReat = alertas.some(function(a){return (a.titulo||'').toLowerCase().includes('reativo');});
+    var fmt = function(v){ return v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); };
+    var alertasList = alertas.map(function(a){
+      return '<li><b>'+a.titulo+'</b>'+(a.valor_r?' — R$ '+fmt(parseFloat(a.valor_r||0))+'/mês':'')+': '+a.descricao+'</li>';
+    }).join('');
+    var analiseAnterior = analises.slice(0,2).map(function(a){return a.analise_claude||'';}).filter(Boolean).join(' ');
+
+    var parts = [];
+    var temGrupoA = (f0.subgrupo||'').startsWith('A');
+    var utilDem = demCtda>0 ? Math.round(demMedi/demCtda*100) : null;
+    var custoAnual = custoMedio * 12;
+    var ecoMensal = parseFloat(a0.potencial_economia_anual||0)/12;
+    var fmtR = function(v){ return 'R$ '+parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2}); };
+
+    parts.push('## Diagnóstico Executivo — '+nomeCliente);
+    parts.push('');
+    parts.push('**UC '+uc+'** | '+f0.subgrupo+' | '+f0.modalidade+' | Gasto anual estimado: **'+fmtR(custoAnual)+'**');
+    parts.push('');
+
+    // SERVIÇO 1 — Gestão de Energia Completa
+    parts.push('## 1. Gestão de Energia Completa');
+    parts.push('');
+    parts.push('**Situação atual:** Custo médio de **'+fmtR(custoMedio)+'/mês** ('+fmtR(custoAnual)+'/ano). '
+      +(a0.score_eficiencia?'Score de eficiência: **'+a0.score_eficiencia+'/100**. ':'')
+      +'Enquadramento: **'+f0.subgrupo+' — '+f0.modalidade+'**.');
+    parts.push('');
+    parts.push('**O que faremos:** Revisar o enquadramento tarifário (grupo, subgrupo, classe, modalidade, sazonalidade). '
+      +'Verificar se a modalidade atual é a mais econômica. '
+      +(utilDem!==null?'Analisar a demanda contratada ('+demCtda+' kW) com utilização atual de **'+utilDem+'%** — '
+        +(utilDem<70?'há indício de superdimensionamento.':'utilização adequada.'):'')
+      +' Relatório mensal com análise das faturas antes do pagamento.');
+    parts.push('');
+    parts.push('**Resultado esperado:** Redução estrutural dos custos + segurança que cada fatura está correta antes de ser paga.');
+
+    // SERVIÇO 2 — Auditoria Retroativa
+    parts.push('');
+    parts.push('## 2. Auditoria Retroativa (últimos 120 meses)');
+    parts.push('');
+    parts.push('**Situação atual:** Histórico de '+fat.length+' faturas analisadas. '
+      +(alertas.length>0?'**'+alertas.length+' irregularidade(s) identificada(s)** nos dados disponíveis: '
+        +alertas.slice(0,3).map(function(a){return a.titulo;}).join(', ')+'.':'Dados disponíveis para análise retroativa.'));
+    parts.push('');
+    parts.push('**O que faremos:** Revisar todas as faturas dos últimos 10 anos. '
+      +'Identificar cobranças indevidas, erro de enquadramento, ICMS sobre TUSD/TUST (Lei 14.385/2022), COSIP incorreta, reativo indevido. '
+      +'Protocolar contestações junto à Amazonas Energia e órgãos competentes.');
+    parts.push('');
+    parts.push('**Base legal:** Lei 14.385/2022 | ADI 7324 STF | Prazo prescricional: 10 anos.');
+    parts.push('**Remuneração:** 30% sobre valores efetivamente recuperados (sem êxito, sem custo).');
+
+    // SERVIÇO 3 — Revisão junto à distribuidora
+    parts.push('');
+    parts.push('## 3. Revisão e Ajustes Junto à Distribuidora');
+    parts.push('');
+    var itensRevisao = [];
+    if(alertas.some(function(a){return (a.titulo||'').toLowerCase().includes('reativo');}))
+      itensRevisao.push('**Fator de potência:** cobranças de reativo identificadas — correção via banco de capacitores');
+    if(utilDem!==null && utilDem<70)
+      itensRevisao.push('**Demanda:** contratada em '+demCtda+' kW com uso de '+utilDem+'% — possível redução da demanda contratada');
+    if(alertas.some(function(a){return (a.titulo||'').toLowerCase().includes('cosip');}))
+      itensRevisao.push('**COSIP:** valor elevado — contestação junto à Prefeitura de Manaus');
+    if(f0.subgrupo==='B3'||f0.subgrupo==='B2')
+      itensRevisao.push('**Enquadramento:** verificar se subgrupo '+f0.subgrupo+' é o mais adequado para o perfil de consumo');
+    if(itensRevisao.length===0)
+      itensRevisao.push('Revisão completa de todos os parâmetros do contrato com a distribuidora');
+    itensRevisao.forEach(function(i){ parts.push('- '+i); });
+
+    // SERVIÇO 4 — Vistoria Técnica
+    parts.push('');
+    parts.push('## 4. Vistoria Técnica da Instalação');
+    parts.push('');
+    parts.push('**O que faremos:** Inspeção da rede elétrica interna para identificar perdas, equipamentos ineficientes e pontos de melhoria. '
+      +'Relatório técnico com diagnóstico e orçamento de adequações quando necessário.');
+
+    // SERVIÇO 5 — Mercado Livre (se elegível)
+    if(temGrupoA || demCtda>=300){
+      parts.push('');
+      parts.push('## 5. Migração para o Mercado Livre (ACL)');
+      parts.push('');
+      parts.push('**Elegibilidade:** ✅ '+(temGrupoA?'Grupo A ('+f0.subgrupo+') — elegível para contratação livre':'Demanda de '+demCtda+' kW — elegível'));
+      parts.push('');
+      parts.push('**O que faremos:** Análise de propostas de comercializadoras, negociação do melhor preço por MWh, '
+        +'acompanhamento da migração junto à CCEE e distribuidora, gestão do contrato no ambiente livre.');
+      parts.push('**Economia potencial:** 10-25% sobre o custo atual de energia (R$ '
+        +Math.round(custoMedio*0.15).toLocaleString('pt-BR')+' a R$ '
+        +Math.round(custoMedio*0.25).toLocaleString('pt-BR')+'/mês estimado).');
+    }
+
+    // SERVIÇO 6 — Geração Distribuída / Autoprodução
+    if(hasGD){
+      parts.push('');
+      parts.push('## '+(temGrupoA||demCtda>=300?'6':'5')+'. Otimização de Geração Distribuída');
+      parts.push('');
+      parts.push('**Situação atual:** ✅ UC possui sistema GD ativo com injeção de energia na rede.');
+      parts.push('**O que faremos:** Gestão dos créditos acumulados, verificação de compensação entre UCs do mesmo CNPJ, '
+        +'análise de expansão do sistema e estudo de autoprodução para maximizar o retorno.');
+    } else if(custoMedio>500){
+      parts.push('');
+      parts.push('## '+(temGrupoA||demCtda>=300?'6':'5')+'. Análise de Autoprodução');
+      parts.push('');
+      parts.push('**Oportunidade:** Com gasto mensal de '+fmtR(custoMedio)+', a geração própria (solar/GD) pode ser viável.');
+      parts.push('**O que faremos:** Estudo econômico e de custo-benefício, cotações com empresas de GDIS, relatório comparativo completo.');
+    }
+
+    // Resumo financeiro
+    parts.push('');
+    parts.push('## Resumo Financeiro');
+    parts.push('');
+    parts.push('- Gasto atual: **'+fmtR(custoMedio)+'/mês** ('+fmtR(custoAnual)+'/ano)');
+    parts.push('- Economia potencial identificada: **'+fmtR(parseFloat(a0.potencial_economia_anual||0))+'/ano**');
+    parts.push('- Investimento no serviço: **R$ '+(fat.length>0?(Math.min(fat.length,ucs||1)*500).toLocaleString('pt-BR'):'500,00')+'/mês**');
+    var ecoAno = parseFloat(a0.potencial_economia_anual||0);
+    var invAno = (fat.length>0?Math.min(fat.length,1)*500:500)*12;
+    parts.push('- ROI: '+(ecoAno>invAno?'**Positivo** — economia supera o investimento':'Análise aprofundada necessária com auditoria retroativa'));
+    parts.push('');
+    parts.push('## Recomendação');
+    parts.push('');
+    parts.push('Recomenda-se a **contratação imediata** dos serviços de gestão de energia e auditoria retroativa. '
+      +'O modelo de remuneração por resultado na auditoria (30% sobre o recuperado) garante que **não há risco financeiro** para o CONTRATANTE — '
+      +'pagamos a nós mesmos apenas com o que recuperamos.');
+
+    var md = parts.join('\n');
+    _analiseCache[uc] = md;
+    renderAnaliseTexto(md, uc, nomeCliente, clienteId);
+    if(clienteId){
+      var cl2 = D.clientes.find(function(x){return x.id===clienteId;});
+      if(cl2 && cl2.status==='prospecto') await mudarStatus(clienteId,'analisando');
+    }
+  } catch(e2){
+    document.getElementById('ma-body').innerHTML = '<div style="color:var(--red);padding:24px">Erro: '+e2.message+'</div>';
+  }
+}
+
+function renderAnaliseTexto(md, uc, nome, clienteId){
+  var html = md
+    .replace(/^## (.+)$/gm, function(m,t){
+      var icones = {'Diagn':'🔍','Oportunidad':'⚡','Ações':'🚨','Urgentes':'🚨','Mercado':'🏭','Escopo':'📋','Estimativa':'💰','Próximos':'📅','Adequa':'🏭'};
+      var ico = '';
+      Object.keys(icones).forEach(function(k){ if(t.indexOf(k)>=0) ico=icones[k]; });
+      return '<div style="display:flex;align-items:center;gap:8px;margin:20px 0 10px;padding-bottom:7px;border-bottom:2px solid #e2e8f0">'
+        +'<span style="font-size:18px">'+ico+'</span>'
+        +'<h2 style="font-size:15px;font-weight:700;color:#0d2137;margin:0">'+t+'</h2></div>';
+    })
+    .replace(/^### (.+)$/gm,'<h3 style="font-size:13px;font-weight:600;color:#1e293b;margin:12px 0 5px">$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong style="color:#0f172a">$1</strong>')
+    .replace(/^- (.+)$/gm,'<div style="display:flex;gap:8px;margin-bottom:6px;padding:7px 10px;background:#f8fafc;border-radius:6px;border-left:3px solid #059669"><span style="color:#059669;font-weight:700;flex-shrink:0">→</span><span style="font-size:12px;line-height:1.5">$1</span></div>')
+    .replace(/^(\d+)\. (.+)$/gm,'<div style="display:flex;gap:8px;margin-bottom:7px;align-items:flex-start"><span style="width:22px;height:22px;background:#0d2137;color:#fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">$1</span><span style="font-size:12px;line-height:1.6">$2</span></div>')
+    .replace(/\n\n/g,'<br>').replace(/\n/g,' ');
+
+  var fat  = D.faturas.filter(function(f){return f.uc===uc;});
+  var an   = D.analises.filter(function(a){return a.uc===uc;});
+  var al   = D.alertas.filter(function(a){return a.uc===uc&&!a.resolvido;});
+  var n    = Math.min(fat.length,12)||1;
+  var custo= fat.slice(0,n).reduce(function(s,f){return s+parseFloat(f.total_a_pagar||0);},0)/n;
+  var eco  = an[0] ? parseFloat(an[0].potencial_economia_anual||0) : 0;
+  var score= an[0] ? an[0].score_eficiencia : null;
+  var sc   = !score?'#94a3b8':score>=85?'#6ee7b7':score>=70?'#fcd34d':'#fca5a5';
+  var f0   = fat[0]||{};
+  var idJson  = JSON.stringify(clienteId||'');
+
+  document.getElementById('ma-body').innerHTML =
+    '<div style="background:linear-gradient(135deg,#0d2137,#1e3a5f);border-radius:12px;padding:20px 22px;margin-bottom:20px">'
+    +'<div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px">'
+    +'<div><div style="font-size:10px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Diagnóstico Executivo · IA</div>'
+    +'<div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:3px">'+nome.slice(0,50)+'</div>'
+    +'<div style="font-size:11px;color:rgba(255,255,255,.45)">UC '+uc+(f0.subgrupo?' · '+f0.subgrupo:'')+(f0.modalidade?' · '+f0.modalidade:'')+' · '+new Date().toLocaleDateString('pt-BR')+'</div></div>'
+    +(score!==null?'<div style="text-align:center;background:rgba(255,255,255,.1);border-radius:8px;padding:10px 16px;flex-shrink:0"><div style="font-size:26px;font-weight:700;color:'+sc+'">'+score+'</div><div style="font-size:10px;color:rgba(255,255,255,.4)">Score</div></div>':'')
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px">'
+    +'<div style="background:rgba(255,255,255,.07);border-radius:8px;padding:9px;text-align:center"><div style="font-size:14px;font-weight:700;color:#fff">R$ '+custo.toLocaleString('pt-BR',{minimumFractionDigits:0})+'</div><div style="font-size:9px;color:rgba(255,255,255,.35)">Custo médio/mês</div></div>'
+    +'<div style="background:rgba(255,255,255,.07);border-radius:8px;padding:9px;text-align:center"><div style="font-size:14px;font-weight:700;color:#6ee7b7">R$ '+eco.toLocaleString('pt-BR',{minimumFractionDigits:0})+'</div><div style="font-size:9px;color:rgba(255,255,255,.35)">Economia potencial/ano</div></div>'
+    +'<div style="background:rgba(255,255,255,.07);border-radius:8px;padding:9px;text-align:center"><div style="font-size:14px;font-weight:700;color:'+(al.length>0?'#fca5a5':'#6ee7b7')+'">'+al.length+'</div><div style="font-size:9px;color:rgba(255,255,255,.35)">Alertas ativos</div></div>'
+    +'</div></div>'
+    +'<div style="font-size:13px;line-height:1.8;color:#374151">'+html+'</div>'
+    +'<div style="margin-top:22px;padding:16px 18px;background:linear-gradient(135deg,#f0fdf4,#eff6ff);border-radius:10px;border:1px solid #bbf7d0;display:flex;gap:10px;flex-wrap:wrap;align-items:center">'
+    +'<div style="flex:1"><div style="font-size:13px;font-weight:700;color:#0d2137">Próximo passo</div>'
+    +'<div style="font-size:11px;color:#64748b;margin-top:2px">Gere a proposta PDF para enviar ao cliente e avançar no pipeline</div></div>'
+    +(clienteId?'<button class="btn green" style="padding:10px 20px;font-size:13px;font-weight:700" onclick="fecharModal(\'modalAnalise\');gerarProposta('+idJson+')">📧 Gerar Proposta PDF</button>':'')
+    +'<button class="btn" style="padding:10px 16px" onclick="imprimirAnalise()">🖨 Imprimir</button>'
+    +'</div>';
+}
+
+function imprimirAnalise(){
+  var c = document.getElementById('ma-body');
+  var t = document.getElementById('ma-titulo');
+  if(!c) return;
+  var w = window.open('','_blank');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+(t?t.textContent:'')+'</title>'
+    +'<style>body{font-family:Arial,sans-serif;font-size:13px;padding:30px;max-width:800px;margin:0 auto;color:#1a1a1a}'
+    +'h2{color:#0d2137;border-bottom:2px solid #e2e8f0;padding-bottom:5px;margin:18px 0 8px}'
+    +'li{margin-bottom:4px}@media print{button{display:none}}</style></head>'
+    +'<body>'+c.innerHTML+'<br><button onclick="window.print()">Imprimir</button></body></html>');
+  w.document.close();
+}
+
+// ── PROPOSTA ─────────────────────────────────────────────────────────────────
+async function gerarPropostaParaCliente(clienteId){
   var c = D.clientes.find(function(x){return x.id===clienteId;});
   if(!c) return;
   var uc = (c.ucs||[])[0];
@@ -1746,8 +2364,8 @@ async function abrirAnaliseCliente(clienteId){
     [
       {label:'📧 Gerar Proposta PDF', cls:'btn primary', fn: function(){gerarProposta(cId);}},
       {label:'🎯 Fechar Contrato', cls:'btn green', fn: function(){fecharContrato(cId);}},
+      {label:'📥 Relatório PDF Profissional', cls:'btn', fn: function(){window.open(RW+'/relatorio/uc/'+_analiseAtualUC,'_blank');}},
       {label:'📄 Contrato PDF', cls:'btn', fn: function(){gerarContratoPDF(cId);}},
-      {label:'🖨 Imprimir', cls:'btn', fn: function(){imprimirAnaliseCompleta();}},
     ].forEach(function(b){
       var el = document.createElement('button');
       el.className = b.cls;

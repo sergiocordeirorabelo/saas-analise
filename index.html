@@ -537,6 +537,7 @@ const RAILWAY_URL = "https://saas-faturas-production.up.railway.app";
 const MESES_ABREV = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
 
 let DADOS = { faturas:[], analises:[], alertas:[], empresas:[], contestacoes:[], recup:[] };
+let _ucClienteMap = {}; // uc -> nome
 let EMPRESA_FILTRO = "";
 let _pollInterval = null;
 let _histCharts = {};
@@ -1255,6 +1256,7 @@ function formatCpf(v){const n=v.replace(/\D/g,'').slice(0,14);if(n.length<=3)ret
 function renderEstrategico(){
   const cont = document.getElementById('estrategico-lista');
   cont.innerHTML = '';
+  _ucClienteMap = {};
 
   // Agrupa faturas por cliente
   const porCliente = {};
@@ -1263,7 +1265,8 @@ function renderEstrategico(){
     if(!porCliente[nome]) porCliente[nome] = {nome, ucs:[], cnpj:''};
     if(!porCliente[nome].ucs.find(u=>u.uc===f.uc)){
       const analise = DADOS.analises.find(a=>a.fatura_id===f.id) || (Array.isArray(f.faturas_analise)?f.faturas_analise[0]:(f.faturas_analise||{}));
-      porCliente[nome].ucs.push({
+      _ucClienteMap[f.uc] = nome;
+    porCliente[nome].ucs.push({
         uc:f.uc, subgrupo:f.subgrupo, modalidade:f.modalidade,
         demanda_ctda:parseFloat(f.demanda_contratada_fora_ponta_kw)||0,
         demanda_medi:parseFloat(f.demanda_medida_fora_ponta_kw)||0,
@@ -1384,7 +1387,7 @@ function renderEstrategico(){
           <div style="padding:12px 14px">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
               <div style="font-size:10px;font-weight:700;color:var(--hint);text-transform:uppercase">Serviços recomendados</div>
-              <button class="btn primary" style="font-size:11px;padding:5px 12px" onclick="event.stopPropagation();abrirAnaliseUC('${uc.uc}','${nomeCliente.replace(/'/g,"\\'").replace(/`/g,"\\`")}')">🔍 Análise Completa</button>
+              <button class="btn primary" style="font-size:11px;padding:5px 12px" onclick="event.stopPropagation();_openAnalise('${uc}')">🔍 Análise Completa</button>
             </div>
             <div style="display:grid;gap:8px">
               ${uc.servicos.map(sv=>`
@@ -1604,6 +1607,11 @@ function gerarContrato(nomeCliente, ucsStr, subgrupo){
 }
 
 
+
+function _openAnalise(uc){
+  const nome = _ucClienteMap[uc] || uc;
+  abrirAnaliseUC(uc, nome);
+}
 // ── TABS ESTRATÉGICO ──
 function switchTab(tab){
   ['servicos','mercado'].forEach(t=>{

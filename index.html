@@ -515,17 +515,23 @@ function buildClientCard(c, status){
   var badgeClass = 'status-'+status;
 
   var acoes = '';
+  var cId = JSON.stringify(c.id);
+  var cUc = JSON.stringify((c.ucs||[])[0]||'');
+  var cNome = JSON.stringify(c.nome);
+  // Botão Análise Completa sempre presente
+  var btnAnalise = '<button class="client-card-btn" style="background:#0d2137;color:#fff;border-color:#0d2137;width:100%;text-align:center;padding:6px;margin-bottom:4px" onclick="event.stopPropagation();abrirAnaliseCompleta('+cUc+','+cNome+','+cId+')">🔍 Análise Completa</button>';
   if(status==='prospecto'){
-    acoes = '<button class="client-card-btn amber" onclick="event.stopPropagation();analisarCliente('+JSON.stringify(c.id)+')">📊 Analisar</button>';
+    acoes = btnAnalise+'<button class="client-card-btn amber" style="width:100%;text-align:center" onclick="event.stopPropagation();analisarCliente('+cId+')">📊 Iniciar Análise</button>';
   } else if(status==='analisando'){
-    acoes = '<button class="client-card-btn green" onclick="event.stopPropagation();gerarProposta('+JSON.stringify(c.id)+')">📧 Gerar Proposta</button>';
+    acoes = btnAnalise+'<button class="client-card-btn green" style="width:100%;text-align:center" onclick="event.stopPropagation();gerarProposta('+cId+')">📧 Gerar Proposta</button>';
   } else if(status==='proposta'){
-    acoes = '<button class="client-card-btn" onclick="event.stopPropagation();mudarStatus('+JSON.stringify(c.id)+',' +JSON.stringify('negociando')+')">🤝 Negociando</button>'
-      +'<button class="client-card-btn green" onclick="event.stopPropagation();fecharContrato('+JSON.stringify(c.id)+')">🎯 Fechar</button>';
+    acoes = btnAnalise
+      +'<button class="client-card-btn" style="width:48%" onclick="event.stopPropagation();mudarStatus('+cId+','+JSON.stringify('negociando')+')">🤝 Negociando</button>'
+      +'<button class="client-card-btn green" style="width:48%" onclick="event.stopPropagation();fecharContrato('+cId+')">🎯 Fechar</button>';
   } else if(status==='negociando'){
-    acoes = '<button class="client-card-btn green" onclick="event.stopPropagation();fecharContrato('+JSON.stringify(c.id)+')">🎯 Fechar Contrato</button>';
+    acoes = btnAnalise+'<button class="client-card-btn green" style="width:100%;text-align:center" onclick="event.stopPropagation();fecharContrato('+cId+')">🎯 Fechar Contrato</button>';
   } else if(status==='ativo'){
-    acoes = '<button class="client-card-btn" onclick="event.stopPropagation();verRelatorio('+JSON.stringify(c.id)+')">📋 Relatório</button>';
+    acoes = btnAnalise+'<button class="client-card-btn" style="width:100%;text-align:center" onclick="event.stopPropagation();verRelatorio('+cId+')">📋 Ver Relatório Mensal</button>';
   }
 
   return '<div class="client-card" onclick="abrirCliente('+JSON.stringify(c.id)+')">'
@@ -693,54 +699,118 @@ async function abrirAnaliseCompleta(uc, nomeCliente, clienteId){
     var analiseAnterior = analises.slice(0,2).map(function(a){return a.analise_claude||'';}).filter(Boolean).join(' ');
 
     var parts = [];
-    parts.push('## Diagnóstico Atual');
+    var temGrupoA = (f0.subgrupo||'').startsWith('A');
+    var utilDem = demCtda>0 ? Math.round(demMedi/demCtda*100) : null;
+    var custoAnual = custoMedio * 12;
+    var ecoMensal = parseFloat(a0.potencial_economia_anual||0)/12;
+    var fmtR = function(v){ return 'R$ '+parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2}); };
+
+    parts.push('## Diagnóstico Executivo — '+nomeCliente);
     parts.push('');
-    parts.push('Cliente **'+nomeCliente+'** — UC **'+uc+'** ('+f0.subgrupo+' · '+f0.modalidade+')');
+    parts.push('**UC '+uc+'** | '+f0.subgrupo+' | '+f0.modalidade+' | Gasto anual estimado: **'+fmtR(custoAnual)+'**');
     parts.push('');
-    parts.push('Custo médio mensal de **R$ '+fmt(custoMedio)+'**, consumo médio de **'+Math.round(consumoMedio).toLocaleString('pt-BR')+' kWh/mês**.'
-      +(demCtda>0?' Demanda contratada de **'+demCtda+' kW** com utilização de **'+Math.round(demMedi/demCtda*100)+'%**.':'')
-      +(a0.score_eficiencia?' Score de eficiência: **'+a0.score_eficiencia+'/100**.':''));
+
+    // SERVIÇO 1 — Gestão de Energia Completa
+    parts.push('## 1. Gestão de Energia Completa');
     parts.push('');
-    parts.push('## Oportunidades Identificadas');
+    parts.push('**Situação atual:** Custo médio de **'+fmtR(custoMedio)+'/mês** ('+fmtR(custoAnual)+'/ano). '
+      +(a0.score_eficiencia?'Score de eficiência: **'+a0.score_eficiencia+'/100**. ':'')
+      +'Enquadramento: **'+f0.subgrupo+' — '+f0.modalidade+'**.');
     parts.push('');
-    if(alertas.length>0){
-      alertas.forEach(function(a){ parts.push('- **'+a.titulo+'**'+(a.valor_r?' — R$ '+fmt(parseFloat(a.valor_r||0))+'/mês':'')+': '+(a.descricao||''));});
-    } else { parts.push('Nenhum alerta crítico. UC com bom desempenho.'); }
+    parts.push('**O que faremos:** Revisar o enquadramento tarifário (grupo, subgrupo, classe, modalidade, sazonalidade). '
+      +'Verificar se a modalidade atual é a mais econômica. '
+      +(utilDem!==null?'Analisar a demanda contratada ('+demCtda+' kW) com utilização atual de **'+utilDem+'%** — '
+        +(utilDem<70?'há indício de superdimensionamento.':'utilização adequada.'):'')
+      +' Relatório mensal com análise das faturas antes do pagamento.');
     parts.push('');
-    parts.push('## Ações Urgentes');
+    parts.push('**Resultado esperado:** Redução estrutural dos custos + segurança que cada fatura está correta antes de ser paga.');
+
+    // SERVIÇO 2 — Auditoria Retroativa
     parts.push('');
-    var criticos = alertas.filter(function(a){return a.severidade==='critico';});
-    if(criticos.length>0){ criticos.forEach(function(a){ parts.push('- **'+a.titulo+'**: '+(a.descricao||'')); }); }
-    else { parts.push('Nenhuma ação urgente identificada.'); }
+    parts.push('## 2. Auditoria Retroativa (últimos 120 meses)');
     parts.push('');
-    parts.push('## Adequação ao Mercado Livre');
+    parts.push('**Situação atual:** Histórico de '+fat.length+' faturas analisadas. '
+      +(alertas.length>0?'**'+alertas.length+' irregularidade(s) identificada(s)** nos dados disponíveis: '
+        +alertas.slice(0,3).map(function(a){return a.titulo;}).join(', ')+'.':'Dados disponíveis para análise retroativa.'));
     parts.push('');
-    if(elegML){
-      parts.push('Elegível para o Mercado Livre. '+(demCtda>=300?'Demanda de '+demCtda+' kW acima do limiar de 300 kW.':'Grupo '+f0.subgrupo+' habilitado para migração.')+' Economia potencial de 10-20%.');
-    } else {
-      parts.push('Demanda de '+demCtda+' kW (abaixo de 300 kW) — verificar elegibilidade. Foco na gestão eficiente no mercado cativo.');
+    parts.push('**O que faremos:** Revisar todas as faturas dos últimos 10 anos. '
+      +'Identificar cobranças indevidas, erro de enquadramento, ICMS sobre TUSD/TUST (Lei 14.385/2022), COSIP incorreta, reativo indevido. '
+      +'Protocolar contestações junto à Amazonas Energia e órgãos competentes.');
+    parts.push('');
+    parts.push('**Base legal:** Lei 14.385/2022 | ADI 7324 STF | Prazo prescricional: 10 anos.');
+    parts.push('**Remuneração:** 30% sobre valores efetivamente recuperados (sem êxito, sem custo).');
+
+    // SERVIÇO 3 — Revisão junto à distribuidora
+    parts.push('');
+    parts.push('## 3. Revisão e Ajustes Junto à Distribuidora');
+    parts.push('');
+    var itensRevisao = [];
+    if(alertas.some(function(a){return (a.titulo||'').toLowerCase().includes('reativo');}))
+      itensRevisao.push('**Fator de potência:** cobranças de reativo identificadas — correção via banco de capacitores');
+    if(utilDem!==null && utilDem<70)
+      itensRevisao.push('**Demanda:** contratada em '+demCtda+' kW com uso de '+utilDem+'% — possível redução da demanda contratada');
+    if(alertas.some(function(a){return (a.titulo||'').toLowerCase().includes('cosip');}))
+      itensRevisao.push('**COSIP:** valor elevado — contestação junto à Prefeitura de Manaus');
+    if(f0.subgrupo==='B3'||f0.subgrupo==='B2')
+      itensRevisao.push('**Enquadramento:** verificar se subgrupo '+f0.subgrupo+' é o mais adequado para o perfil de consumo');
+    if(itensRevisao.length===0)
+      itensRevisao.push('Revisão completa de todos os parâmetros do contrato com a distribuidora');
+    itensRevisao.forEach(function(i){ parts.push('- '+i); });
+
+    // SERVIÇO 4 — Vistoria Técnica
+    parts.push('');
+    parts.push('## 4. Vistoria Técnica da Instalação');
+    parts.push('');
+    parts.push('**O que faremos:** Inspeção da rede elétrica interna para identificar perdas, equipamentos ineficientes e pontos de melhoria. '
+      +'Relatório técnico com diagnóstico e orçamento de adequações quando necessário.');
+
+    // SERVIÇO 5 — Mercado Livre (se elegível)
+    if(temGrupoA || demCtda>=300){
+      parts.push('');
+      parts.push('## 5. Migração para o Mercado Livre (ACL)');
+      parts.push('');
+      parts.push('**Elegibilidade:** ✅ '+(temGrupoA?'Grupo A ('+f0.subgrupo+') — elegível para contratação livre':'Demanda de '+demCtda+' kW — elegível'));
+      parts.push('');
+      parts.push('**O que faremos:** Análise de propostas de comercializadoras, negociação do melhor preço por MWh, '
+        +'acompanhamento da migração junto à CCEE e distribuidora, gestão do contrato no ambiente livre.');
+      parts.push('**Economia potencial:** 10-25% sobre o custo atual de energia (R$ '
+        +Math.round(custoMedio*0.15).toLocaleString('pt-BR')+' a R$ '
+        +Math.round(custoMedio*0.25).toLocaleString('pt-BR')+'/mês estimado).');
     }
+
+    // SERVIÇO 6 — Geração Distribuída / Autoprodução
+    if(hasGD){
+      parts.push('');
+      parts.push('## '+(temGrupoA||demCtda>=300?'6':'5')+'. Otimização de Geração Distribuída');
+      parts.push('');
+      parts.push('**Situação atual:** ✅ UC possui sistema GD ativo com injeção de energia na rede.');
+      parts.push('**O que faremos:** Gestão dos créditos acumulados, verificação de compensação entre UCs do mesmo CNPJ, '
+        +'análise de expansão do sistema e estudo de autoprodução para maximizar o retorno.');
+    } else if(custoMedio>500){
+      parts.push('');
+      parts.push('## '+(temGrupoA||demCtda>=300?'6':'5')+'. Análise de Autoprodução');
+      parts.push('');
+      parts.push('**Oportunidade:** Com gasto mensal de '+fmtR(custoMedio)+', a geração própria (solar/GD) pode ser viável.');
+      parts.push('**O que faremos:** Estudo econômico e de custo-benefício, cotações com empresas de GDIS, relatório comparativo completo.');
+    }
+
+    // Resumo financeiro
     parts.push('');
-    parts.push('## Escopo de Serviços Recomendado');
+    parts.push('## Resumo Financeiro');
     parts.push('');
-    parts.push('- **Gestão de energia completa** (R$ 500/mês): levantamento tarifário, revisão de enquadramento, relatório mensal');
-    parts.push('- **Auditoria retroativa** (30% sobre recuperado): revisão dos últimos 120 meses de faturas');
-    if(hasReat) parts.push('- **Correção de fator de potência** (incluído): banco de capacitores para eliminar reativo');
-    if(elegML)  parts.push('- **Migração para Mercado Livre** (comissão): estudo e acompanhamento da migração');
+    parts.push('- Gasto atual: **'+fmtR(custoMedio)+'/mês** ('+fmtR(custoAnual)+'/ano)');
+    parts.push('- Economia potencial identificada: **'+fmtR(parseFloat(a0.potencial_economia_anual||0))+'/ano**');
+    parts.push('- Investimento no serviço: **R$ '+(fat.length>0?(Math.min(fat.length,ucs||1)*500).toLocaleString('pt-BR'):'500,00')+'/mês**');
+    var ecoAno = parseFloat(a0.potencial_economia_anual||0);
+    var invAno = (fat.length>0?Math.min(fat.length,1)*500:500)*12;
+    parts.push('- ROI: '+(ecoAno>invAno?'**Positivo** — economia supera o investimento':'Análise aprofundada necessária com auditoria retroativa'));
     parts.push('');
-    parts.push('## Estimativa de Resultado');
+    parts.push('## Recomendação');
     parts.push('');
-    parts.push('- Economia potencial: **R$ '+fmt(parseFloat(a0.potencial_economia_anual||0))+'/ano**');
-    parts.push('- Investimento: **R$ 500/mês** (R$ 6.000/ano)');
-    parts.push('- ROI: '+(parseFloat(a0.potencial_economia_anual||0)>6000?'positivo — economia supera o investimento':'análise aprofundada necessária'));
-    parts.push('');
-    parts.push('## Próximos Passos');
-    parts.push('');
-    parts.push('1. Apresentar diagnóstico ao cliente');
-    parts.push('2. Enviar proposta comercial');
-    parts.push('3. Assinatura do contrato de gestão');
-    parts.push('4. Início: levantamento completo e auditoria retroativa');
-    if(analiseAnterior) { parts.push(''); parts.push('---'); parts.push('*Análise IA anterior: '+analiseAnterior.slice(0,300)+'*'); }
+    parts.push('Recomenda-se a **contratação imediata** dos serviços de gestão de energia e auditoria retroativa. '
+      +'O modelo de remuneração por resultado na auditoria (30% sobre o recuperado) garante que **não há risco financeiro** para o CONTRATANTE — '
+      +'pagamos a nós mesmos apenas com o que recuperamos.');
+
     var md = parts.join('\n');
     _analiseCache[uc] = md;
     renderAnaliseTexto(md, uc, nomeCliente, clienteId);
@@ -755,26 +825,50 @@ async function abrirAnaliseCompleta(uc, nomeCliente, clienteId){
 
 function renderAnaliseTexto(md, uc, nome, clienteId){
   var html = md
-    .replace(/^## (.+)$/gm,'<h2 style="font-size:15px;font-weight:700;color:#0d2137;margin:20px 0 8px;padding-bottom:5px;border-bottom:2px solid #e2e8f0">$1</h2>')
-    .replace(/^### (.+)$/gm,'<h3 style="font-size:13px;font-weight:600;margin:12px 0 6px">$1</h3>')
-    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-    .replace(/^- (.+)$/gm,'<li style="margin-bottom:4px;margin-left:16px">$1</li>')
-    .replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');
+    .replace(/^## (.+)$/gm, function(m,t){
+      var icones = {'Diagn':'🔍','Oportunidad':'⚡','Ações':'🚨','Urgentes':'🚨','Mercado':'🏭','Escopo':'📋','Estimativa':'💰','Próximos':'📅','Adequa':'🏭'};
+      var ico = '';
+      Object.keys(icones).forEach(function(k){ if(t.indexOf(k)>=0) ico=icones[k]; });
+      return '<div style="display:flex;align-items:center;gap:8px;margin:20px 0 10px;padding-bottom:7px;border-bottom:2px solid #e2e8f0">'
+        +'<span style="font-size:18px">'+ico+'</span>'
+        +'<h2 style="font-size:15px;font-weight:700;color:#0d2137;margin:0">'+t+'</h2></div>';
+    })
+    .replace(/^### (.+)$/gm,'<h3 style="font-size:13px;font-weight:600;color:#1e293b;margin:12px 0 5px">$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong style="color:#0f172a">$1</strong>')
+    .replace(/^- (.+)$/gm,'<div style="display:flex;gap:8px;margin-bottom:6px;padding:7px 10px;background:#f8fafc;border-radius:6px;border-left:3px solid #059669"><span style="color:#059669;font-weight:700;flex-shrink:0">→</span><span style="font-size:12px;line-height:1.5">$1</span></div>')
+    .replace(/^(\d+)\. (.+)$/gm,'<div style="display:flex;gap:8px;margin-bottom:7px;align-items:flex-start"><span style="width:22px;height:22px;background:#0d2137;color:#fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">$1</span><span style="font-size:12px;line-height:1.6">$2</span></div>')
+    .replace(/\n\n/g,'<br>').replace(/\n/g,' ');
 
-  var idJson = JSON.stringify(clienteId||'');
-  var ucJson = JSON.stringify(uc);
-  var nomeJson = JSON.stringify(nome);
+  var fat  = D.faturas.filter(function(f){return f.uc===uc;});
+  var an   = D.analises.filter(function(a){return a.uc===uc;});
+  var al   = D.alertas.filter(function(a){return a.uc===uc&&!a.resolvido;});
+  var n    = Math.min(fat.length,12)||1;
+  var custo= fat.slice(0,n).reduce(function(s,f){return s+parseFloat(f.total_a_pagar||0);},0)/n;
+  var eco  = an[0] ? parseFloat(an[0].potencial_economia_anual||0) : 0;
+  var score= an[0] ? an[0].score_eficiencia : null;
+  var sc   = !score?'#94a3b8':score>=85?'#6ee7b7':score>=70?'#fcd34d':'#fca5a5';
+  var f0   = fat[0]||{};
+  var idJson  = JSON.stringify(clienteId||'');
 
   document.getElementById('ma-body').innerHTML =
-    '<div style="background:linear-gradient(135deg,#0d2137,#1e3a5f);border-radius:10px;padding:14px 18px;margin-bottom:20px">'
-    +'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:3px">DIAGNÓSTICO EXECUTIVO — IA</div>'
-    +'<div style="font-size:16px;font-weight:700;color:#fff">'+nome.slice(0,50)+'</div>'
-    +'<div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">UC '+uc+' · '+new Date().toLocaleDateString('pt-BR')+'</div>'
+    '<div style="background:linear-gradient(135deg,#0d2137,#1e3a5f);border-radius:12px;padding:20px 22px;margin-bottom:20px">'
+    +'<div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px">'
+    +'<div><div style="font-size:10px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Diagnóstico Executivo · IA</div>'
+    +'<div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:3px">'+nome.slice(0,50)+'</div>'
+    +'<div style="font-size:11px;color:rgba(255,255,255,.45)">UC '+uc+(f0.subgrupo?' · '+f0.subgrupo:'')+(f0.modalidade?' · '+f0.modalidade:'')+' · '+new Date().toLocaleDateString('pt-BR')+'</div></div>'
+    +(score!==null?'<div style="text-align:center;background:rgba(255,255,255,.1);border-radius:8px;padding:10px 16px;flex-shrink:0"><div style="font-size:26px;font-weight:700;color:'+sc+'">'+score+'</div><div style="font-size:10px;color:rgba(255,255,255,.4)">Score</div></div>':'')
     +'</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px">'
+    +'<div style="background:rgba(255,255,255,.07);border-radius:8px;padding:9px;text-align:center"><div style="font-size:14px;font-weight:700;color:#fff">R$ '+custo.toLocaleString('pt-BR',{minimumFractionDigits:0})+'</div><div style="font-size:9px;color:rgba(255,255,255,.35)">Custo médio/mês</div></div>'
+    +'<div style="background:rgba(255,255,255,.07);border-radius:8px;padding:9px;text-align:center"><div style="font-size:14px;font-weight:700;color:#6ee7b7">R$ '+eco.toLocaleString('pt-BR',{minimumFractionDigits:0})+'</div><div style="font-size:9px;color:rgba(255,255,255,.35)">Economia potencial/ano</div></div>'
+    +'<div style="background:rgba(255,255,255,.07);border-radius:8px;padding:9px;text-align:center"><div style="font-size:14px;font-weight:700;color:'+(al.length>0?'#fca5a5':'#6ee7b7')+'">'+al.length+'</div><div style="font-size:9px;color:rgba(255,255,255,.35)">Alertas ativos</div></div>'
+    +'</div></div>'
     +'<div style="font-size:13px;line-height:1.8;color:#374151">'+html+'</div>'
-    +'<div style="margin-top:20px;padding-top:14px;border-top:1px solid #e2e8f0;display:flex;gap:10px;flex-wrap:wrap">'
-    +(clienteId?'<button class="btn green" onclick="fecharModal(\'modalAnalise\');gerarProposta('+idJson+')">📧 Gerar Proposta</button>':'')
-    +'<button class="btn" onclick="imprimirAnalise()">🖨 Imprimir PDF</button>'
+    +'<div style="margin-top:22px;padding:16px 18px;background:linear-gradient(135deg,#f0fdf4,#eff6ff);border-radius:10px;border:1px solid #bbf7d0;display:flex;gap:10px;flex-wrap:wrap;align-items:center">'
+    +'<div style="flex:1"><div style="font-size:13px;font-weight:700;color:#0d2137">Próximo passo</div>'
+    +'<div style="font-size:11px;color:#64748b;margin-top:2px">Gere a proposta PDF para enviar ao cliente e avançar no pipeline</div></div>'
+    +(clienteId?'<button class="btn green" style="padding:10px 20px;font-size:13px;font-weight:700" onclick="fecharModal(\'modalAnalise\');gerarProposta('+idJson+')">📧 Gerar Proposta PDF</button>':'')
+    +'<button class="btn" style="padding:10px 16px" onclick="imprimirAnalise()">🖨 Imprimir</button>'
     +'</div>';
 }
 
@@ -899,67 +993,176 @@ async function gerarProposta(clienteId){
 
 // ── CONTRATO PDF ──────────────────────────────────────────────────────────────
 function gerarContratoPDF(clienteId){
-  var c = D.clientes.find(function(x){return x.id===clienteId;});
-  if(!c) return;
-  var ucs = c.ucs||[];
-  var valorMensal = ucs.length * 500;
+  var cl = D.clientes.find(function(x){return x.id===clienteId;});
+  if(!cl) return;
+  var ucs = cl.ucs||[];
+  var valorMensal = parseFloat(cl.valor_mensal)||ucs.length*500;
   var dataHoje = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
-  var cnpjFmt = formatCNPJ(c.cnpj||'');
-  var temGrupoA = (c.subgrupo||'').startsWith('A');
-  var servicos = [
-    'a) Gestão de energia completa, contemplando levantamento contratual, levantamento de multas e adequações de enquadramentos tarifários.',
-    'b) Auditoria retroativa completa nas faturas dos últimos 120 meses.',
-    'c) Prestação de contas mensal através de relatórios, dashboard e presencial se necessário.',
-    'd) Revisão e ajustes junto à distribuidora: grupo, subgrupo, classe, modalidade, COSIP, demanda e reativo.',
-  ];
-  if(temGrupoA) servicos.splice(2,0,'e) Migração do Ambiente de Contratação Regulada (ACR) para o Ambiente de Contratação Livre (ACL).');
+  var cnpjFmt = formatCNPJ(cl.cnpj||'');
+  var temGrupoA = (cl.subgrupo||'').startsWith('A');
+  var endContrato = cl.contrato_fim ? new Date(cl.contrato_fim+'T00:00:00').toLocaleDateString('pt-BR') : '';
 
   var w = window.open('','_blank');
-  w.document.write('<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Contrato — '+c.nome+'</title>'
-    +'<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:12px;color:#1a1a1a;padding:20mm}'
-    +'.logo{display:flex;align-items:center;gap:12px;margin-bottom:24px;padding-bottom:14px;border-bottom:2px solid #0d2137}'
-    +'.logo-box{width:40px;height:40px;background:#0d2137;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff}'
-    +'h1{font-size:13px;font-weight:700;text-align:center;text-transform:uppercase;letter-spacing:.06em;margin-bottom:18px;color:#0d2137}'
-    +'.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}'
-    +'.box{border:1px solid #e2e8f0;border-radius:6px;padding:10px}'
-    +'.box-label{font-size:9px;font-weight:700;text-transform:uppercase;color:#64748b;margin-bottom:5px;padding-bottom:4px;border-bottom:1px solid #e2e8f0}'
-    +'h2{font-size:11px;font-weight:700;margin:12px 0 6px;color:#0d2137}'
-    +'.sv{display:flex;gap:6px;margin-bottom:4px;font-size:10px;line-height:1.6;color:#374151}'
-    +'.hl{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:10px;margin:12px 0}'
-    +'.cl{font-size:10px;line-height:1.6;margin-bottom:6px}'
-    +'.sigs{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:24px}'
-    +'.sig{text-align:center}.sig-line{border-top:1px solid #1a1a1a;padding-top:5px;font-size:10px}'
-    +'.footer{margin-top:14px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:9px;color:#94a3b8;text-align:center}'
-    +'@media print{button{display:none}}</style></head><body>'
-    +'<div class="logo"><div class="logo-box">⚡</div>'
-    +'<div><div style="font-size:15px;font-weight:700;color:#0d2137">TRIANON GESTÃO DE ENERGIA</div><div style="font-size:10px;color:#64748b">Gestão Inteligente de Energia · Manaus, AM</div></div>'
-    +'<button onclick="window.print()" style="margin-left:auto;padding:7px 14px;background:#0d2137;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px">🖨 Imprimir PDF</button></div>'
-    +'<h1>Instrumento Particular de Contrato de Prestação de Serviços</h1>'
-    +'<div class="grid">'
-    +'<div class="box"><div class="box-label">Contratante</div><b style="font-size:11px">'+c.nome+'</b><br><span style="font-size:10px;color:#64748b">'+(cnpjFmt?'CNPJ: '+cnpjFmt+'<br>':'')+ucs.map(function(u){return 'UC: '+u;}).join(' · ')+'</span></div>'
-    +'<div class="box"><div class="box-label">Contratada</div><b style="font-size:11px">TRIANON GESTÃO DE ENERGIA LTDA</b><br><span style="font-size:10px;color:#64748b">CNPJ: 58.843.586/0001-36<br>Rua Dom José Moraes Torres, 69 – Flores, Manaus, AM</span></div>'
-    +'</div>'
-    +'<p style="font-size:11px;line-height:1.7;color:#374151;margin-bottom:14px">As Partes têm entre si justo e acertado o presente Contrato de Prestação de Serviços, que se regerá pelas cláusulas e condições a seguir:</p>'
-    +'<h2>Objeto do Contrato</h2>'
-    +servicos.map(function(s){return '<div class="sv"><span>•</span><span>'+s+'</span></div>';}).join('')
-    +'<div class="hl"><div style="font-size:10px;color:#065f46;margin-bottom:3px;font-weight:600">💰 REMUNERAÇÃO MENSAL</div>'
-    +'<div style="font-size:16px;font-weight:700;color:#059669">R$ '+valorMensal.toLocaleString('pt-BR',{minimumFractionDigits:2})+'/mês</div>'
-    +'<div style="font-size:10px;color:#065f46;margin-top:3px">'+ucs.length+' UC(s) × R$ 500,00 — pagamento até o dia 05 de cada mês</div></div>'
-    +'<div class="cl"><b>Auditoria Retroativa:</b> 30% de comissão sobre valores efetivamente recuperados.</div>'
-    +'<div class="cl"><b>Vigência:</b> 1 (um) ano, renovação automática com reajuste anual pelo IPCA.</div>'
-    +'<div class="cl"><b>Rescisão:</b> Sem penalidade quando o custo do serviço superar a economia gerada. Por outros motivos: multa de 30% sobre o saldo restante.</div>'
-    +'<div class="cl"><b>Foro:</b> Comarca de Manaus, Estado do Amazonas.</div>'
-    +'<p style="text-align:center;margin:16px 0;font-size:11px">Manaus, '+dataHoje+'.</p>'
-    +'<div class="sigs">'
-    +'<div class="sig"><div style="height:36px"></div><div class="sig-line">TRIANON GESTÃO DE ENERGIA LTDA<br><span style="font-size:9px;color:#64748b">Contratada</span></div></div>'
-    +'<div class="sig"><div style="height:36px"></div><div class="sig-line">'+c.nome.slice(0,40)+'<br><span style="font-size:9px;color:#64748b">Contratante</span></div></div>'
-    +'</div>'
-    +'<div class="sigs" style="margin-top:18px">'
-    +'<div class="sig"><div style="height:36px"></div><div class="sig-line">Testemunha 1<br>Nome: ___________ CPF: ___________</div></div>'
-    +'<div class="sig"><div style="height:36px"></div><div class="sig-line">Testemunha 2<br>Nome: ___________ CPF: ___________</div></div>'
-    +'</div>'
-    +'<div class="footer">TRIANON GESTÃO DE ENERGIA LTDA · CNPJ: 58.843.586/0001-36 · Manaus, AM</div>'
-    +'</body></html>');
+  var h = [];
+  h.push('<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Contrato — '+cl.nome+'</title>');
+  h.push('<style>');
+  h.push('*{box-sizing:border-box;margin:0;padding:0}');
+  h.push('body{font-family:Arial,sans-serif;font-size:11.5px;color:#1a1a1a;padding:18mm 20mm}');
+  h.push('.logo-area{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:14px;border-bottom:3px solid #0d2137}');
+  h.push('.logo-box{width:44px;height:44px;background:#0d2137;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;flex-shrink:0}');
+  h.push('.logo-nome{font-size:16px;font-weight:700;color:#0d2137}.logo-sub{font-size:10px;color:#64748b}');
+  h.push('h1{font-size:13px;font-weight:700;text-align:center;text-transform:uppercase;letter-spacing:.07em;margin:0 0 18px;color:#0d2137}');
+  h.push('.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}');
+  h.push('.parte-box{border:1.5px solid #e2e8f0;border-radius:6px;padding:10px}');
+  h.push('.parte-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#64748b;margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid #e2e8f0}');
+  h.push('.parte-nome{font-size:11.5px;font-weight:700;margin-bottom:3px}');
+  h.push('.parte-info{font-size:10px;color:#64748b;line-height:1.6}');
+  h.push('.intro{font-size:11px;line-height:1.7;color:#374151;margin-bottom:14px}');
+  h.push('h2{font-size:11.5px;font-weight:700;margin:14px 0 6px;color:#0d2137}');
+  h.push('.obj-item{font-size:10.5px;line-height:1.7;color:#374151;margin-bottom:4px;padding-left:4px}');
+  h.push('.cl{font-size:10.5px;line-height:1.7;color:#374151;margin-bottom:4px;padding-left:16px}');
+  h.push('.cl-titulo{font-size:11px;font-weight:700;color:#1a1a1a;margin:10px 0 4px}');
+  h.push('.hl{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:10px 12px;margin:12px 0}');
+  h.push('.hl-val{font-size:16px;font-weight:700;color:#059669;margin-bottom:2px}');
+  h.push('.hl-sub{font-size:10px;color:#065f46}');
+  h.push('.sigs{display:grid;grid-template-columns:1fr 1fr;gap:36px;margin-top:28px}');
+  h.push('.sig{text-align:center}');
+  h.push('.sig-line{border-top:1px solid #1a1a1a;padding-top:5px;font-size:10px;color:#374151;line-height:1.6}');
+  h.push('.footer{margin-top:14px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:9px;color:#94a3b8;text-align:center}');
+  h.push('@media print{button{display:none!important}}');
+  h.push('</style></head><body>');
+
+  // Header
+  h.push('<div class="logo-area">');
+  h.push('<div class="logo-box">⚡</div>');
+  h.push('<div><div class="logo-nome">TRIANON GESTÃO DE ENERGIA</div><div class="logo-sub">Gestão Inteligente de Energia · Manaus, AM</div></div>');
+  h.push('<button onclick="window.print()" style="margin-left:auto;padding:8px 16px;background:#0d2137;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600">🖨 Imprimir / Salvar PDF</button>');
+  h.push('</div>');
+
+  h.push('<h1>Instrumento Particular de Contrato de Prestação de Serviços</h1>');
+
+  // Partes
+  h.push('<div class="grid2">');
+  h.push('<div class="parte-box"><div class="parte-label">Contratante</div>');
+  h.push('<div class="parte-nome">'+cl.nome+'</div>');
+  h.push('<div class="parte-info">'+(cnpjFmt?'CNPJ: '+cnpjFmt+'<br>':'')+ucs.map(function(u){return 'UC: '+u;}).join('  ·  ')+'</div>');
+  if(cl.endereco) h.push('<div class="parte-info" style="margin-top:3px">'+cl.endereco+'</div>');
+  h.push('</div>');
+  h.push('<div class="parte-box"><div class="parte-label">Contratada</div>');
+  h.push('<div class="parte-nome">TRIANON GESTÃO DE ENERGIA LTDA</div>');
+  h.push('<div class="parte-info">CNPJ: 58.843.586/0001-36<br>Rua Dom José Moraes Torres, 69 – Flores, Manaus, AM</div>');
+  h.push('</div>');
+  h.push('</div>');
+
+  // Intro
+  h.push('<p class="intro">As Partes acima identificadas, doravante denominadas como <b>CONTRATANTE</b> e <b>CONTRATADA</b>, e em conjunto como <b>PARTES</b>, têm, entre si, justo e acertado o presente Contrato de Prestação de Serviços ("Contrato"), que se regerá pelas cláusulas e condições a seguir expostas:</p>');
+  h.push('<p class="intro">O presente Contrato tem por objeto a prestação de serviços pela CONTRATADA, incluindo:</p>');
+
+  // Objeto
+  h.push('<div class="obj-item">a) Gestão de energia completa, contemplando levantamento contratual, levantamento de multas e adequações de enquadramentos tarifários, levantamento de possíveis economias nas faturas de energia, levantamento de carga e visita técnica para detectar pontos de melhorias.</div>');
+  if(temGrupoA){
+    h.push('<div class="obj-item">b) Migração do Ambiente de Contratação Regulada (ACR) para o Ambiente de Contratação Livre (ACL).</div>');
+    h.push('<div class="obj-item">c) Assessoria no Ambiente de Contratação Livre (ACL), abrangendo consultoria para análise detalhada das propostas recebidas e auxílio na escolha da melhor opção. Gestão junto à CCEE, garantindo acompanhamento operacional, conferência financeira e segurança regulatória.</div>');
+    h.push('<div class="obj-item">d) Escolha da melhor fonte de geração para suprir a demanda de cada UC, energia por assinatura, geração própria ou mercado livre de energia.</div>');
+    h.push('<div class="obj-item">e) Auditoria retroativa completa nas faturas dos últimos 120 meses.</div>');
+    h.push('<div class="obj-item">f) Prestação de contas mensal através de relatórios, sistema de gestão, dashboard e presencial se necessário.</div>');
+  } else {
+    h.push('<div class="obj-item">b) Auditoria retroativa completa nas faturas dos últimos 120 meses.</div>');
+    h.push('<div class="obj-item">c) Prestação de contas mensal através de relatórios, sistema de gestão, dashboard e presencial se necessário.</div>');
+    h.push('<div class="obj-item">d) Escolha da melhor fonte de geração para suprir a demanda de cada UC, energia por assinatura ou geração própria.</div>');
+  }
+
+  // Cláusulas
+  h.push('<div class="cl-titulo">1. Revisão e Ajustes Junto à Distribuidora</div>');
+  h.push('<div class="cl">1.1 Grupo, Subgrupo, Classe, Modalidade, Sazonalidade, CIP, Demanda, Reativo e mudança de titularidade caso necessário.</div>');
+  h.push('<div class="cl">1.2 Analisar cada item e fazer simulações para entender onde a UC se encaixa melhor.</div>');
+  h.push('<div class="cl">1.3 Fazer todas as alterações necessárias junto à distribuidora inclusive novos contratos.</div>');
+  h.push('<div class="cl">1.4 A CONTRATADA atuará como assessoria técnica e administrativa, não sendo responsável por decisões regulatórias da distribuidora, CCEE, ANEEL, comercializadoras ou órgãos governamentais, nem por indeferimentos decorrentes de exigências técnicas, regulatórias ou estruturais da unidade consumidora.</div>');
+
+  h.push('<div class="cl-titulo">2. Vistoria Técnica</div>');
+  h.push('<div class="cl">2.1 Nossa equipe técnica faz uma vistoria para detectar pontos de melhorias em toda rede elétrica, necessárias para uma melhor eficiência energética.</div>');
+  h.push('<div class="cl">2.2 Após o diagnóstico de nossa engenharia, enviamos um relatório sobre a situação atual da unidade consumidora e, se necessário, orçamento de melhorias.</div>');
+
+  if(temGrupoA){
+    h.push('<div class="cl-titulo">3. Denúncia de Portabilidade para o ACL</div>');
+    h.push('<div class="cl">3.1 Descontinuidade do contrato CATIVO.</div>');
+    h.push('<div class="cl">3.2 Protocolar na distribuidora a intenção de mudança para o LIVRE.</div>');
+    h.push('<div class="cl">3.3 Alterar o e-mail de acesso temporariamente fazendo com que se dê agilidade nos procedimentos. A alteração de e-mail será realizada mediante autorização formal do CONTRATANTE, e após as conclusões, o e-mail de acesso será alterado para o anterior.</div>');
+    h.push('<div class="cl-titulo">4. Compra de Energia</div>');
+    h.push('<div class="cl">4.1 Assinatura do contrato e procurações com a comercializadora.</div>');
+    h.push('<div class="cl">4.2 Acompanhamento de todas as etapas até a mudança para o LIVRE.</div>');
+    h.push('<div class="cl">4.3 Acompanhamento PRESENCIAL de vistoria da distribuidora.</div>');
+    h.push('<div class="cl">4.4 Caso seja pedido adequação no SMF, iremos informar e eventuais custos de adequação serão de responsabilidade do CONTRATANTE.</div>');
+    h.push('<div class="cl">4.5 Solicitação de certificado de energia renovável.</div>');
+    h.push('<div class="cl-titulo">5. Análise de Projetos de Autoprodução</div>');
+    h.push('<div class="cl">5.1 Estudo econômico e de custo-benefício sobre a geração própria e local de instalação.</div>');
+    h.push('<div class="cl">5.2 Cotações com empresas de GDIS para comparativos.</div>');
+    h.push('<div class="cl">5.3 Relatórios completos sobre autoprodução.</div>');
+    h.push('<div class="cl-titulo">6. Assessoria Contínua Pós Portabilidade</div>');
+    h.push('<div class="cl">6.1 Após a migração para o ACL, faremos auditorias e um relatório mensal para verificar se tudo está conforme foi contratado junto à distribuidora e comercializadora.</div>');
+    h.push('<div class="cl">6.2 Caso haja divergência, contestaremos administrativamente perante o órgão responsável.</div>');
+    h.push('<div class="cl">6.3 Somente após auditadas as faturas, enviaremos para o CONTRATANTE para serem pagas.</div>');
+  }
+
+  // Remuneração
+  var numCl = temGrupoA ? '7' : '3';
+  h.push('<div class="cl-titulo">'+numCl+'. Remuneração da Gestão</div>');
+  h.push('<div class="hl">');
+  h.push('<div class="hl-val">R$ '+valorMensal.toLocaleString('pt-BR',{minimumFractionDigits:2})+'/mês</div>');
+  h.push('<div class="hl-sub">'+ucs.length+' UC(s) × R$ '+(valorMensal/ucs.length).toFixed(2).replace('.',',')+' — pagamento até o dia 05 de cada mês mediante nota fiscal e boleto bancário</div>');
+  h.push('</div>');
+  h.push('<div class="cl">'+numCl+'.1 Pelos serviços prestados ao CONTRATANTE, a CONTRATADA receberá a remuneração de R$ '+valorMensal.toLocaleString('pt-BR',{minimumFractionDigits:2})+' ('+valorMensal.toLocaleString('pt-BR',{minimumFractionDigits:2})+' reais) mensalmente todo dia 05.</div>');
+  h.push('<div class="cl">'+numCl+'.2 O pagamento do serviço será feito mediante apresentação de nota fiscal e boleto bancário.</div>');
+  h.push('<div class="cl">'+numCl+'.3 A CONTRATADA fará jus à 30% de comissão sobre os valores recuperados da distribuidora no caso de êxito na auditoria retroativa. Incidirá apenas sobre valores efetivamente restituídos e creditados ao CONTRATANTE em conta bancária ou crédito na fatura de energia.</div>');
+
+  var n8 = temGrupoA ? '8' : '4';
+  h.push('<div class="cl-titulo">'+n8+'. Vigência e Renovação</div>');
+  h.push('<div class="cl">'+n8+'.1 O contrato tem validade de 1 ano (Um ano) a contar da data de assinatura. Após este período, será renovado automaticamente por igual período, salvo manifestação contrária do CONTRATANTE.</div>');
+  h.push('<div class="cl">'+n8+'.2 Na renovação, o valor será reajustado anualmente pela variação do IPCA, e em caso de aumento expressivo de consumo ou inclusão de novas UCs, poderá haver reequilíbrio econômico-financeiro.</div>');
+
+  var n9 = temGrupoA ? '9' : '5';
+  h.push('<div class="cl-titulo">'+n9+'. Rescisão Contratual</div>');
+  h.push('<div class="cl">'+n9+'.1 O contrato poderá ser rescindido a qualquer momento <b>sem penalidade</b> para o CONTRATANTE: A) Quando o custo do serviço do CONTRATADO for maior que a economia proporcionada; B) Caso fortuito ou força maior, nos termos do art. 393 do Código Civil.</div>');
+  h.push('<div class="cl">'+n9+'.2 A apuração de economia considerará como base o histórico médio dos últimos 12 meses anteriores à contratação, ajustado por variação de consumo, sazonalidade e bandeiras tarifárias.</div>');
+  h.push('<div class="cl">'+n9+'.3 Caso qualquer das partes opte pela rescisão por motivo diverso dos previstos, deverá pagar multa correspondente a 30% (trinta por cento) do valor total restante até o término da vigência contratual.</div>');
+
+  var n10 = temGrupoA ? '10' : '6';
+  h.push('<div class="cl-titulo">'+n10+'. Confidencialidade e Proteção de Dados</div>');
+  h.push('<div class="cl">'+n10+'.1 As PARTES comprometem-se a manter sigilo sobre todas as informações obtidas em razão deste contrato, em conformidade com a Lei nº 13.709/2018 (LGPD). A obrigação de confidencialidade permanece válida após o término do contrato.</div>');
+
+  var n11 = temGrupoA ? '11' : '7';
+  h.push('<div class="cl-titulo">'+n11+'. Autorização de Uso de Logomarca</div>');
+  h.push('<div class="cl">'+n11+'.1 O CONTRATANTE expressamente anui e concorda com a divulgação de sua logomarca pelo CONTRATADO para fins publicitários.</div>');
+
+  var n12 = temGrupoA ? '12' : '8';
+  h.push('<div class="cl-titulo">'+n12+'. Limitação de Responsabilidade</div>');
+  h.push('<div class="cl">'+n12+'.1 A responsabilidade da CONTRATADA fica limitada ao valor total efetivamente pago pelo CONTRATANTE nos últimos 12 meses de contrato, excluindo-se lucros cessantes e danos indiretos.</div>');
+
+  var n13 = temGrupoA ? '13' : '9';
+  h.push('<div class="cl-titulo">'+n13+'. Caso Fortuito, Força Maior e Reequilíbrio Regulatório</div>');
+  h.push('<div class="cl">'+n13+'.1 A CONTRATADA não será responsabilizada por atrasos ou impactos decorrentes de caso fortuito ou força maior, incluindo mudanças regulatórias da ANEEL, Medidas Provisórias, novas Resoluções, alterações tributárias ou decisões da CCEE, distribuidora ou órgãos governamentais.</div>');
+
+  var n14 = temGrupoA ? '14' : '10';
+  h.push('<div class="cl-titulo">'+n14+'. Foro</div>');
+  h.push('<div class="cl">'+n14+'.1 Fica eleito o foro da Comarca de Manaus, Estado do Amazonas, com renúncia expressa a qualquer outro, para dirimir quaisquer controvérsias oriundas deste contrato.</div>');
+
+  // Assinatura
+  h.push('<p style="font-size:11px;text-align:center;margin:20px 0">E, por estarem justas e contratadas, as <b>PARTES</b> firmam o presente Contrato em duas vias de igual teor e validade, na presença de 2 (duas) testemunhas.</p>');
+  h.push('<p style="font-size:11px;text-align:center;margin:14px 0">Manaus, '+dataHoje+'.</p>');
+
+  h.push('<div class="sigs">');
+  h.push('<div class="sig"><div style="height:44px"></div><div class="sig-line">TRIANON GESTÃO DE ENERGIA LTDA<br><span style="font-size:9px;color:#64748b;font-weight:400">Contratada</span></div></div>');
+  h.push('<div class="sig"><div style="height:44px"></div><div class="sig-line">'+cl.nome+'<br><span style="font-size:9px;color:#64748b;font-weight:400">Contratante</span></div></div>');
+  h.push('</div>');
+  h.push('<div class="sigs" style="margin-top:24px">');
+  h.push('<div class="sig"><div style="height:44px"></div><div class="sig-line">TESTEMUNHA<br>Nome: ________________________________<br>CPF: _________________________________</div></div>');
+  h.push('<div class="sig"><div style="height:44px"></div><div class="sig-line">TESTEMUNHA<br>Nome: ________________________________<br>CPF: _________________________________</div></div>');
+  h.push('</div>');
+
+  h.push('<div class="footer">TRIANON GESTÃO DE ENERGIA LTDA · CNPJ: 58.843.586/0001-36 · Rua Dom José Moraes Torres, 69 – Flores, Manaus, AM</div>');
+  h.push('</body></html>');
+
+  w.document.write(h.join(''));
   w.document.close();
 }
 

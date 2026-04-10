@@ -1141,8 +1141,23 @@ async function gerarPropostaParaCliente(clienteId){
 
   // Fallback: Railway offline — gera HTML próprio
   var uc = ucs[0];
-  var analise = _analiseCache[uc]||'Diagnóstico executivo disponível no sistema.';
+  // Usa cache se disponível, senão constrói do banco
   var fat = D.faturas.filter(function(f){return ucs.includes(f.uc);});
+  var ans = D.analises.filter(function(a){return ucs.includes(a.uc);});
+  fat.forEach(function(f){
+    var fa=Array.isArray(f.faturas_analise)?f.faturas_analise[0]:(f.faturas_analise||null);
+    if(!fa) fa=ans.find(function(a){return a.fatura_id===f.id;})||{};
+    f._a=fa;
+  });
+  var alsFat=[]; fat.forEach(function(f){var al=f._a.alertas;if(typeof al==='string'){try{al=JSON.parse(al);}catch(e){al=[];}} (al||[]).forEach(function(a){alsFat.push(a);});});
+  var analise = _analiseCache[uc];
+  if(!analise){
+    var parts=[];
+    var critCount=alsFat.filter(function(a){return a.severidade==='critico';}).length;
+    if(critCount>0) parts.push(critCount+' problema(s) crítico(s) identificado(s).');
+    alsFat.slice(0,4).forEach(function(a){parts.push('• '+a.titulo+(a.acao_recomendada?' — '+a.acao_recomendada:''));});
+    analise = parts.join(' ') || 'Análise baseada nos dados históricos de faturamento.';
+  }
   var n = Math.min(fat.length,12)||1;
   var custoMedio = fat.slice(0,n).reduce(function(s,f){return s+parseFloat(f.total_a_pagar||0);},0)/n;
   var ecoEstimada = custoMedio * 0.15 * 12;
@@ -1829,13 +1844,7 @@ async function gerarProposta(clienteId){
   if(!c) return;
   var uc = (c.ucs||[])[0];
   if(!uc) { alert('Nenhuma UC encontrada para este cliente.'); return; }
-  if(!_analiseCache[uc]){
-    if(!confirm('Análise não gerada ainda. Gerar agora?')) return;
-    await abrirAnaliseCompleta(uc, c.nome, clienteId);
-    setTimeout(function(){ gerarPropostaParaCliente(clienteId); }, 2000);
-  } else {
-    gerarPropostaParaCliente(clienteId);
-  }
+  gerarPropostaParaCliente(clienteId);
 }
 
 // ── CONTRATO PDF ──────────────────────────────────────────────────────────────
@@ -2368,6 +2377,22 @@ async function abrirAnaliseCliente(clienteId){
   H += '<div style="font-size:15px;font-weight:700;color:#0d2137;margin-bottom:4px">🎯 Próximos Passos</div>';
   H += '<div style="font-size:12px;color:#64748b;margin-bottom:14px">Gere o PDF profissional (relatório + proposta) ou feche o contrato</div>';
   H += '<div style="display:flex;gap:10px;flex-wrap:wrap" id="analise-btns-cta"></div></div>';
+
+  // Salva análise no cache para proposta usar
+  var cacheText = [];
+  if(alertas.length>0){
+    cacheText.push('ALERTAS IDENTIFICADOS:');
+    alertas.forEach(function(a){
+      cacheText.push('- ['+a.severidade.toUpperCase()+'] '+a.titulo+(a.descricao?' — '+a.descricao:''));
+      if(a.acao_recomendada) cacheText.push('  Ação: '+a.acao_recomendada);
+    });
+  }
+  if(mlElegivel){
+    cacheText.push('MERCADO LIVRE: Elegível (Grupo A — Portaria 50/2022). Economia estimada: '+fmtR(mlEcoAnual)+'/ano via comercializadora '+(demCtda>=500?'livre (CCEE)':'varejista'));
+  }
+  cacheText.push('RESUMO FINANCEIRO: Custo médio '+fmtR(custoMedio)+'/mês. Economia total identificada: '+fmtR(ecoAnual+(mlElegivel?mlEcoAnual:0))+'/ano.');
+  if(analiseTextos.length>0) cacheText.push('ANÁLISE IA: '+analiseTextos[0].ia);
+  _analiseCache[_analiseAtualUC] = cacheText.join('\n');
 
   painel.innerHTML = H;
 

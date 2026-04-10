@@ -263,10 +263,15 @@
     </div>
   </div>
   <div class="sb-section">Portfólio</div>
-  <div class="sb-item active">
+  <div class="sb-item active" id="sb-clientes" onclick="showPortfolio();setSbActive(this)">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
     Clientes
-    <span class="sb-badge">12</span>
+    <span class="sb-badge" id="sbCount">—</span>
+  </div>
+  <div class="sb-item" id="sb-faturas" onclick="openFaturasModal();setSbActive(this)">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h10a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"/><path d="M5 6h6M5 9h4"/></svg>
+    Faturas
+    <span class="sb-badge" id="sbFaturasbadge" style="display:none;background:rgba(245,166,35,.12);color:var(--amber)">•</span>
   </div>
   <div class="sb-item">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12L6 7l3 3 3-4 2 2"/></svg>
@@ -276,7 +281,7 @@
   <div class="sb-item">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
     Alertas ativos
-    <span class="sb-badge" style="background:rgba(239,69,69,.1);color:var(--red)">4</span>
+    <span class="sb-badge" id="sbAlertas" style="background:rgba(239,69,69,.1);color:var(--red)">—</span>
   </div>
   <div class="sb-item">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="10" rx="1"/><path d="M5 7h6M5 10h4"/></svg>
@@ -290,6 +295,88 @@
   <div class="sb-bottom">
     <div style="font-size:11px;color:var(--muted)">worker ativo</div>
     <div style="font-size:10px;color:var(--green);margin-top:3px">● Railway · online</div>
+  </div>
+</div>
+
+<!-- ══ MODAL FATURAS ══ -->
+<div id="faturasModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;overflow:auto;padding:32px 16px">
+  <div style="background:#fff;border-radius:20px;width:100%;max-width:480px;box-shadow:0 16px 48px rgba(0,0,0,.25);overflow:hidden;margin:0 auto">
+
+    <!-- Header -->
+    <div style="background:var(--accent);padding:20px 24px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:#fff">⚡ Nova Extração</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:2px">Amazonas Energia · portal do cliente</div>
+      </div>
+      <button onclick="closeFaturasModal()" style="background:rgba(255,255,255,.15);border:none;color:#fff;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px">✕</button>
+    </div>
+
+    <!-- Formulário -->
+    <div id="faturasForm" style="padding:24px">
+      <div style="margin-bottom:16px">
+        <label style="font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;display:block">CPF ou CNPJ *</label>
+        <input id="fm-cpf" type="text" placeholder="000.000.000-00"
+          oninput="this.value=formatCpf(this.value)"
+          style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #d1d5db;font-size:15px;background:#f9fafb;outline:none" />
+      </div>
+      <div style="margin-bottom:16px">
+        <label style="font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;display:block">Senha *</label>
+        <input id="fm-senha" type="password" placeholder="Senha do portal"
+          onkeydown="if(event.key==='Enter') enviarExtracao()"
+          style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #d1d5db;font-size:15px;background:#f9fafb;outline:none" />
+      </div>
+      <div style="margin-bottom:16px">
+        <label style="font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;display:block">Período de faturas</label>
+        <select id="fm-meses"
+          style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #d1d5db;font-size:14px;background:#f9fafb;cursor:pointer;color:#1e293b;outline:none">
+          <option value="1">Último mês</option>
+          <option value="3">Últimos 3 meses</option>
+          <option value="6">Últimos 6 meses</option>
+          <option value="12" selected>Últimos 12 meses</option>
+          <option value="24">Últimos 24 meses (2 anos)</option>
+          <option value="36">Últimos 36 meses (3 anos)</option>
+        </select>
+      </div>
+      <div style="margin-bottom:16px">
+        <label style="font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;display:block">
+          UCs específicas <span style="font-weight:400;color:#9ca3af">(opcional — vazio = todas)</span>
+        </label>
+        <input id="fm-ucs" type="text" placeholder="Ex: 21300, 6021263"
+          style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #d1d5db;font-size:14px;background:#f9fafb;outline:none" />
+        <p style="font-size:11px;color:#9ca3af;margin-top:4px">Separe por vírgula. Vazio = todas as UCs.</p>
+      </div>
+      <div style="margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#166534">🔔 Monitorar faturas novas</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:2px">Busca automática quando surgir fatura nova</div>
+        </div>
+        <div id="fm-toggle" class="toggle" onclick="this.classList.toggle('on')">
+          <div class="toggle-dot"></div>
+        </div>
+      </div>
+      <div id="fm-error" style="display:none;background:#fee2e2;border:1px solid #fecaca;border-radius:10px;padding:10px 14px;margin-bottom:16px;color:#dc2626;font-size:13px"></div>
+      <button id="fm-btn" onclick="enviarExtracao()"
+        style="width:100%;padding:14px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-size:15px;font-weight:700;cursor:pointer">
+        ⚡ Buscar Faturas
+      </button>
+    </div>
+
+    <!-- Status após envio -->
+    <div id="faturasStatus" style="display:none;padding:24px">
+      <div style="text-align:center;padding:8px 0 20px">
+        <div id="fs-icon" style="font-size:36px;margin-bottom:12px">⏳</div>
+        <div id="fs-title" style="font-size:16px;font-weight:700;color:#0f172a;margin-bottom:6px">Processando...</div>
+        <div id="fs-sub" style="font-size:13px;color:#6b7280;line-height:1.5"></div>
+      </div>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:16px">
+        <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">log da extração</div>
+        <div id="fs-log" style="font-size:12px;color:#374151;line-height:1.9"></div>
+      </div>
+      <button id="fs-close-btn" onclick="closeFaturasModal();setSbActive(document.getElementById('sb-clientes'));carregarDados()" style="display:none;width:100%;padding:12px;border-radius:10px;border:1px solid #d1d5db;background:transparent;color:#374151;font-size:14px;cursor:pointer;font-weight:600">
+        ✓ Ver no portfólio
+      </button>
+    </div>
+
   </div>
 </div>
 
@@ -1153,6 +1240,158 @@ function showPortfolio() {
   document.getElementById('pageTitle').textContent = 'Portfólio de clientes';
   document.getElementById('pageSub').textContent = 'abril 2026 · Manaus';
   currentCliente = null;
+}
+
+// ── Sidebar active ────────────────────────────────────────────────────────────
+function setSbActive(el) {
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── Modal Faturas ─────────────────────────────────────────────────────────────
+let _pollInterval = null;
+
+function openFaturasModal() {
+  document.getElementById('faturasModal').style.display = 'block';
+  document.getElementById('faturasForm').style.display = 'block';
+  document.getElementById('faturasStatus').style.display = 'none';
+  document.getElementById('fm-cpf').value = '';
+  document.getElementById('fm-senha').value = '';
+  document.getElementById('fm-ucs').value = '';
+  document.getElementById('fm-error').style.display = 'none';
+  const tog = document.getElementById('fm-toggle');
+  tog.classList.remove('on');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeFaturasModal() {
+  document.getElementById('faturasModal').style.display = 'none';
+  document.body.style.overflow = '';
+  if (_pollInterval) { clearInterval(_pollInterval); _pollInterval = null; }
+}
+
+async function enviarExtracao() {
+  const cpfRaw = document.getElementById('fm-cpf').value.replace(/\D/g,'');
+  const senha  = document.getElementById('fm-senha').value;
+  const meses  = parseInt(document.getElementById('fm-meses').value);
+  const ucsStr = document.getElementById('fm-ucs').value;
+  const monitorar = document.getElementById('fm-toggle').classList.contains('on');
+  const errEl  = document.getElementById('fm-error');
+
+  if (!cpfRaw || !senha) {
+    errEl.textContent = 'Preencha CPF/CNPJ e senha.';
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+
+  const btn = document.getElementById('fm-btn');
+  btn.textContent = 'Enviando...';
+  btn.disabled = true;
+
+  const creds = { cpf_cnpj: cpfRaw, senha, meses, monitorar };
+  if (ucsStr.trim()) {
+    creds.selected_ucs = ucsStr.split(',').map(u => u.trim()).filter(Boolean);
+  }
+
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/extraction_requests`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=representation',
+      },
+      body: JSON.stringify({
+        concessionaria: 'amazonas_energia',
+        credentials: creds,
+        status: 'pendente',
+      }),
+    });
+
+    const data = await r.json();
+    if (!r.ok || !data[0]) throw new Error(data.message || 'Erro ao criar tarefa.');
+
+    const taskId = data[0].id;
+
+    // Muda para tela de status
+    document.getElementById('faturasForm').style.display = 'none';
+    document.getElementById('faturasStatus').style.display = 'block';
+    setFsState('loading', 'Aguardando o worker...', `Tarefa criada · ID: ${taskId.slice(0,8)}...`);
+    addFsLog('✓ Tarefa criada no banco');
+    addFsLog('⏳ Worker vai pegar em até 15 segundos...');
+
+    // Poll status
+    _pollInterval = setInterval(async () => {
+      await pollTaskStatus(taskId);
+    }, 5000);
+
+  } catch(e) {
+    btn.textContent = '⚡ Buscar Faturas';
+    btn.disabled = false;
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+  }
+}
+
+async function pollTaskStatus(taskId) {
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/extraction_requests?id=eq.${taskId}&select=status,status_detail,pdf_links`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
+    });
+    const data = await r.json();
+    const task = data[0];
+    if (!task) return;
+
+    const ST = {
+      pendente:             { icon:'⏳', title:'Na fila...', sub:'Aguardando o worker processar.' },
+      em_progresso:         { icon:'🔄', title:'Baixando faturas...', sub:'Fazendo login e extraindo PDFs.' },
+      concluido:            { icon:'✅', title:'Concluído!', sub:`${task.pdf_links?.length||0} fatura(s) extraída(s) e analisada(s).` },
+      erro_extracao:        { icon:'❌', title:'Erro na extração', sub: task.status_detail || 'Tente novamente.' },
+      credenciais_invalidas:{ icon:'🔒', title:'CPF ou senha inválidos', sub:'Verifique os dados e tente novamente.' },
+    };
+
+    const s = ST[task.status] || ST.pendente;
+
+    if (task.status === 'em_progresso') {
+      setFsState('loading', s.title, s.sub);
+      addFsLog('🔄 Worker iniciou a extração...');
+    }
+
+    if (task.status === 'concluido') {
+      clearInterval(_pollInterval); _pollInterval = null;
+      setFsState('success', s.title, s.sub);
+      addFsLog(`✓ ${task.pdf_links?.length||0} fatura(s) baixada(s)`);
+      addFsLog('✓ Parse e análise concluídos');
+      addFsLog('✓ Dados disponíveis no portfólio');
+      document.getElementById('fs-close-btn').style.display = 'block';
+      document.getElementById('sbFaturasbadge').style.display = '';
+    }
+
+    if (task.status === 'erro_extracao' || task.status === 'credenciais_invalidas') {
+      clearInterval(_pollInterval); _pollInterval = null;
+      setFsState('error', s.title, s.sub);
+      addFsLog(`❌ ${task.status_detail || 'Erro desconhecido'}`);
+      document.getElementById('fs-close-btn').style.display = 'block';
+      document.getElementById('fs-close-btn').textContent = 'Fechar';
+    }
+  } catch(e) {}
+}
+
+function setFsState(type, title, sub) {
+  const icons = { loading:'🔄', success:'✅', error:'❌' };
+  document.getElementById('fs-icon').textContent  = icons[type] || '⏳';
+  document.getElementById('fs-title').textContent = title;
+  document.getElementById('fs-sub').textContent   = sub;
+}
+
+const _fsLogs = new Set();
+function addFsLog(msg) {
+  if (_fsLogs.has(msg)) return;
+  _fsLogs.add(msg);
+  const el = document.getElementById('fs-log');
+  el.innerHTML += `<div>${msg}</div>`;
 }
 
 // Carrega dados reais do Supabase ao iniciar

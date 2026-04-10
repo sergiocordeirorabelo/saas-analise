@@ -546,6 +546,7 @@ function navegar(page, el){
   if(page==='clientes-page') renderClientes();
   if(page==='alertas-page') renderAlertas();
   if(page==='recup') renderRecup();
+  if(page==='estrategico') renderEstrategico();
   if(page==='contestacao') renderContestacao();
 }
 function setSbActive(el){document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));if(el)el.classList.add('active');}
@@ -571,6 +572,7 @@ async function carregarDados(){
     popularFiltros();
     renderVisaoGeral();
     atualizarBadges();
+    if(document.getElementById('page-estrategico')?.classList.contains('active')) renderEstrategico();
   } catch(e){ console.error('Erro carregarDados:', e); }
 }
 
@@ -1237,13 +1239,13 @@ function renderEstrategico(){
     const nome = f.cliente_nome || f.uc;
     if(!porCliente[nome]) porCliente[nome] = {nome, ucs:[], cnpj:''};
     if(!porCliente[nome].ucs.find(u=>u.uc===f.uc)){
-      const analise = Array.isArray(f.faturas_analise)?f.faturas_analise[0]:(f.faturas_analise||{});
+      const analise = DADOS.analises.find(a=>a.fatura_id===f.id) || (Array.isArray(f.faturas_analise)?f.faturas_analise[0]:(f.faturas_analise||{}));
       porCliente[nome].ucs.push({
         uc:f.uc, subgrupo:f.subgrupo, modalidade:f.modalidade,
-        demanda_ctda:f.demanda_contratada_fora_ponta_kw||0,
-        demanda_medi:f.demanda_medida_fora_ponta_kw||0,
-        consumo:f.consumo_total_kwh||0,
-        total_pago:f.total_a_pagar||0,
+        demanda_ctda:parseFloat(f.demanda_contratada_fora_ponta_kw)||0,
+        demanda_medi:parseFloat(f.demanda_medida_fora_ponta_kw)||0,
+        consumo:parseFloat(f.consumo_total_kwh)||0,
+        total_pago:parseFloat(f.total_a_pagar)||0,
         score:analise?.score_eficiencia||100,
         alertas:Array.isArray(analise?.alertas)?analise.alertas:[],
         eco:analise?.potencial_economia_anual||0,

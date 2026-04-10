@@ -750,6 +750,92 @@ async function carregarAnaliseNoModal(uc, nome, clienteId){
   }
 }
 
+function gerarAnaliseFallback(uc, nome){
+  var fat = D.faturas.filter(function(f){return f.uc===uc;});
+  var analises = D.analises.filter(function(a){return a.uc===uc;});
+  var alertas = D.alertas.filter(function(a){return a.uc===uc&&!a.resolvido;});
+  if(!fat.length){ _analiseCache[uc]='Nenhuma fatura encontrada para UC '+uc+'.'; return; }
+  var f0=fat[0]; var a0=analises[0]||{};
+  var n=Math.min(fat.length,12)||1;
+  var custoMedio=fat.slice(0,n).reduce(function(s,f){return s+parseFloat(f.total_a_pagar||0);},0)/n;
+  var custoAnual=custoMedio*12;
+  var demCtda=parseFloat(f0.demanda_contratada_fora_ponta_kw)||0;
+  var demMedi=parseFloat(f0.demanda_medida_fora_ponta_kw)||0;
+  var utilDem=demCtda>0?Math.round(demMedi/demCtda*100):null;
+  var temGrupoA=(f0.subgrupo||'').startsWith('A');
+  var hasGD=alertas.some(function(a){return (a.tipo||'').includes('GD');});
+  var hasReativo=alertas.some(function(a){return (a.titulo||'').toLowerCase().includes('reativo');});
+  var elegML=temGrupoA||demCtda>=300;
+  var fmtR=function(v){return 'R$ '+parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2});};
+
+  var p=[];
+  p.push('## Diagnóstico Executivo — '+nome);
+  p.push('');
+  p.push('**UC '+uc+'** | '+(f0.subgrupo||'?')+' | '+(f0.modalidade||'?')+' | Gasto anual: **'+fmtR(custoAnual)+'**');
+  p.push('');
+  p.push('## 1. Gestão de Energia Completa');
+  p.push('');
+  p.push('**Situação atual:** Custo médio de **'+fmtR(custoMedio)+'/mês**.'
+    +(a0.score_eficiencia?' Score de eficiência: **'+a0.score_eficiencia+'/100**.':'')
+    +' Enquadramento: **'+(f0.subgrupo||'?')+' — '+(f0.modalidade||'?')+'**.');
+  p.push('');
+  p.push('**O que faremos:** Revisar enquadramento tarifário (grupo, subgrupo, modalidade, sazonalidade).'
+    +(utilDem!==null?' Demanda contratada '+demCtda+' kW com utilização de **'+utilDem+'%**'+(utilDem<70?' — possível superdimensionamento.':' — adequada.'):'')
+    +' Relatório mensal com análise das faturas antes do pagamento.');
+  p.push('');
+  p.push('**Resultado esperado:** Redução estrutural dos custos + segurança que cada fatura está correta antes de ser paga.');
+  p.push('');
+  p.push('## 2. Auditoria Retroativa (120 meses)');
+  p.push('');
+  p.push('**Situação atual:** '+fat.length+' fatura(s) analisada(s).'
+    +(alertas.length>0?' **'+alertas.length+' irregularidade(s) identificada(s):** '+alertas.slice(0,3).map(function(a){return a.titulo;}).join(', ')+'.':' Dados disponíveis para revisão retroativa.'));
+  p.push('');
+  p.push('**O que faremos:** Revisar todas as faturas dos últimos 10 anos. Identificar cobranças indevidas, erro de enquadramento, ICMS sobre TUSD/TUST (Lei 14.385/2022), COSIP incorreta, reativo indevido.');
+  p.push('');
+  p.push('**Base legal:** Lei 14.385/2022 | ADI 7324 STF | **Remuneração:** 30% sobre valores recuperados (sem êxito, sem custo).');
+  p.push('');
+  p.push('## 3. Revisão e Ajustes Junto à Distribuidora');
+  p.push('');
+  var rev=[];
+  if(hasReativo) rev.push('- **Fator de potência:** cobranças de reativo identificadas — correção via banco de capacitores');
+  if(utilDem!==null&&utilDem<70) rev.push('- **Demanda superdimensionada:** '+demCtda+' kW contratado vs '+utilDem+'% utilizado — reduzir para economizar');
+  if(alertas.some(function(a){return (a.titulo||'').toLowerCase().includes('cosip');})) rev.push('- **COSIP:** valor elevado — contestação junto à Prefeitura de Manaus');
+  if(!rev.length) rev.push('- Revisão completa: grupo, subgrupo, classe, modalidade, CIP, demanda e reativo');
+  rev.forEach(function(r){p.push(r);});
+  p.push('');
+  p.push('## 4. Vistoria Técnica');
+  p.push('');
+  p.push('**O que faremos:** Inspeção da rede elétrica interna para identificar perdas e equipamentos ineficientes. Relatório com diagnóstico e orçamento de adequações.');
+  if(elegML){
+    p.push('');
+    p.push('## 5. Migração para o Mercado Livre (ACL)');
+    p.push('');
+    p.push('✅ **Elegível** — '+(temGrupoA?'Grupo A ('+f0.subgrupo+')':'Demanda '+demCtda+' kW ≥ 300 kW'));
+    p.push('**Economia estimada:** R$ '+Math.round(custoMedio*0.15).toLocaleString('pt-BR')+' a R$ '+Math.round(custoMedio*0.25).toLocaleString('pt-BR')+'/mês (10-25% da fatura atual).');
+  }
+  if(hasGD||custoMedio>800){
+    p.push('');
+    p.push('## '+(elegML?'6':'5')+'. '+(hasGD?'Otimização de Geração Distribuída':'Análise de Autoprodução'));
+    p.push('');
+    p.push(hasGD
+      ?'✅ UC possui GD ativo. Faremos gestão de créditos, compensação entre UCs e estudo de expansão.'
+      :'Com gasto de '+fmtR(custoMedio)+'/mês, geração solar/GD pode ser viável. Realizaremos estudo econômico completo.');
+  }
+  p.push('');
+  p.push('## Resumo Financeiro');
+  p.push('');
+  p.push('- Gasto atual: **'+fmtR(custoMedio)+'/mês** | **'+fmtR(custoAnual)+'/ano**');
+  p.push('- Economia potencial: **'+fmtR(parseFloat(a0.potencial_economia_anual||0))+'/ano**');
+  p.push('- Investimento: **R$ 500,00/mês** por UC');
+  var ecoAno=parseFloat(a0.potencial_economia_anual||0);
+  p.push('- ROI: '+(ecoAno>6000?'**Positivo** — economia supera o investimento':'Análise retroativa necessária para confirmar potencial'));
+  p.push('');
+  p.push('## Recomendação');
+  p.push('');
+  p.push('Contratação imediata recomendada. O modelo de **30% sobre o recuperado** na auditoria garante que não há risco financeiro — pagamos a nós mesmos apenas com o que recuperamos para o cliente.');
+  _analiseCache[uc] = p.join('\n');
+}
+
 function imprimirAnaliseModal(){
   var area = document.getElementById('mc-analise-area');
   var titulo = document.getElementById('mc-titulo');

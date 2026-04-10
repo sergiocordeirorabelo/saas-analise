@@ -1371,8 +1371,26 @@ async function pollTaskStatus(taskId) {
 
     if (task.status === 'erro_extracao' || task.status === 'credenciais_invalidas') {
       clearInterval(_pollInterval); _pollInterval = null;
-      setFsState('error', s.title, s.sub);
-      addFsLog(`❌ ${task.status_detail || 'Erro desconhecido'}`);
+      const detail = task.status_detail || '';
+      let titulo = s.title;
+      let sub = detail || 'Verifique os logs do Railway para mais detalhes.';
+
+      // Mensagens amigáveis para erros comuns
+      if (!detail || detail === 'null') {
+        sub = 'Erro inesperado. Tente novamente em alguns minutos.';
+      } else if (detail.toLowerCase().includes('limite diário') || detail.toLowerCase().includes('limite diario') || detail.toLowerCase().includes('timeout')) {
+        titulo = '⏰ Limite diário atingido';
+        sub = 'A Amazonas Energia permite apenas 1 download por fatura por dia. Tente novamente amanhã.';
+      } else if (detail.toLowerCase().includes('email')) {
+        sub = 'Email da fatura não chegou no tempo limite. Tente novamente em alguns minutos.';
+      } else if (detail.toLowerCase().includes('nenhuma fatura')) {
+        sub = 'Nenhuma fatura encontrada para este período. Verifique o CPF/CNPJ e o período selecionado.';
+      } else if (detail.toLowerCase().includes('instável') || detail.toLowerCase().includes('instavel')) {
+        sub = 'Portal da Amazonas Energia instável. Tente novamente em alguns minutos.';
+      }
+
+      setFsState('error', titulo, sub);
+      addFsLog(`❌ ${detail || 'Erro interno no worker'}`);
       document.getElementById('fs-close-btn').style.display = 'block';
       document.getElementById('fs-close-btn').textContent = 'Fechar';
     }

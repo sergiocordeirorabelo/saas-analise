@@ -596,7 +596,20 @@ async function carregarDados(){
     popularFiltros();
     renderVisaoGeral();
     atualizarBadges();
-    if(document.getElementById('page-estrategico')?.classList.contains('active')) renderEstrategico();
+    // Re-renderiza a seção ativa para mostrar novos dados
+    const pagesAtivas = ['faturas-page','analise-ia','clientes-page','alertas-page','recup','estrategico','multi-uc','contestacao'];
+    pagesAtivas.forEach(function(p){
+      const el = document.getElementById('page-'+p);
+      if(el && el.classList.contains('active')){
+        if(p==='faturas-page') renderFaturas();
+        else if(p==='analise-ia') renderAnaliseIA();
+        else if(p==='clientes-page') renderClientes();
+        else if(p==='alertas-page') renderAlertas();
+        else if(p==='recup') renderRecup();
+        else if(p==='estrategico') renderEstrategico();
+        else if(p==='contestacao') renderContestacao();
+      }
+    });
   } catch(e){ console.error('Erro carregarDados:', e); }
 }
 
@@ -1234,7 +1247,19 @@ async function pollTask(taskId){
     const r=await fetch(`${SUPABASE_URL}/rest/v1/extraction_requests?id=eq.${taskId}&select=status,status_detail,pdf_links`,{headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`}});
     const d=await r.json();const t=d[0];if(!t) return;
     if(t.status==='em_progresso') addFsLog('🔄 Extraindo faturas...');
-    if(t.status==='concluido'){clearInterval(_pollInterval);_pollInterval=null;setFsState('success','Concluído!',`${t.pdf_links?.length||0} fatura(s) extraída(s).`);addFsLog(`✓ ${t.pdf_links?.length||0} fatura(s)`);addFsLog('✓ Parse e análise OK');document.getElementById('fs-close-btn').style.display='block';}
+    if(t.status==='concluido'){
+      clearInterval(_pollInterval);_pollInterval=null;
+      const nFat = t.pdf_links ? t.pdf_links.length : 0;
+      setFsState('success','Extração concluída! 🎉', nFat+' fatura(s) incorporadas ao dashboard.');
+      addFsLog('✓ '+nFat+' fatura(s) baixadas e analisadas');
+      addFsLog('🔄 Atualizando dashboard...');
+      await carregarDados();
+      addFsLog('✅ Dashboard atualizado!');
+      const btn = document.getElementById('fs-close-btn');
+      btn.style.display='block';
+      btn.textContent='✓ Ver faturas incorporadas';
+      btn.onclick = function(){ closeFaturasModal(); navegar('faturas-page', document.getElementById('sb-faturas-page')); };
+    }
     if(t.status==='erro_extracao'||t.status==='credenciais_invalidas'){
       clearInterval(_pollInterval);_pollInterval=null;
       const d=t.status_detail||'';

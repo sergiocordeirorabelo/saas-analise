@@ -3,90 +3,116 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Amazônia Faturas — Gestão Inteligente de Energia</title>
+<title>Trianon Energia — Gestão de Clientes</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
 :root{
-  --bg:#f8fafc;--bg2:#ffffff;--bg3:#f1f5f9;
+  --bg:#f8fafc;--bg2:#fff;--bg3:#f1f5f9;
   --border:#e2e8f0;--border2:#cbd5e1;
   --text:#0f172a;--muted:#64748b;--hint:#94a3b8;
-  --green:#059669;--green-bg:#d1fae5;--green-dark:#065f46;
+  --green:#059669;--green-bg:#d1fae5;
   --amber:#d97706;--amber-bg:#fef3c7;
   --red:#dc2626;--red-bg:#fee2e2;
   --blue:#2563eb;--blue-bg:#dbeafe;
-  --teal:#0d9488;--teal-bg:#ccfbf1;
   --purple:#7c3aed;--purple-bg:#ede9fe;
-  --accent:#1e293b;--accent2:#0f172a;
-  --sidebar-w:240px;
-  --radius:10px;--radius-sm:6px;
+  --accent:#0f172a;--radius:10px;--sidebar-w:230px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:14px}
 .shell{display:flex;min-height:100vh}
 
-/* ── SIDEBAR ── */
-.sidebar{width:var(--sidebar-w);flex-shrink:0;background:var(--accent2);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:50;overflow-y:auto}
-.sb-logo{padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px}
-.sb-icon{width:32px;height:32px;background:var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
-.sb-title{font-size:13px;font-weight:700;color:#fff}
-.sb-sub{font-size:10px;color:rgba(255,255,255,.4);margin-top:1px}
-.sb-empresa{padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.06)}
-.sb-empresa select{width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#fff;padding:7px 10px;border-radius:6px;font-size:12px;cursor:pointer;outline:none}
-.sb-empresa select option{background:#1e293b;color:#fff}
-.sb-section{font-size:10px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.06em;padding:14px 16px 6px}
-.sb-item{display:flex;align-items:center;gap:9px;padding:8px 16px;font-size:12px;color:rgba(255,255,255,.6);cursor:pointer;border-left:2px solid transparent;transition:all .15s;user-select:none}
+/* SIDEBAR */
+.sidebar{width:var(--sidebar-w);flex-shrink:0;background:var(--accent);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:50;overflow-y:auto}
+.sb-logo{padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px}
+.sb-icon{width:34px;height:34px;background:#059669;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.sb-brand{font-size:13px;font-weight:700;color:#fff;line-height:1.2}
+.sb-brand-sub{font-size:10px;color:rgba(255,255,255,.35);margin-top:1px}
+.sb-section{font-size:9px;color:rgba(255,255,255,.25);text-transform:uppercase;letter-spacing:.08em;padding:14px 16px 5px}
+.sb-item{display:flex;align-items:center;gap:9px;padding:8px 16px;font-size:12px;color:rgba(255,255,255,.55);cursor:pointer;border-left:2px solid transparent;transition:all .15s;user-select:none}
 .sb-item:hover{color:#fff;background:rgba(255,255,255,.06)}
-.sb-item.active{color:#fff;border-left-color:var(--green);background:rgba(5,150,105,.12)}
-.sb-item svg{width:15px;height:15px;flex-shrink:0}
-.sb-badge{margin-left:auto;font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7)}
-.sb-badge.red{background:rgba(220,38,38,.2);color:#fca5a5}
-.sb-badge.green{background:rgba(5,150,105,.2);color:#6ee7b7}
-.sb-bottom{margin-top:auto;padding:14px 16px;border-top:1px solid rgba(255,255,255,.06)}
+.sb-item.active{color:#fff;border-left-color:#059669;background:rgba(5,150,105,.12)}
+.sb-item svg{width:15px;height:15px;flex-shrink:0;opacity:.7}
+.sb-item.active svg{opacity:1}
+.sb-badge{margin-left:auto;font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.6)}
+.sb-badge.alert{background:rgba(220,38,38,.25);color:#fca5a5}
+.sb-badge.green{background:rgba(5,150,105,.25);color:#6ee7b7}
+.sb-bottom{margin-top:auto;padding:12px 16px;border-top:1px solid rgba(255,255,255,.06);font-size:10px}
 
-/* ── MAIN ── */
-.main{margin-left:var(--sidebar-w);flex:1;overflow:auto;min-height:100vh}
-
-/* ── TOPBAR ── */
-.topbar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg2);position:sticky;top:0;z-index:40}
-.topbar-title{font-size:16px;font-weight:600;color:var(--text)}
-.topbar-right{display:flex;gap:8px;align-items:center}
-.btn{font-size:12px;padding:7px 14px;border:1px solid var(--border2);border-radius:var(--radius-sm);cursor:pointer;color:var(--muted);background:transparent;font-family:inherit;transition:all .15s;font-weight:500}
-.btn:hover{color:var(--text);border-color:var(--blue);background:var(--blue-bg)}
-.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
-.btn.primary:hover{opacity:.88}
-.btn.green{background:var(--green);color:#fff;border-color:var(--green)}
-.btn.green:hover{opacity:.88}
-.btn.danger{background:var(--red-bg);color:var(--red);border-color:#fecaca}
-
-/* ── PAGE WRAPPER ── */
+/* MAIN */
+.main{margin-left:var(--sidebar-w);flex:1;overflow:auto}
+.topbar{padding:14px 24px;border-bottom:1px solid var(--border);background:var(--bg2);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40}
+.topbar-title{font-size:16px;font-weight:600}
 .page{display:none;padding:24px}
 .page.active{display:block}
 
-/* ── MÉTRICAS ── */
-.metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
-.metric-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:18px;position:relative}
-.metric-label{font-size:11px;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
-.metric-val{font-size:22px;font-weight:700;line-height:1;color:var(--text)}
+/* BUTTONS */
+.btn{font-size:12px;padding:7px 14px;border:1px solid var(--border2);border-radius:7px;cursor:pointer;color:var(--muted);background:transparent;font-family:inherit;transition:all .15s;font-weight:500}
+.btn:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-bg)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn.primary:hover{opacity:.85}
+.btn.green{background:var(--green);color:#fff;border-color:var(--green)}
+.btn.green:hover{opacity:.85}
+.btn.amber{background:var(--amber);color:#fff;border-color:var(--amber)}
+.btn.red{background:var(--red-bg);color:var(--red);border-color:#fecaca}
+.btn.big{padding:11px 22px;font-size:14px;font-weight:600}
+
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:14px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.card-title{font-size:13px;font-weight:600}
+
+/* MÉTRICAS */
+.metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.metric-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.metric-label{font-size:11px;color:var(--muted);margin-bottom:6px}
+.metric-val{font-size:22px;font-weight:700;line-height:1}
 .metric-val.green{color:var(--green)}
 .metric-val.amber{color:var(--amber)}
 .metric-val.red{color:var(--red)}
-.metric-sub{font-size:11px;color:var(--hint);margin-top:6px}
-.metric-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.metric-val.blue{color:var(--blue)}
+.metric-sub{font-size:10px;color:var(--hint);margin-top:5px}
 
-/* ── CARDS ── */
-.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px}
-.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.card-title{font-size:13px;font-weight:600;color:var(--text)}
-.card-sub{font-size:11px;color:var(--muted);margin-top:2px}
+/* KANBAN */
+.kanban{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;align-items:start}
+.kanban-col{background:var(--bg3);border-radius:var(--radius);padding:12px;min-height:300px}
+.kanban-col-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--border)}
+.kanban-col-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.kanban-count{font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--bg2);border:1px solid var(--border)}
+.client-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;cursor:pointer;transition:all .2s;position:relative}
+.client-card:hover{border-color:var(--blue);box-shadow:0 2px 12px rgba(37,99,235,.1);transform:translateY(-1px)}
+.client-card-nome{font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px;line-height:1.3}
+.client-card-sub{font-size:10px;color:var(--muted)}
+.client-card-val{font-size:13px;font-weight:700;color:var(--text);margin-top:8px}
+.client-card-badge{display:inline-block;font-size:9px;padding:2px 7px;border-radius:20px;font-weight:600;margin-top:5px}
+.client-card-actions{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+.client-card-btn{font-size:10px;padding:4px 9px;border:1px solid var(--border);border-radius:5px;cursor:pointer;background:var(--bg3);color:var(--muted);font-family:inherit;transition:all .15s}
+.client-card-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-bg)}
+.client-card-btn.green{background:var(--green-bg);color:var(--green);border-color:#6ee7b7}
+.client-card-btn.amber{background:var(--amber-bg);color:var(--amber);border-color:#fcd34d}
 
-/* ── TABELAS ── */
+/* STATUS COLORS */
+.status-prospecto{color:#6366f1;background:#eef2ff;border-color:#c7d2fe}
+.status-analisando{color:var(--amber);background:var(--amber-bg);border-color:#fcd34d}
+.status-proposta{color:var(--blue);background:var(--blue-bg);border-color:#93c5fd}
+.status-negociando{color:var(--purple);background:var(--purple-bg);border-color:#c4b5fd}
+.status-ativo{color:var(--green);background:var(--green-bg);border-color:#6ee7b7}
+
+/* BADGES */
+.badge{font-size:10px;padding:3px 8px;border-radius:20px;font-weight:500;display:inline-block}
+.badge.ok{background:var(--green-bg);color:var(--green)}
+.badge.alerta{background:var(--amber-bg);color:var(--amber)}
+.badge.critico{background:var(--red-bg);color:var(--red)}
+.badge.info{background:var(--blue-bg);color:var(--blue)}
+.badge.gray{background:var(--bg3);color:var(--muted)}
+
+/* TABELAS */
 .table-wrap{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
 .table-head{display:grid;padding:10px 16px;background:var(--bg3);border-bottom:1px solid var(--border)}
 .th{font-size:10px;color:var(--hint);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
 .th.r{text-align:right}
-.table-row{display:grid;padding:12px 16px;border-bottom:1px solid var(--border);align-items:center;transition:background .12s;cursor:pointer}
+.table-row{display:grid;padding:12px 16px;border-bottom:1px solid var(--border);align-items:center;cursor:pointer;transition:background .12s}
 .table-row:last-child{border-bottom:none}
 .table-row:hover{background:var(--bg3)}
 .td{font-size:12px;color:var(--text)}
@@ -94,89 +120,51 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .td.muted{color:var(--muted);font-size:11px}
 .td.green{color:var(--green);font-weight:600}
 
-/* ── BADGES ── */
-.badge{font-size:10px;padding:3px 9px;border-radius:20px;font-weight:500;display:inline-block}
-.badge.critico{background:var(--red-bg);color:var(--red)}
-.badge.atencao{background:var(--amber-bg);color:var(--amber)}
-.badge.info{background:var(--blue-bg);color:var(--blue)}
-.badge.ok{background:var(--green-bg);color:var(--green)}
-.badge.purple{background:var(--purple-bg);color:var(--purple)}
-.badge.gray{background:var(--bg3);color:var(--muted)}
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;overflow:auto;padding:24px 16px}
+.modal-box{background:var(--bg2);border-radius:16px;width:100%;max-width:520px;margin:0 auto;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal-box.wide{max-width:800px}
+.modal-head{background:var(--accent);padding:18px 24px;display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-size:15px;font-weight:700;color:#fff}
+.modal-sub{font-size:11px;color:rgba(255,255,255,.4);margin-top:2px}
+.modal-close{background:rgba(255,255,255,.12);border:none;color:#fff;width:30px;height:30px;border-radius:7px;cursor:pointer;font-size:16px}
+.modal-body{padding:24px}
+.form-group{margin-bottom:16px}
+.form-label{font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;display:block}
+.form-input{width:100%;padding:10px 14px;border-radius:8px;border:1.5px solid #d1d5db;font-size:13px;background:#f9fafb;outline:none;font-family:inherit;transition:border .15s}
+.form-input:focus{border-color:var(--blue);background:#fff}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 
-/* ── TOGGLE ── */
+/* TOGGLE */
 .toggle{position:relative;width:40px;height:22px;background:#d1d5db;border-radius:11px;cursor:pointer;transition:background .2s;flex-shrink:0}
 .toggle.on{background:var(--green)}
 .toggle-dot{position:absolute;top:2px;left:2px;width:18px;height:18px;background:#fff;border-radius:50%;transition:left .2s}
 .toggle.on .toggle-dot{left:20px}
 
-/* ── CHARTS ── */
-.chart-wrap{position:relative;height:140px}
-.chart-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px}
+/* SPIN */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:36px;height:36px;border:3px solid #e5e7eb;border-top:3px solid var(--blue);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 14px}
 
-/* ── CLIENTE CARD ── */
-.cliente-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px;overflow:hidden}
-.cliente-card-header{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
-.cliente-card-header:hover{background:var(--bg3)}
-.cliente-nome{font-size:13px;font-weight:600;color:var(--text)}
-.cliente-uc{font-size:11px;color:var(--muted);margin-top:2px}
-.cliente-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:14px 18px;border-top:1px solid var(--border);background:var(--bg3)}
-.cli-m-label{font-size:10px;color:var(--muted);margin-bottom:3px}
-.cli-m-val{font-size:14px;font-weight:700}
-
-/* ── ALERT ITEM ── */
-.alert-item{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start}
+/* ALERT ITEM */
+.alert-item{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;gap:10px}
 .alert-item:last-child{border-bottom:none}
-.alert-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px}
-.alert-content{flex:1}
-.alert-titulo{font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px}
-.alert-desc{font-size:12px;color:var(--muted);line-height:1.5}
-.alert-meta{font-size:10px;color:var(--hint);margin-top:4px}
 
-/* ── INSIGHT ITEM (Análise IA) ── */
-.insight-item{padding:14px 16px;border-bottom:1px solid var(--border)}
-.insight-item:last-child{border-bottom:none}
-.insight-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
-.insight-titulo{font-size:13px;font-weight:500;color:var(--text)}
-.insight-meta{font-size:10px;color:var(--hint)}
-.insight-desc{font-size:12px;color:var(--muted);line-height:1.6}
+/* TIMELINE */
+.timeline{padding:0;list-style:none}
+.tl-item{display:flex;gap:12px;padding-bottom:16px;position:relative}
+.tl-item::before{content:'';position:absolute;left:15px;top:28px;width:2px;bottom:0;background:var(--border)}
+.tl-item:last-child::before{display:none}
+.tl-dot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.tl-content{flex:1;padding-top:4px}
+.tl-title{font-size:12px;font-weight:600}
+.tl-sub{font-size:11px;color:var(--muted);margin-top:2px}
 
-/* ── CONTESTAÇÃO ── */
-.cont-item{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
-.cont-item:last-child{border-bottom:none}
-.cont-id{font-size:11px;font-family:monospace;color:var(--blue);font-weight:600}
-.cont-tipo{font-size:11px;color:var(--muted)}
-.cont-valor{font-size:13px;font-weight:600;color:var(--text);margin-left:auto}
-
-/* ── EMPTY ── */
+/* EMPTY */
 .empty{padding:48px;text-align:center;color:var(--hint)}
 .empty-icon{font-size:36px;margin-bottom:12px}
-.empty-title{font-size:14px;font-weight:500;color:var(--muted);margin-bottom:6px}
 
-/* ── OVERLAY (Faturas Modal) ── */
-#faturasModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;overflow:auto;padding:32px 16px}
-.modal-box{background:#fff;border-radius:20px;width:100%;max-width:480px;box-shadow:0 16px 48px rgba(0,0,0,.2);overflow:hidden;margin:0 auto}
-.modal-header{background:var(--accent2);padding:20px 24px;display:flex;align-items:center;justify-content:space-between}
-.modal-title{font-size:15px;font-weight:700;color:#fff}
-.modal-close{background:rgba(255,255,255,.15);border:none;color:#fff;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px}
-.form-label{font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;display:block}
-.form-input{width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid #d1d5db;font-size:14px;background:#f9fafb;outline:none;font-family:inherit}
-.form-input:focus{border-color:var(--blue)}
-
-/* ── RECUPERAÇÃO TRIBUTÁRIA ── */
-.recup-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:10px}
-.recup-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.recup-uc{font-size:12px;font-family:monospace;font-weight:600;color:var(--text)}
-.recup-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.recup-m{background:var(--bg3);border-radius:6px;padding:10px}
-.recup-m-label{font-size:10px;color:var(--muted);margin-bottom:3px}
-.recup-m-val{font-size:13px;font-weight:600}
-
-/* ── MULTI UC ── */
-.multi-uc-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:14px}
-
-/* ── SCROLL ── */
+/* SCROLL */
 ::-webkit-scrollbar{width:5px}
-::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px}
 </style>
 </head>
@@ -188,1486 +176,929 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   <div class="sb-logo">
     <div class="sb-icon">⚡</div>
     <div>
-      <div class="sb-title">Amazônia Faturas</div>
-      <div class="sb-sub">Gestão Inteligente de Energia</div>
+      <div class="sb-brand">Trianon Energia</div>
+      <div class="sb-brand-sub">Gestão de Clientes</div>
     </div>
   </div>
-  <div class="sb-empresa">
-    <select id="filtroEmpresa" onchange="filtrarEmpresa(this.value)">
-      <option value="">Todas as Empresas</option>
-    </select>
+
+  <div class="sb-section">Pipeline</div>
+  <div class="sb-item active" id="sb-pipeline" onclick="navegar('pipeline',this)">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="3" height="12" rx="1"/><rect x="6" y="2" width="3" height="9" rx="1"/><rect x="11" y="2" width="4" height="6" rx="1"/></svg>
+    Kanban Clientes
+    <span class="sb-badge green" id="sb-n-ativos">0</span>
   </div>
-  <div class="sb-section">Principal</div>
-  <div class="sb-item active" id="sb-visao" onclick="navegar('visao',this)">
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
-    Visão Geral
+  <div class="sb-item" id="sb-novo" onclick="abrirModalNovoCliente()">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v6M5 8h6"/></svg>
+    + Novo Cliente
   </div>
-  <div class="sb-item" id="sb-faturas-page" onclick="navegar('faturas-page',this)">
+
+  <div class="sb-section">Análise</div>
+  <div class="sb-item" id="sb-faturas" onclick="navegar('faturas',this)">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h10a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"/><path d="M5 6h6M5 9h4"/></svg>
     Faturas
     <span class="sb-badge" id="sb-n-faturas">0</span>
   </div>
-  <div class="sb-item" id="sb-analise-ia" onclick="navegar('analise-ia',this)">
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
-    Análise IA
-    <span class="sb-badge" id="sb-n-insights">0</span>
-  </div>
-  <div class="sb-item" id="sb-clientes-page" onclick="navegar('clientes-page',this)">
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="6" r="3"/><path d="M2 14c0-3 2.7-5 6-5s6 2 6 5"/></svg>
-    Clientes
-    <span class="sb-badge green" id="sb-n-clientes">0</span>
-  </div>
-  <div class="sb-section">Análise</div>
-  <div class="sb-item" id="sb-alertas-page" onclick="navegar('alertas-page',this)">
+  <div class="sb-item" id="sb-alertas" onclick="navegar('alertas',this)">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2L2 13h12L8 2z"/><path d="M8 7v3M8 11.5v.5"/></svg>
     Alertas
-    <span class="sb-badge red" id="sb-n-alertas">0</span>
+    <span class="sb-badge alert" id="sb-n-alertas">0</span>
   </div>
-  <div class="sb-item" id="sb-recup" onclick="navegar('recup',this)">
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h12M8 2l4 6-4 6"/></svg>
-    Recup. Tributária
-  </div>
-  <div class="sb-item" id="sb-estrategico" onclick="navegar('estrategico',this)" style="margin:6px 8px;border-radius:8px;background:linear-gradient(135deg,rgba(5,150,105,.25),rgba(37,99,235,.15));border:1px solid rgba(5,150,105,.3);padding:10px 12px;color:#6ee7b7">
+  <div class="sb-item" id="sb-relatorios" onclick="navegar('relatorios',this)">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12l4-4 3 3 5-6"/></svg>
-    <span style="font-weight:700;font-size:13px">Estratégico</span>
-    <span style="margin-left:auto;font-size:9px;background:rgba(5,150,105,.3);padding:2px 6px;border-radius:10px;color:#6ee7b7">NOVO</span>
+    Relatórios Mensais
   </div>
-  <div class="sb-item" id="sb-multi-uc" onclick="navegar('multi-uc',this)">
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="10" rx="1"/><path d="M5 7h6M5 10h4"/></svg>
-    Consolidado Multi-UC
+
+  <div class="sb-section">Comercial</div>
+  <div class="sb-item" id="sb-propostas" onclick="navegar('propostas',this)">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12v8a1 1 0 01-1 1H3a1 1 0 01-1-1V4z"/><path d="M2 4l6 5 6-5"/></svg>
+    Propostas
+    <span class="sb-badge" id="sb-n-propostas">0</span>
   </div>
-  <div class="sb-item" id="sb-contestacao" onclick="navegar('contestacao',this)">
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11v1"/></svg>
-    Contestação
+  <div class="sb-item" id="sb-contratos" onclick="navegar('contratos',this)">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 1h8l3 3v11H1V1z"/><path d="M11 1v4h4"/><path d="M4 7h8M4 10h5"/></svg>
+    Contratos
   </div>
-  <div class="sb-section">Extração</div>
-  <div class="sb-item" id="sb-faturas" onclick="openFaturasModal();setSbActive(document.getElementById('sb-faturas'))">
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v6M5 8h6"/></svg>
-    Nova Extração
-  </div>
+
   <div class="sb-bottom">
-    <div style="font-size:10px;color:rgba(255,255,255,.3)">worker</div>
-    <div style="font-size:10px;color:#6ee7b7;margin-top:2px">● Railway · online</div>
+    <div style="color:rgba(255,255,255,.3);font-size:10px;margin-bottom:3px">worker</div>
+    <div id="sb-worker-status" style="font-size:10px;color:#6ee7b7">● Railway · online</div>
   </div>
 </div>
 
 <!-- MAIN -->
 <div class="main">
-
-  <!-- TOPBAR -->
   <div class="topbar">
-    <div id="topbar-title" class="topbar-title">Visão Geral</div>
-    <div class="topbar-right">
+    <div id="topbar-title" class="topbar-title">Kanban Clientes</div>
+    <div style="display:flex;gap:8px;align-items:center">
       <button class="btn" onclick="carregarDados()">↻ Atualizar</button>
-      <button class="btn primary" onclick="openFaturasModal()">+ Nova Extração</button>
+      <button class="btn green big" onclick="abrirModalNovoCliente()">+ Novo Cliente</button>
     </div>
   </div>
 
-  <!-- ══ VISÃO GERAL ══ -->
-  <div id="page-visao" class="page active">
-    <div class="metrics-grid">
-      <div class="metric-card">
-        <div class="metric-label">Custo Total <span>📄</span></div>
-        <div class="metric-val" id="m-custo">—</div>
-        <div class="metric-sub" id="m-custo-sub">faturas</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-label">Economia Identificada <span>📉</span></div>
-        <div class="metric-val green" id="m-eco">—</div>
-        <div class="metric-sub" id="m-eco-pct">do total faturado</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-label">Faturas Analisadas <span>✅</span></div>
-        <div class="metric-val" id="m-faturas">—</div>
-        <div class="metric-sub" id="m-faturas-sub">UCs monitoradas</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-label">Alertas Ativos <span>⚠️</span></div>
-        <div class="metric-val red" id="m-alertas">—</div>
-        <div class="metric-sub">ação recomendada</div>
-      </div>
+  <!-- ══ KANBAN ══ -->
+  <div id="page-pipeline" class="page active">
+    <!-- Métricas topo -->
+    <div class="metrics-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:20px">
+      <div class="metric-card"><div class="metric-label">Prospectos</div><div class="metric-val blue" id="kpi-prospectos">0</div></div>
+      <div class="metric-card"><div class="metric-label">Em Análise</div><div class="metric-val amber" id="kpi-analisando">0</div></div>
+      <div class="metric-card"><div class="metric-label">Proposta Enviada</div><div class="metric-val" id="kpi-proposta">0</div></div>
+      <div class="metric-card"><div class="metric-label">Negociando</div><div class="metric-val" style="color:var(--purple)" id="kpi-negociando">0</div></div>
+      <div class="metric-card"><div class="metric-label">Clientes Ativos</div><div class="metric-val green" id="kpi-ativos">0</div><div class="metric-sub" id="kpi-mrr">R$ 0/mês</div></div>
     </div>
 
-    <h3 style="font-size:14px;font-weight:600;margin-bottom:14px">Visão por Cliente</h3>
-    <div id="clientes-visao-geral"></div>
+    <!-- Colunas Kanban -->
+    <div class="kanban" id="kanban-board"></div>
   </div>
 
   <!-- ══ FATURAS ══ -->
-  <div id="page-faturas-page" class="page">
+  <div id="page-faturas" class="page">
     <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
-      <select id="filtro-cliente" onchange="renderFaturas()" style="padding:8px 12px;border:1px solid var(--border2);border-radius:8px;font-size:12px;background:var(--bg2);cursor:pointer">
+      <select id="filtro-cliente-fat" onchange="renderFaturas()" style="padding:8px 12px;border:1px solid var(--border2);border-radius:8px;font-size:12px;background:var(--bg2)">
         <option value="">Todos os Clientes</option>
       </select>
-      <select id="filtro-uc" onchange="renderFaturas()" style="padding:8px 12px;border:1px solid var(--border2);border-radius:8px;font-size:12px;background:var(--bg2);cursor:pointer">
+      <select id="filtro-uc-fat" onchange="renderFaturas()" style="padding:8px 12px;border:1px solid var(--border2);border-radius:8px;font-size:12px;background:var(--bg2)">
         <option value="">Todas as UCs</option>
       </select>
-      <select id="filtro-status-fat" onchange="renderFaturas()" style="padding:8px 12px;border:1px solid var(--border2);border-radius:8px;font-size:12px;background:var(--bg2);cursor:pointer">
-        <option value="">Todos os Status</option>
-        <option value="ABER">Em Aberto</option>
-        <option value="PAGA">Paga</option>
-      </select>
-      <span style="font-size:12px;color:var(--muted);display:flex;align-items:center" id="fat-count"></span>
+      <span id="fat-count" style="font-size:12px;color:var(--muted);display:flex;align-items:center"></span>
     </div>
     <div id="faturas-lista"></div>
   </div>
 
-  <!-- ══ ANÁLISE IA ══ -->
-  <div id="page-analise-ia" class="page">
-    <div style="margin-bottom:14px;display:flex;align-items:center;gap:8px">
-      <span style="font-size:13px;font-weight:600">Análise IA por Cliente</span>
-      <span id="insights-total-badge" class="badge info">0 insights</span>
-    </div>
-    <div id="analise-ia-lista"></div>
-  </div>
-
-  <!-- ══ CLIENTES ══ -->
-  <div id="page-clientes-page" class="page">
-    <div class="table-wrap">
-      <div class="table-head" style="grid-template-columns:2fr 1fr 1fr 1fr 100px">
-        <div class="th">Cliente</div>
-        <div class="th">CNPJ</div>
-        <div class="th r">Faturas</div>
-        <div class="th r">Economia/ano</div>
-        <div class="th r">Score</div>
-      </div>
-      <div id="clientes-lista"></div>
-    </div>
-  </div>
-
   <!-- ══ ALERTAS ══ -->
-  <div id="page-alertas-page" class="page">
-    <div style="display:flex;gap:10px;margin-bottom:16px">
-      <select id="filtro-alerta-sev" onchange="renderAlertas()" style="padding:8px 12px;border:1px solid var(--border2);border-radius:8px;font-size:12px;background:var(--bg2);cursor:pointer">
-        <option value="">Todas as Severidades</option>
-        <option value="critico">Crítico</option>
-        <option value="atencao">Atenção</option>
-        <option value="info">Info</option>
-      </select>
-    </div>
+  <div id="page-alertas" class="page">
     <div class="card" style="padding:0">
       <div id="alertas-lista"></div>
     </div>
   </div>
 
-  <!-- ══ RECUPERAÇÃO TRIBUTÁRIA ══ -->
-  <div id="page-recup" class="page">
-    <div class="metrics-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
-      <div class="metric-card">
-        <div class="metric-label">Casos Ativos</div>
-        <div class="metric-val" id="recup-casos">—</div>
-        <div class="metric-sub">recuperação tributária</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-label">Total Faturado Analisado</div>
-        <div class="metric-val" id="recup-faturado">—</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-label">Créditos Identificados</div>
-        <div class="metric-val green" id="recup-creditos">R$ 0,00</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-label">Estimativa Base Total</div>
-        <div class="metric-val amber" id="recup-estimativa">—</div>
-      </div>
+  <!-- ══ RELATÓRIOS MENSAIS ══ -->
+  <div id="page-relatorios" class="page">
+    <div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+      <p style="font-size:13px;color:var(--muted)">Relatórios gerados mensalmente para clientes com contrato ativo.</p>
+      <button class="btn green" onclick="gerarRelatoriosMensais()">⚡ Gerar Relatórios do Mês</button>
     </div>
-
-    <div class="card" style="margin-bottom:16px;background:var(--amber-bg);border-color:#fde68a">
-      <div style="font-size:12px;font-weight:600;color:var(--amber);margin-bottom:6px">⚖️ Base Legal</div>
-      <div style="font-size:12px;color:#92400e;line-height:1.6">
-        Lei 14.385/2022 — Exclusão do ICMS da base de cálculo do PIS/Pasep e da Cofins das distribuidoras de energia.
-        ADI 7324 (STF) — Confirmação da constitucionalidade. Prazo prescricional de 10 anos.
-      </div>
-      <div style="font-size:11px;color:var(--red);margin-top:8px;font-weight:500">
-        ⚠️ Este módulo NÃO afirma automaticamente a existência de crédito líquido exigível. Toda análise requer revisão humana.
-      </div>
-    </div>
-
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <h3 style="font-size:13px;font-weight:600">Casos de Recuperação Tributária</h3>
-      <button class="btn green" onclick="novoRecup()">+ Novo Caso</button>
-    </div>
-    <div id="recup-lista"></div>
+    <div id="relatorios-lista"></div>
   </div>
 
-  <!-- ══ ESTRATÉGICO ══ -->
-  <div id="page-estrategico" class="page">
-    <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
-      <button id="tab-servicos" onclick="switchTab('servicos')" style="padding:8px 20px;border-radius:20px;border:none;background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer">📋 Serviços por Cliente</button>
-      <button id="tab-mercado" onclick="switchTab('mercado')" style="padding:8px 20px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--muted);font-size:13px;font-weight:500;cursor:pointer">🏭 Simulador Mercado Livre</button>
-    </div>
-    <div id="tab-servicos-content"><div id="estrategico-lista"></div></div>
-    <div id="tab-mercado-content" style="display:none">
-      <div class="card" style="margin-bottom:16px">
-        <div class="card-header">
-          <div>
-            <div class="card-title">⚡ Simulador de Viabilidade — Mercado Livre</div>
-            <div class="card-sub">Baseado nos dados reais das faturas extraídas</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-          <select id="ml-uc" onchange="simularML()" style="flex:1;padding:10px 14px;border:1px solid var(--border2);border-radius:8px;font-size:13px;background:var(--bg2);cursor:pointer">
-            <option value="">Selecione uma UC para simular</option>
-          </select>
-          <div style="display:flex;gap:8px;align-items:center">
-            <label style="font-size:12px;color:var(--muted)">Desconto ML:</label>
-            <input id="ml-desconto" type="number" value="15" min="1" max="40" onchange="simularML()" style="width:60px;padding:8px;border:1px solid var(--border2);border-radius:6px;font-size:13px;text-align:center">
-            <span style="font-size:12px;color:var(--muted)">%</span>
-          </div>
-        </div>
-      </div>
-      <div id="ml-resultado"></div>
-    </div>
+  <!-- ══ PROPOSTAS ══ -->
+  <div id="page-propostas" class="page">
+    <div id="propostas-lista"></div>
   </div>
 
-  <!-- ══ CONSOLIDADO MULTI-UC ══ -->
-  <div id="page-multi-uc" class="page">
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <div class="card-title">Análise Consolidada Multi-UC</div>
-          <div class="card-sub">Selecione uma empresa para ver análise de todas as UCs agrupadas</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:10px;align-items:center">
-        <select id="multi-uc-empresa" style="flex:1;padding:10px 14px;border:1px solid var(--border2);border-radius:8px;font-size:13px;background:var(--bg2);cursor:pointer">
-          <option value="">Selecione uma empresa / CNPJ</option>
-        </select>
-        <button class="btn primary" onclick="gerarMultiUC()">Gerar Análise</button>
-      </div>
-    </div>
-    <div id="multi-uc-resultado"></div>
+  <!-- ══ CONTRATOS ══ -->
+  <div id="page-contratos" class="page">
+    <div id="contratos-lista"></div>
   </div>
+</div>
+</div>
 
-  <!-- ══ CONTESTAÇÃO ══ -->
-  <div id="page-contestacao" class="page">
-    <div class="metrics-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
-      <div class="metric-card">
-        <div class="metric-label">Total de Casos</div>
-        <div class="metric-val" id="cont-total">0</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-label">Valor Total</div>
-        <div class="metric-val amber" id="cont-valor">R$ 0</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-label">Gerados</div>
-        <div class="metric-val blue" id="cont-gerados">0</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-label">Concluídos</div>
-        <div class="metric-val green" id="cont-concluidos">0</div>
-      </div>
-    </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <h3 style="font-size:13px;font-weight:600">Casos de Contestação</h3>
-      <button class="btn green" onclick="gerarContestacoes()">⚡ Gerar Automaticamente</button>
-    </div>
-    <div class="card" style="padding:0">
-      <div id="contestacao-lista"></div>
-    </div>
-  </div>
-
-</div><!-- /main -->
-</div><!-- /shell -->
-
-<!-- ══ MODAL NOVA EXTRAÇÃO ══ -->
-<div id="faturasModal">
+<!-- ══ MODAL NOVO CLIENTE ══ -->
+<div id="modalNovoCliente" class="modal-bg">
   <div class="modal-box">
-    <div class="modal-header">
+    <div class="modal-head">
       <div>
-        <div class="modal-title">⚡ Nova Extração</div>
-        <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px">Amazonas Energia · portal do cliente</div>
+        <div class="modal-title">+ Novo Cliente</div>
+        <div class="modal-sub">Informe as credenciais — o resto é automático</div>
       </div>
-      <button class="modal-close" onclick="closeFaturasModal()">✕</button>
+      <button class="modal-close" onclick="fecharModal('modalNovoCliente')">✕</button>
     </div>
-    <div id="faturasForm" style="padding:24px">
-      <div style="margin-bottom:14px">
-        <label class="form-label">CPF ou CNPJ *</label>
-        <input id="fm-cpf" class="form-input" type="text" placeholder="000.000.000-00" oninput="this.value=formatCpf(this.value)" />
+    <div id="form-novo-cliente" class="modal-body">
+      <div class="form-group">
+        <label class="form-label">CPF ou CNPJ do portal Amazonas Energia *</label>
+        <input id="nc-cpf" class="form-input" type="text" placeholder="00.000.000/0001-00" oninput="this.value=formatDoc(this.value)">
       </div>
-      <div style="margin-bottom:14px">
-        <label class="form-label">Senha *</label>
-        <input id="fm-senha" class="form-input" type="password" placeholder="Senha do portal" onkeydown="if(event.key==='Enter')enviarExtracao()" />
+      <div class="form-group">
+        <label class="form-label">Senha do portal *</label>
+        <input id="nc-senha" class="form-input" type="password" placeholder="Senha de acesso">
       </div>
-      <div style="margin-bottom:14px">
-        <label class="form-label">Período</label>
-        <select id="fm-meses" class="form-input">
-          <option value="1">Último mês</option>
-          <option value="3">Últimos 3 meses</option>
-          <option value="6">Últimos 6 meses</option>
-          <option value="12" selected>Últimos 12 meses</option>
-          <option value="24">Últimos 24 meses</option>
-          <option value="36">Últimos 36 meses</option>
-        </select>
+      <div class="form-group">
+        <label class="form-label">E-mail do cliente <span style="font-weight:400;color:var(--hint)">(para envio de relatórios)</span></label>
+        <input id="nc-email" class="form-input" type="email" placeholder="cliente@empresa.com">
       </div>
-      <div style="margin-bottom:14px">
-        <label class="form-label">UCs específicas <span style="font-weight:400;color:var(--hint)">(opcional)</span></label>
-        <input id="fm-ucs" class="form-input" type="text" placeholder="Ex: 21300, 6021263" />
-        <p style="font-size:11px;color:var(--hint);margin-top:4px">Separe por vírgula. Vazio = todas as UCs.</p>
-      </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0;margin-bottom:18px">
+      <div style="display:flex;align-items:center;justify-content:space-between;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px 14px;margin-bottom:18px">
         <div>
-          <div style="font-size:13px;font-weight:600;color:#166534">🔔 Monitorar faturas novas</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:2px">Busca automática mensal</div>
+          <div style="font-size:13px;font-weight:600;color:#166534">🔔 Monitoramento mensal automático</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Baixa e analisa nova fatura todo mês</div>
         </div>
-        <div id="fm-toggle" class="toggle" onclick="this.classList.toggle('on')"><div class="toggle-dot"></div></div>
+        <div id="nc-toggle" class="toggle on" onclick="this.classList.toggle('on')"><div class="toggle-dot"></div></div>
       </div>
-      <div id="fm-error" style="display:none;background:var(--red-bg);border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin-bottom:14px;color:var(--red);font-size:12px"></div>
-      <button id="fm-btn" onclick="enviarExtracao()" class="btn primary" style="width:100%;padding:13px;font-size:14px">⚡ Buscar Faturas</button>
+      <div id="nc-error" style="display:none;background:var(--red-bg);border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin-bottom:14px;color:var(--red);font-size:12px"></div>
+      <button id="nc-btn" class="btn green" style="width:100%;padding:13px;font-size:14px" onclick="iniciarExtracao()">⚡ Buscar Faturas Automaticamente</button>
     </div>
-    <div id="faturasStatus" style="display:none;padding:24px">
+    <div id="status-extracao" style="display:none;padding:24px">
       <div style="text-align:center;padding:8px 0 20px">
-        <div id="fs-icon" style="font-size:36px;margin-bottom:12px">⏳</div>
-        <div id="fs-title" style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">Processando...</div>
-        <div id="fs-sub" style="font-size:12px;color:var(--muted);line-height:1.5"></div>
+        <div id="ext-icon" style="font-size:40px;margin-bottom:12px">⏳</div>
+        <div id="ext-titulo" style="font-size:16px;font-weight:700;margin-bottom:6px">Extraindo faturas...</div>
+        <div id="ext-sub" style="font-size:12px;color:var(--muted);line-height:1.5"></div>
       </div>
-      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px">
-        <div style="font-size:10px;font-weight:700;color:var(--hint);text-transform:uppercase;margin-bottom:8px">log</div>
-        <div id="fs-log" style="font-size:11px;color:var(--muted);line-height:1.9"></div>
+      <div style="background:var(--bg3);border-radius:8px;padding:12px;margin-bottom:16px">
+        <div style="font-size:10px;font-weight:700;color:var(--hint);text-transform:uppercase;margin-bottom:8px">Progresso</div>
+        <div id="ext-log" style="font-size:11px;color:var(--muted);line-height:2"></div>
       </div>
-      <button id="fs-close-btn" onclick="closeFaturasModal();navegar('visao',document.getElementById('sb-visao'));carregarDados()" style="display:none;width:100%;padding:11px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--text);font-size:13px;cursor:pointer;font-weight:600">✓ Ver no portfólio</button>
+      <button id="ext-btn-ver" onclick="fecharModal('modalNovoCliente');navegar('pipeline',document.getElementById('sb-pipeline'));carregarDados()" style="display:none;width:100%;padding:12px;border-radius:8px;border:1px solid var(--border2);background:var(--green);color:#fff;font-size:14px;cursor:pointer;font-weight:600">✓ Ver cliente no Kanban</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL CLIENTE (detalhes + ações) ══ -->
+<div id="modalCliente" class="modal-bg">
+  <div class="modal-box wide">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title" id="mc-titulo">Cliente</div>
+        <div class="modal-sub" id="mc-sub"></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="modal-close" onclick="fecharModal('modalCliente')">✕</button>
+      </div>
+    </div>
+    <div class="modal-body" id="mc-body"></div>
+  </div>
+</div>
+
+<!-- ══ MODAL ANÁLISE COMPLETA ══ -->
+<div id="modalAnalise" class="modal-bg">
+  <div class="modal-box wide">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title" id="ma-titulo">Análise Completa</div>
+        <div class="modal-sub">Diagnóstico executivo gerado por IA</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="imprimirAnalise()" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;padding:6px 12px;border-radius:7px;cursor:pointer;font-size:11px">🖨 Imprimir</button>
+        <button class="modal-close" onclick="fecharModal('modalAnalise')">✕</button>
+      </div>
+    </div>
+    <div style="padding:24px;max-height:78vh;overflow-y:auto" id="ma-body">
+      <div style="text-align:center;padding:40px">
+        <div class="spinner"></div>
+        <div style="font-size:13px;color:var(--muted)">Gerando diagnóstico executivo...</div>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
-const SUPABASE_URL = "https://shaihalexolocjjkkpoh.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNoYWloYWxleG9sb2NqamtrcG9oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwMDA2ODUsImV4cCI6MjA5MDU3NjY4NX0.TfMwnhlu-TDZY2n_hxIhpUdXQEOdbr14SuH2e8R9cH8";
-const RAILWAY_URL = "https://saas-faturas-production.up.railway.app";
-const MESES_ABREV = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+const SB = 'https://shaihalexolocjjkkpoh.supabase.co';
+const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNoYWloYWxleG9sb2NqamtrcG9oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwMDA2ODUsImV4cCI6MjA5MDU3NjY4NX0.TfMwnhlu-TDZY2n_hxIhpUdXQEOdbr14SuH2e8R9cH8';
+const RW = 'https://saas-faturas-production.up.railway.app';
 
-let DADOS = { faturas:[], analises:[], alertas:[], empresas:[], contestacoes:[], recup:[] };
-let _ucClienteMap = {}; // uc -> nome
-let EMPRESA_FILTRO = "";
-let _pollInterval = null;
-let _histCharts = {};
+let D = { clientes:[], faturas:[], analises:[], alertas:[], propostas:[], contratos:[], relatorios:[] };
+let _poll = null;
+let _analiseCache = {};
 
-async function sbGet(ep){
-  const r = await fetch(`${SUPABASE_URL}/rest/v1/${ep}`,{headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`}});
-  return r.json();
-}
-async function sbPost(ep,body){
-  const r = await fetch(`${SUPABASE_URL}/rest/v1/${ep}`,{method:'POST',headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify(body)});
-  return r.json();
-}
+// ── API ──────────────────────────────────────────────────────────────────────
+async function sbGet(ep){ const r=await fetch(SB+'/rest/v1/'+ep,{headers:{apikey:KEY,Authorization:'Bearer '+KEY}}); return r.json(); }
+async function sbPost(ep,body){ const r=await fetch(SB+'/rest/v1/'+ep,{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify(body)}); return r.json(); }
+async function sbPatch(ep,body){ const r=await fetch(SB+'/rest/v1/'+ep,{method:'PATCH',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:JSON.stringify(body)}); return r.ok; }
 
-// ── NAVEGAÇÃO ──
-function navegar(page, el){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
-  document.getElementById('page-'+page).classList.add('active');
-  if(el) el.classList.add('active');
-  const titles = {
-    'visao':'Visão Geral','faturas-page':'Faturas','analise-ia':'Análise IA',
-    'clientes-page':'Clientes','alertas-page':'Alertas Automáticos',
-    'recup':'Recuperação Tributária','multi-uc':'Consolidado Multi-UC',
-    'contestacao':'Contestação de Faturas'
-  };
-  document.getElementById('topbar-title').textContent = titles[page]||page;
-  // Render on demand
-  if(page==='faturas-page') renderFaturas();
-  if(page==='analise-ia') renderAnaliseIA();
-  if(page==='clientes-page') renderClientes();
-  if(page==='alertas-page') renderAlertas();
-  if(page==='recup') renderRecup();
-  if(page==='estrategico') renderEstrategico();
-  if(page==='contestacao') renderContestacao();
-}
-function setSbActive(el){document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));if(el)el.classList.add('active');}
-
-// ── CARREGAR DADOS ──
+// ── CARREGAR DADOS ───────────────────────────────────────────────────────────
 async function carregarDados(){
-  try{
-    const [faturas, analises, alertas, empresas, contestacoes, recup] = await Promise.all([
-      sbGet("faturas_parsed?select=*,faturas_analise(*)&order=parsed_at.desc&limit=200"),
-      sbGet("faturas_analise?select=*&order=analyzed_at.desc&limit=200"),
-      sbGet("alertas_de_fatura?select=*&order=created_at.desc&limit=200"),
-      sbGet("empresas?select=*&order=nome"),
-      sbGet("contestacoes?select=*&order=created_at.desc"),
-      sbGet("casos_recuperacao_tributaria?select=*&order=created_at.desc"),
-    ]);
-    DADOS.faturas    = Array.isArray(faturas)      ? faturas      : [];
-    DADOS.analises   = Array.isArray(analises)     ? analises     : [];
-    DADOS.alertas    = Array.isArray(alertas)      ? alertas      : [];
-    DADOS.empresas   = Array.isArray(empresas)     ? empresas     : [];
-    DADOS.contestacoes = Array.isArray(contestacoes)? contestacoes: [];
-    DADOS.recup      = Array.isArray(recup)        ? recup        : [];
+  var [clientes,faturas,analises,alertas,propostas,contratos,relatorios] = await Promise.all([
+    sbGet('clientes?select=*&order=custo_medio.desc.nullslast'),
+    sbGet('faturas_parsed?select=*,faturas_analise(*)&order=parsed_at.desc&limit=300'),
+    sbGet('faturas_analise?select=*&order=analyzed_at.desc&limit=300'),
+    sbGet('alertas_de_fatura?select=*&order=created_at.desc&limit=200'),
+    sbGet('propostas?select=*&order=created_at.desc'),
+    sbGet('contratos?select=*&order=created_at.desc'),
+    sbGet('relatorios_mensais?select=*&order=created_at.desc&limit=50'),
+  ]);
+  D.clientes   = Array.isArray(clientes)   ? clientes   : [];
+  D.faturas    = Array.isArray(faturas)    ? faturas    : [];
+  D.analises   = Array.isArray(analises)   ? analises   : [];
+  D.alertas    = Array.isArray(alertas)    ? alertas    : [];
+  D.propostas  = Array.isArray(propostas)  ? propostas  : [];
+  D.contratos  = Array.isArray(contratos)  ? contratos  : [];
+  D.relatorios = Array.isArray(relatorios) ? relatorios : [];
+  renderAtivo();
+}
 
-    popularFiltros();
-    renderVisaoGeral();
-    atualizarBadges();
-    // Re-renderiza a seção ativa para mostrar novos dados
-    const pagesAtivas = ['faturas-page','analise-ia','clientes-page','alertas-page','recup','estrategico','multi-uc','contestacao'];
-    pagesAtivas.forEach(function(p){
-      const el = document.getElementById('page-'+p);
-      if(el && el.classList.contains('active')){
-        if(p==='faturas-page') renderFaturas();
-        else if(p==='analise-ia') renderAnaliseIA();
-        else if(p==='clientes-page') renderClientes();
-        else if(p==='alertas-page') renderAlertas();
-        else if(p==='recup') renderRecup();
-        else if(p==='estrategico') renderEstrategico();
-        else if(p==='contestacao') renderContestacao();
-      }
-    });
-  } catch(e){ console.error('Erro carregarDados:', e); }
+function renderAtivo(){
+  var pages = ['pipeline','faturas','alertas','relatorios','propostas','contratos'];
+  pages.forEach(function(p){
+    if(document.getElementById('page-'+p)?.classList.contains('active')){
+      if(p==='pipeline') renderKanban();
+      else if(p==='faturas') renderFaturas();
+      else if(p==='alertas') renderAlertas();
+      else if(p==='relatorios') renderRelatorios();
+      else if(p==='propostas') renderPropostas();
+      else if(p==='contratos') renderContratos();
+    }
+  });
+  atualizarBadges();
 }
 
 function atualizarBadges(){
-  const f = DADOS.faturas;
-  const a = DADOS.alertas.filter(x=>!x.resolvido);
-  document.getElementById('sb-n-faturas').textContent  = f.length;
-  document.getElementById('sb-n-alertas').textContent  = a.length;
-  document.getElementById('sb-n-insights').textContent = DADOS.analises.reduce((s,a)=>{
-    const al = a.alertas;
-    return s + (Array.isArray(al)?al.length:0);
-  },0);
-  document.getElementById('sb-n-clientes').textContent = DADOS.empresas.length || [...new Set(f.map(x=>x.cliente_nome).filter(Boolean))].length;
-  document.getElementById('insights-total-badge').textContent = document.getElementById('sb-n-insights').textContent + ' insights';
+  var ativos = D.clientes.filter(function(c){return c.status==='ativo';}).length;
+  document.getElementById('sb-n-ativos').textContent = ativos;
+  document.getElementById('sb-n-faturas').textContent = D.faturas.length;
+  document.getElementById('sb-n-alertas').textContent = D.alertas.filter(function(a){return !a.resolvido;}).length;
+  document.getElementById('sb-n-propostas').textContent = D.propostas.filter(function(p){return p.status==='rascunho'||p.status==='enviada';}).length;
+
+  // KPIs Kanban
+  var st = {prospecto:0,analisando:0,proposta:0,negociando:0,ativo:0};
+  D.clientes.forEach(function(c){ if(st[c.status]!==undefined) st[c.status]++; });
+  var mrr = D.clientes.filter(function(c){return c.status==='ativo';}).reduce(function(s,c){return s+(parseFloat(c.valor_mensal)||500)*((c.ucs||[]).length||1);},0);
+  document.getElementById('kpi-prospectos').textContent = st.prospecto;
+  document.getElementById('kpi-analisando').textContent = st.analisando;
+  document.getElementById('kpi-proposta').textContent   = st.proposta;
+  document.getElementById('kpi-negociando').textContent = st.negociando;
+  document.getElementById('kpi-ativos').textContent     = st.ativo;
+  document.getElementById('kpi-mrr').textContent        = 'R$ '+mrr.toLocaleString('pt-BR')+'/mês';
 }
 
-function popularFiltros(){
-  const nomes = [...new Set(DADOS.faturas.map(f=>f.cliente_nome).filter(Boolean))].sort();
-  const ucs   = [...new Set(DADOS.faturas.map(f=>f.uc).filter(Boolean))].sort();
-  // sidebar empresa filter
-  const sel = document.getElementById('filtroEmpresa');
-  sel.innerHTML = '<option value="">Todas as Empresas</option>' + nomes.map(n=>`<option value="${n}">${n.slice(0,35)}</option>`).join('');
-  // faturas filters
-  const fc = document.getElementById('filtro-cliente');
-  if(fc) fc.innerHTML = '<option value="">Todos os Clientes</option>' + nomes.map(n=>`<option value="${n}">${n.slice(0,40)}</option>`).join('');
-  const fu = document.getElementById('filtro-uc');
-  if(fu) fu.innerHTML = '<option value="">Todas as UCs</option>' + ucs.map(u=>`<option value="${u}">UC ${u}</option>`).join('');
-  // multi-uc empresa
-  const mu = document.getElementById('multi-uc-empresa');
-  if(mu) mu.innerHTML = '<option value="">Selecione uma empresa / CNPJ</option>' + nomes.map(n=>`<option value="${n}">${n.slice(0,50)}</option>`).join('');
+// ── NAVEGAÇÃO ────────────────────────────────────────────────────────────────
+function navegar(page, el){
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.sb-item').forEach(function(i){i.classList.remove('active');});
+  document.getElementById('page-'+page).classList.add('active');
+  if(el) el.classList.add('active');
+  var titles = {pipeline:'Kanban Clientes',faturas:'Faturas',alertas:'Alertas',relatorios:'Relatórios Mensais',propostas:'Propostas Comerciais',contratos:'Contratos'};
+  document.getElementById('topbar-title').textContent = titles[page]||page;
+  if(page==='pipeline') renderKanban();
+  else if(page==='faturas') renderFaturas();
+  else if(page==='alertas') renderAlertas();
+  else if(page==='relatorios') renderRelatorios();
+  else if(page==='propostas') renderPropostas();
+  else if(page==='contratos') renderContratos();
 }
 
-function filtrarEmpresa(v){
-  EMPRESA_FILTRO = v;
-  renderVisaoGeral();
-}
+// ── KANBAN ───────────────────────────────────────────────────────────────────
+var COLUNAS = [
+  {key:'prospecto', label:'🔍 Prospecto',  cor:'#6366f1'},
+  {key:'analisando',label:'📊 Analisando', cor:'#d97706'},
+  {key:'proposta',  label:'📧 Proposta',   cor:'#2563eb'},
+  {key:'negociando',label:'🤝 Negociando', cor:'#7c3aed'},
+  {key:'ativo',     label:'✅ Ativo',      cor:'#059669'},
+];
 
-function faturasFiltradas(){
-  return EMPRESA_FILTRO ? DADOS.faturas.filter(f=>f.cliente_nome===EMPRESA_FILTRO) : DADOS.faturas;
-}
-
-// ── VISÃO GERAL ──
-function renderVisaoGeral(){
-  const fat = faturasFiltradas();
-  const custoTotal = fat.reduce((s,f)=>s+(f.total_a_pagar||0),0);
-  const analises   = fat.map(f=>{
-    const a = Array.isArray(f.faturas_analise) ? f.faturas_analise[0] : (f.faturas_analise||{});
-    return a;
-  }).filter(a=>a&&a.potencial_economia_anual);
-  const ecoTotal = analises.reduce((s,a)=>s+(a.potencial_economia_anual||0),0);
-  const pct = custoTotal>0 ? ((ecoTotal/(custoTotal*12||1))*100).toFixed(1) : 0;
-  const alertasAtivos = DADOS.alertas.filter(a=>!a.resolvido).length;
-
-  document.getElementById('m-custo').textContent     = 'R$ ' + custoTotal.toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0});
-  document.getElementById('m-custo-sub').textContent = fat.length + ' faturas';
-  document.getElementById('m-eco').textContent       = 'R$ ' + ecoTotal.toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0});
-  document.getElementById('m-eco-pct').textContent   = '↗ ' + pct + '%';
-  document.getElementById('m-faturas').textContent   = fat.length;
-  document.getElementById('m-faturas-sub').textContent = [...new Set(fat.map(f=>f.uc))].length + ' UCs';
-  document.getElementById('m-alertas').textContent   = alertasAtivos;
-
-  // Agrupa por cliente
-  const porCliente = {};
-  for(const f of fat){
-    const nome = f.cliente_nome || f.uc;
-    if(!porCliente[nome]) porCliente[nome] = {nome, uc:f.uc, faturas:[], analise:null};
-    porCliente[nome].faturas.push(f);
-    if(!porCliente[nome].analise){
-      const a = Array.isArray(f.faturas_analise)?f.faturas_analise[0]:(f.faturas_analise||null);
-      if(a) porCliente[nome].analise = a;
-    }
-  }
-
-  const cont = document.getElementById('clientes-visao-geral');
-  cont.innerHTML = '';
-  Object.values(porCliente).sort((a,b)=>{
-    const ecoA = a.analise?.potencial_economia_anual||0;
-    const ecoB = b.analise?.potencial_economia_anual||0;
-    return ecoB-ecoA;
-  }).forEach(cli => {
-    const totalPago = cli.faturas.reduce((s,f)=>s+(f.total_a_pagar||0),0);
-    const eco = cli.analise?.potencial_economia_anual||0;
-    const score = cli.analise?.score_eficiencia||100;
-    const analisadas = cli.faturas.filter(f=>Array.isArray(f.faturas_analise)?f.faturas_analise.length>0:!!f.faturas_analise).length;
-    const scoreColor = score<60?'var(--red)':score<80?'var(--amber)':'var(--green)';
-
-    // Histórico de consumo
-    const histData = cli.faturas.slice(-6).reverse().map(f=>f.consumo_total_kwh||0);
-    const histLabels = cli.faturas.slice(-6).reverse().map(f=>{
-      const [m] = (f.mes_referencia||'').split('/');
-      return MESES_ABREV[(parseInt(m||1)-1+12)%12];
-    });
-    // Demanda
-    const demCtda = cli.faturas[0]?.demanda_contratada_fora_ponta_kw||0;
-    const demMedi = cli.faturas[0]?.demanda_medida_fora_ponta_kw||0;
-
-    const cardId = 'cli-' + nome_id(cli.nome);
-    const div = document.createElement('div');
-    div.className = 'cliente-card';
-    div.innerHTML = `
-      <div class="cliente-card-header" onclick="toggleClienteCard('${cardId}')">
-        <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:34px;height:34px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🏢</div>
-          <div>
-            <div class="cliente-nome">${cli.nome.slice(0,60)}${cli.nome.length>60?'...':''}</div>
-            <div class="cliente-uc">UC ${cli.uc} • ${cli.faturas[0]?.subgrupo||''} • ${cli.faturas[0]?.modalidade||''}</div>
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px">
-          <button class="btn" onclick="event.stopPropagation();downloadPDF('${cli.analise?.id||''}','${cli.nome}','${cli.faturas[0]?.mes_referencia||''}')">⬇ Baixar PDF</button>
-          <span style="color:var(--hint);font-size:18px" id="arrow-${cardId}">›</span>
-        </div>
-      </div>
-      <div class="cliente-metrics">
-        <div><div class="cli-m-label">Faturas</div><div class="cli-m-val">${cli.faturas.length}</div></div>
-        <div><div class="cli-m-label">Total Pago</div><div class="cli-m-val">R$ ${totalPago.toLocaleString('pt-BR',{minimumFractionDigits:0})}</div></div>
-        <div><div class="cli-m-label">Economia</div><div class="cli-m-val" style="color:${eco>0?'var(--green)':'var(--muted)'}">R$ ${eco.toLocaleString('pt-BR',{minimumFractionDigits:0})}</div></div>
-        <div><div class="cli-m-label">Analisadas</div><div class="cli-m-val">${analisadas}</div></div>
-      </div>
-      <div id="${cardId}" style="display:none;padding:16px 18px;border-top:1px solid var(--border)">
-        <div class="chart-grid">
-          <div class="card" style="padding:14px">
-            <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px">Consumo (kWh)</div>
-            <div class="chart-wrap"><canvas id="chart-cons-${cardId}"></canvas></div>
-          </div>
-          <div class="card" style="padding:14px">
-            <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px">Demanda (kW)</div>
-            <div class="chart-wrap" id="dem-chart-${cardId}">
-              ${demCtda>0?`
-              <div style="margin-top:8px">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-                  <div style="font-size:11px;color:var(--muted);width:80px">Contratada</div>
-                  <div style="flex:1;height:8px;background:rgba(220,38,38,.2);border-radius:4px"><div style="height:100%;background:rgba(220,38,38,.6);border-radius:4px;width:100%"></div></div>
-                  <div style="font-size:11px;font-weight:600;width:50px">${demCtda} kW</div>
-                </div>
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-                  <div style="font-size:11px;color:var(--muted);width:80px">Medida</div>
-                  <div style="flex:1;height:8px;background:var(--bg3);border-radius:4px"><div style="height:100%;background:var(--blue);border-radius:4px;width:${Math.min(demMedi/demCtda*100,100)}%"></div></div>
-                  <div style="font-size:11px;font-weight:600;width:50px">${demMedi} kW</div>
-                </div>
-                <div style="font-size:11px;color:var(--muted);margin-top:6px">Utilização: <b style="color:${(demMedi/demCtda)<0.7?'var(--red)':'var(--green)'}">${Math.round(demMedi/demCtda*100)}%</b></div>
-              </div>`:'<div style="color:var(--hint);font-size:12px;padding:20px 0">Dados de demanda não disponíveis</div>'}
-            </div>
-          </div>
-          <div class="card" style="padding:14px">
-            <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px">Score de Eficiência</div>
-            <div style="display:flex;align-items:center;gap:12px;margin-top:12px">
-              <div style="width:56px;height:56px;border-radius:50%;background:${scoreColor}18;border:2px solid ${scoreColor}40;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:${scoreColor}">${score}</div>
-              <div>
-                <div style="font-size:13px;font-weight:600;color:${scoreColor}">${score>=85?'Eficiente':score>=70?'Atenção':'Crítico'}</div>
-                <div style="font-size:11px;color:var(--muted)">${(cli.analise?.alertas||[]).length} alerta(s)</div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!-- Alertas desta UC -->
-        ${(cli.analise?.alertas||[]).length>0?`
-        <div style="margin-top:4px">
-          <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px">ALERTAS IDENTIFICADOS</div>
-          ${(cli.analise?.alertas||[]).map(a=>`
-            <div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
-              <span class="badge ${a.severidade==='critico'?'critico':a.severidade==='atencao'?'atencao':'info'}" style="font-size:9px;flex-shrink:0">${a.severidade==='critico'?'CRÍTICO':a.severidade==='atencao'?'ATENÇÃO':'INFO'}</span>
-              <div>
-                <div style="font-size:12px;font-weight:500">${a.titulo||''}</div>
-                ${a.economia_mensal_r?`<div style="font-size:11px;color:var(--green)">R$ ${(a.economia_mensal_r||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}/mês</div>`:''}
-                <div style="font-size:11px;color:var(--muted)">${a.acao_recomendada||''}</div>
-              </div>
-            </div>`).join('')}
-        </div>`:''}
-        <!-- Análise IA -->
-        ${cli.analise?.analise_claude?`
-        <div style="margin-top:12px;background:var(--bg3);border-radius:8px;padding:12px;border-left:3px solid var(--green)">
-          <div style="font-size:10px;font-weight:600;color:var(--muted);margin-bottom:6px">ANÁLISE EXECUTIVA — IA</div>
-          <div style="font-size:12px;color:var(--muted);line-height:1.6;font-style:italic">"${cli.analise.analise_claude}"</div>
-        </div>`:''}
-      </div>
-    `;
-    cont.appendChild(div);
-    // Chart de consumo
-    setTimeout(()=>{
-      const ctx = document.getElementById('chart-cons-'+cardId);
-      if(ctx && histData.length>0){
-        if(_histCharts[cardId]) _histCharts[cardId].destroy();
-        _histCharts[cardId] = new Chart(ctx,{
-          type:'bar',
-          data:{labels:histLabels,datasets:[{data:histData,backgroundColor:histData.map((_,i)=>i===histData.length-1?'rgba(37,99,235,.7)':'rgba(0,0,0,.07)'),borderRadius:3}]},
-          options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:8},color:'#94a3b8'}},y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:8},color:'#94a3b8',callback:v=>v>=1000?(v/1000).toFixed(0)+'k':v}}}}
-        });
-      }
-    },100);
+function renderKanban(){
+  var board = document.getElementById('kanban-board');
+  board.innerHTML = '';
+  COLUNAS.forEach(function(col){
+    var clientes = D.clientes.filter(function(c){return c.status===col.key;});
+    var div = document.createElement('div');
+    div.className = 'kanban-col';
+    var cards = clientes.map(function(c){ return buildClientCard(c, col.key); }).join('');
+    div.innerHTML = '<div class="kanban-col-header">'
+      +'<span class="kanban-col-title" style="color:'+col.cor+'">'+col.label+'</span>'
+      +'<span class="kanban-count">'+clientes.length+'</span>'
+      +'</div>'
+      + (cards || '<div style="font-size:11px;color:var(--hint);text-align:center;padding:20px 0">Nenhum cliente</div>');
+    board.appendChild(div);
   });
 }
 
-function toggleClienteCard(id){
-  const el = document.getElementById(id);
-  const arrow = document.getElementById('arrow-'+id);
-  if(!el) return;
-  const open = el.style.display!=='none';
-  el.style.display = open?'none':'block';
-  if(arrow) arrow.textContent = open?'›':'˅';
-}
+function buildClientCard(c, status){
+  var ucs = (c.ucs||[]).join(', ');
+  var custo = parseFloat(c.custo_medio)||0;
+  var alertasUC = D.alertas.filter(function(a){return (c.ucs||[]).includes(a.uc)&&!a.resolvido;});
+  var temAlerta = alertasUC.some(function(a){return a.severidade==='critico';});
+  var badgeClass = 'status-'+status;
 
-function nome_id(n){ return (n||'').replace(/[^a-zA-Z0-9]/g,'_').slice(0,20); }
-
-// ── FATURAS ──
-function renderFaturas(){
-  const cli = document.getElementById('filtro-cliente')?.value||'';
-  const uc  = document.getElementById('filtro-uc')?.value||'';
-  const st  = document.getElementById('filtro-status-fat')?.value||'';
-  let fat = DADOS.faturas.filter(f=>
-    (!cli || f.cliente_nome===cli) &&
-    (!uc  || f.uc===uc) &&
-    (!st  || f.situacao===st || (st==='PAGA'&&!f.situacao))
-  );
-  document.getElementById('fat-count').textContent = fat.length + ' fatura(s)';
-  // Agrupa por cliente
-  const porCli = {};
-  for(const f of fat){
-    const n = f.cliente_nome||f.uc;
-    if(!porCli[n]) porCli[n] = {nome:n, ucs:{}};
-    if(!porCli[n].ucs[f.uc]) porCli[n].ucs[f.uc] = [];
-    porCli[n].ucs[f.uc].push(f);
-  }
-  const cont = document.getElementById('faturas-lista');
-  cont.innerHTML = '';
-  Object.values(porCli).forEach(cli=>{
-    Object.entries(cli.ucs).forEach(([uc, faturas])=>{
-      const tipo = faturas[0]?.modalidade||'';
-      const div = document.createElement('div');
-      div.className = 'card';
-      div.style.padding = '0';
-      div.style.marginBottom = '12px';
-      div.innerHTML = `
-        <div style="padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)">
-          <div style="display:flex;align-items:center;gap:10px">
-            <div style="font-size:16px">🏢</div>
-            <div>
-              <div style="font-size:13px;font-weight:600">${cli.nome.slice(0,50)}</div>
-              <div style="font-size:11px;color:var(--muted)">UC: ${uc} • ${tipo}</div>
-            </div>
-          </div>
-          <div style="display:flex;gap:6px">
-            <span class="badge gray">${faturas.length} fatura(s)</span>
-            <button class="btn green" onclick="uploadLote('${uc}')">⬆ Upload em Lote</button>
-          </div>
-        </div>
-        <div class="table-wrap" style="border:none;border-radius:0">
-          <div class="table-head" style="grid-template-columns:2fr 100px 1fr 1fr 90px 90px 70px">
-            <div class="th">Arquivo</div>
-            <div class="th">Origem</div>
-            <div class="th">UC</div>
-            <div class="th">Mês</div>
-            <div class="th r">Valor</div>
-            <div class="th r">Status</div>
-            <div class="th r">Ação</div>
-          </div>
-          ${faturas.map(f=>{
-            const a = Array.isArray(f.faturas_analise)?f.faturas_analise[0]:(f.faturas_analise||{});
-            const analisada = !!a?.score_eficiencia;
-            return `<div class="table-row" style="grid-template-columns:2fr 100px 1fr 1fr 90px 90px 70px">
-              <div class="td" style="font-size:11px;font-family:monospace;color:var(--blue);word-break:break-all">detalhada_${f.uc}_${(f.mes_referencia||'').replace('/','')}</div>
-              <div class="td"><span class="badge info" style="font-size:9px">PDF oficial</span></div>
-              <div class="td">${f.uc}</div>
-              <div class="td">${f.mes_referencia||''}</div>
-              <div class="td r">R$ ${(f.total_a_pagar||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
-              <div class="td r"><span class="badge ${analisada?'ok':'gray'}" style="font-size:9px">${analisada?'Analisada':'Pendente'}</span></div>
-              <div class="td r" style="display:flex;gap:4px;justify-content:flex-end">
-                ${analisada?`<button class="btn" style="font-size:10px;padding:3px 8px" onclick="downloadPDF('${a.id||''}','${f.cliente_nome||''}','${f.mes_referencia||''}')">Estudo</button>`:''}
-              </div>
-            </div>`;
-          }).join('')}
-        </div>
-      `;
-      cont.appendChild(div);
-    });
-  });
-  if(!cont.innerHTML) cont.innerHTML = '<div class="empty"><div class="empty-icon">📄</div><div class="empty-title">Nenhuma fatura encontrada</div></div>';
-}
-
-// ── ANÁLISE IA ──
-function renderAnaliseIA(){
-  const cont = document.getElementById('analise-ia-lista');
-  cont.innerHTML = '';
-
-  // Agrupa por cliente
-  const porCliente = {};
-  for(const a of DADOS.analises){
-    const fat = DADOS.faturas.find(f=>f.id===a.fatura_id);
-    const nome = fat?.cliente_nome || a.uc;
-    if(!porCliente[nome]) porCliente[nome] = {nome, ucs:{}};
-    if(!porCliente[nome].ucs[a.uc]) porCliente[nome].ucs[a.uc] = {alertasMap:{}, analiseIA:null, meses:[]};
-    const uc = porCliente[nome].ucs[a.uc];
-    uc.meses.push(a.mes_referencia);
-    // Agrupa alertas por tipo — mantém apenas o mais recente de cada tipo
-    const alertas = Array.isArray(a.alertas)?a.alertas:[];
-    alertas.forEach(al=>{
-      const tipo = al.codigo||al.titulo||'geral';
-      if(!uc.alertasMap[tipo]) uc.alertasMap[tipo] = {...al, uc:a.uc, mes:a.mes_referencia, count:1};
-      else uc.alertasMap[tipo].count++;
-    });
-    // Mantém a análise Claude mais recente por UC
-    if(a.analise_claude && !uc.analiseIA) uc.analiseIA = {texto:a.analise_claude, mes:a.mes_referencia};
+  var acoes = '';
+  if(status==='prospecto'){
+    acoes = '<button class="client-card-btn amber" onclick="event.stopPropagation();analisarCliente('+JSON.stringify(c.id)+')">📊 Analisar</button>';
+  } else if(status==='analisando'){
+    acoes = '<button class="client-card-btn green" onclick="event.stopPropagation();gerarProposta('+JSON.stringify(c.id)+')">📧 Gerar Proposta</button>';
+  } else if(status==='proposta'){
+    acoes = '<button class="client-card-btn" onclick="event.stopPropagation();mudarStatus('+JSON.stringify(c.id)+',' +JSON.stringify('negociando')+')">🤝 Negociando</button>'
+      +'<button class="client-card-btn green" onclick="event.stopPropagation();fecharContrato('+JSON.stringify(c.id)+')">🎯 Fechar</button>';
+  } else if(status==='negociando'){
+    acoes = '<button class="client-card-btn green" onclick="event.stopPropagation();fecharContrato('+JSON.stringify(c.id)+')">🎯 Fechar Contrato</button>';
+  } else if(status==='ativo'){
+    acoes = '<button class="client-card-btn" onclick="event.stopPropagation();verRelatorio('+JSON.stringify(c.id)+')">📋 Relatório</button>';
   }
 
-  Object.values(porCliente).forEach(cli=>{
-    const totalInsights = Object.values(cli.ucs).reduce((s,u)=>s+Object.keys(u.alertasMap).length+(u.analiseIA?1:0),0);
-    const div = document.createElement('div');
-    div.className = 'card';
-    div.style.marginBottom = '14px';
+  return '<div class="client-card" onclick="abrirCliente('+JSON.stringify(c.id)+')">'
+    +'<div class="client-card-nome">'+c.nome.slice(0,40)+(c.nome.length>40?'...':'')+'</div>'
+    +'<div class="client-card-sub">'+(ucs?'UC '+ucs:'')+(c.subgrupo?' · '+c.subgrupo:'')+'</div>'
+    +(custo>0?'<div class="client-card-val">R$ '+custo.toLocaleString('pt-BR',{minimumFractionDigits:0})+'/mês</div>':'')
+    +(temAlerta?'<div><span class="badge critico" style="margin-top:6px">⚠ Alerta crítico</span></div>':'')
+    +'<div class="client-card-actions">'+acoes+'</div>'
+    +'</div>';
+}
 
-    const ucCards = Object.entries(cli.ucs).map(([uc, data])=>{
-      const alertas = Object.values(data.alertasMap);
-      const criticos = alertas.filter(a=>a.severidade==='critico');
-      const atencao  = alertas.filter(a=>a.severidade==='atencao');
-      const info     = alertas.filter(a=>!['critico','atencao'].includes(a.severidade));
-      const mesesStr = [...new Set(data.meses)].sort().join(', ');
+// ── AÇÕES DO PIPELINE ────────────────────────────────────────────────────────
+async function mudarStatus(clienteId, novoStatus){
+  await sbPatch('clientes?id=eq.'+clienteId, {status: novoStatus, status_updated: new Date().toISOString()});
+  await carregarDados();
+}
 
-      return `
-        <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:10px">
-          <div style="padding:10px 14px;background:var(--bg3);display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)">
-            <span style="font-size:12px;font-weight:600;color:var(--text)">UC ${uc}</span>
-            <span style="font-size:10px;color:var(--muted)">${mesesStr}</span>
-            ${criticos.length?`<span class="badge critico" style="font-size:9px">${criticos.length} crítico(s)</span>`:''}
-            ${atencao.length?`<span class="badge atencao" style="font-size:9px">${atencao.length} atenção</span>`:''}
-          </div>
-          ${alertas.length?`
-          <div>
-            ${alertas.map(al=>`
-              <div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-start">
-                <span style="font-size:16px;flex-shrink:0">${al.severidade==='critico'?'🔴':al.severidade==='atencao'?'🟡':'✅'}</span>
-                <div style="flex:1">
-                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
-                    <span style="font-size:13px;font-weight:500;color:var(--text)">${al.titulo||''}</span>
-                    ${al.count>1?`<span class="badge gray" style="font-size:9px">${al.count} meses</span>`:''}
-                    ${al.economia_mensal_r?`<span style="font-size:11px;color:var(--green);font-weight:600">R$ ${(al.economia_mensal_r||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}/mês</span>`:''}
-                  </div>
-                  <div style="font-size:12px;color:var(--muted);line-height:1.5">${al.acao_recomendada||al.descricao||''}</div>
-                </div>
-              </div>`).join('')}
-          </div>`:''}
-          ${data.analiseIA?`
-          <div style="padding:12px 14px;background:#f0fdf4;border-top:1px solid #bbf7d0;display:flex;gap:10px">
-            <span style="font-size:16px;flex-shrink:0">🤖</span>
-            <div>
-              <div style="font-size:11px;font-weight:600;color:var(--green);margin-bottom:4px">ANÁLISE EXECUTIVA — ${data.analiseIA.mes}</div>
-              <div style="font-size:12px;color:#166534;line-height:1.6">${data.analiseIA.texto}</div>
-            </div>
-          </div>`:''}
-        </div>`;
-    }).join('');
+async function analisarCliente(clienteId){
+  await mudarStatus(clienteId, 'analisando');
+  var c = D.clientes.find(function(x){return x.id===clienteId;});
+  if(!c) return;
+  // Abre modal com análise
+  var uc = (c.ucs||[])[0];
+  if(uc) abrirAnaliseCompleta(uc, c.nome, clienteId);
+}
 
-    div.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:16px">🏢</span>
-          <span style="font-size:14px;font-weight:600">${cli.nome.slice(0,60)}</span>
-          <span class="badge info">${totalInsights} insights</span>
-        </div>
-        <button class="btn primary" onclick="downloadPDF('','${cli.nome}','')">⬇ Baixar PDF</button>
-      </div>
-      ${ucCards}
-    `;
-    cont.appendChild(div);
+async function gerarProposta(clienteId){
+  var c = D.clientes.find(function(x){return x.id===clienteId;});
+  if(!c) return;
+  abrirCliente(clienteId, 'proposta');
+}
+
+async function fecharContrato(clienteId){
+  var c = D.clientes.find(function(x){return x.id===clienteId;});
+  if(!c) return;
+  if(!confirm('Confirma fechamento do contrato com '+c.nome.slice(0,40)+'?')) return;
+  var hoje = new Date();
+  var fim = new Date(hoje); fim.setFullYear(fim.getFullYear()+1);
+  var fmt = function(d){ return d.toISOString().split('T')[0]; };
+  var ucs = c.ucs||[];
+  var valorMensal = ucs.length * 500;
+  // Cria contrato
+  await sbPost('contratos',{
+    cliente_id: clienteId, cliente_nome: c.nome, cnpj: c.cnpj,
+    ucs: ucs, valor_mensal: valorMensal,
+    inicio: fmt(hoje), fim: fmt(fim), status: 'ativo'
   });
-  if(!cont.innerHTML) cont.innerHTML = '<div class="empty"><div class="empty-icon">🤖</div><div class="empty-title">Nenhuma análise disponível ainda</div></div>';
-}
-
-// ── CLIENTES ──
-function renderClientes(){
-  const cont = document.getElementById('clientes-lista');
-  const nomes = [...new Set(DADOS.faturas.map(f=>f.cliente_nome).filter(Boolean))];
-  cont.innerHTML = nomes.map(nome=>{
-    const fat = DADOS.faturas.filter(f=>f.cliente_nome===nome);
-    const a   = fat.map(f=>Array.isArray(f.faturas_analise)?f.faturas_analise[0]:(f.faturas_analise||null)).find(Boolean);
-    const cnpj = DADOS.empresas.find(e=>e.nome===nome)?.cnpj||'—';
-    const eco  = a?.potencial_economia_anual||0;
-    const score= a?.score_eficiencia||'—';
-    const sc   = typeof score==='number'?(score<60?'var(--red)':score<80?'var(--amber)':'var(--green)'):'var(--muted)';
-    return `<div class="table-row" style="grid-template-columns:2fr 1fr 1fr 1fr 100px">
-      <div>
-        <div style="font-size:13px;font-weight:500">${nome.slice(0,50)}</div>
-        <div style="font-size:10px;color:var(--hint)">${fat[0]?.subgrupo||''} • UC ${fat[0]?.uc||''}</div>
-      </div>
-      <div class="td muted">${cnpj.slice(0,18)}</div>
-      <div class="td r">${fat.length}</div>
-      <div class="td r green">R$ ${eco.toLocaleString('pt-BR',{minimumFractionDigits:0})}</div>
-      <div class="td r" style="color:${sc};font-weight:600">${score}${typeof score==='number'?'/100':''}</div>
-    </div>`;
-  }).join('');
-  if(!cont.innerHTML) cont.innerHTML = '<div class="empty">Nenhum cliente encontrado.</div>';
-}
-
-// ── ALERTAS ──
-function renderAlertas(){
-  const sev = document.getElementById('filtro-alerta-sev')?.value||'';
-  let al = DADOS.alertas.filter(a=>!sev||a.severidade===sev);
-  const cont = document.getElementById('alertas-lista');
-  if(!al.length){ cont.innerHTML='<div class="empty"><div class="empty-icon">✅</div><div class="empty-title">Nenhum alerta encontrado</div></div>'; return; }
-  cont.innerHTML = al.map(a=>{
-    const fat = DADOS.faturas.find(f=>f.id===a.fatura_id);
-    const bg = a.severidade==='critico'?'var(--red-bg)':a.severidade==='atencao'?'var(--amber-bg)':'var(--blue-bg)';
-    const ico = a.severidade==='critico'?'🔴':a.severidade==='atencao'?'🟡':'ℹ️';
-    return `<div class="alert-item">
-      <div class="alert-icon" style="background:${bg}">${ico}</div>
-      <div class="alert-content">
-        <div class="alert-titulo">${a.titulo||''}</div>
-        <div class="alert-desc">${a.descricao||''}</div>
-        <div class="alert-meta">${fat?.cliente_nome?.slice(0,40)||'UC '+a.uc} • UC ${a.uc} • ${fat?.mes_referencia||''} ${a.valor_r?'• R$ '+(a.valor_r||0).toLocaleString('pt-BR',{minimumFractionDigits:2})+'/mês':''}</div>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
-        <span class="badge ${a.severidade==='critico'?'critico':a.severidade==='atencao'?'atencao':'info'}">${a.severidade==='critico'?'Crítico':a.severidade==='atencao'?'Atenção':'Info'}</span>
-        <button class="btn" style="font-size:10px;padding:3px 8px" onclick="marcarResolvido('${a.id}',this)">✓ Resolver</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-async function marcarResolvido(id, btn){
-  btn.disabled = true;
-  await fetch(`${SUPABASE_URL}/rest/v1/alertas_de_fatura?id=eq.${id}`,{
-    method:'PATCH',headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json'},
-    body:JSON.stringify({resolvido:true})
+  // Muda status cliente
+  await sbPatch('clientes?id=eq.'+clienteId, {
+    status:'ativo', contrato_inicio: fmt(hoje), contrato_fim: fmt(fim), valor_mensal: valorMensal
   });
   await carregarDados();
-  renderAlertas();
+  alert('🎉 Contrato fechado! Cliente '+c.nome.slice(0,30)+' agora é um cliente ativo.');
+  // Abre a tela de contratos
+  navegar('contratos', document.getElementById('sb-contratos'));
 }
 
-// ── RECUPERAÇÃO TRIBUTÁRIA ──
-function renderRecup(){
-  const cont = document.getElementById('recup-lista');
-  const total = DADOS.faturas.reduce((s,f)=>s+(f.total_a_pagar||0),0);
-  document.getElementById('recup-casos').textContent = DADOS.recup.length;
-  document.getElementById('recup-faturado').textContent = 'R$ '+total.toLocaleString('pt-BR',{minimumFractionDigits:2});
-  const estimativa = total * 0.025; // ~2.5% estimativa base
-  document.getElementById('recup-estimativa').textContent = 'R$ '+estimativa.toLocaleString('pt-BR',{minimumFractionDigits:0});
+// ── MODAL CLIENTE (detalhes) ──────────────────────────────────────────────────
+function abrirCliente(clienteId, tab){
+  var c = D.clientes.find(function(x){return x.id===clienteId;});
+  if(!c) return;
+  var fat = D.faturas.filter(function(f){return (c.ucs||[]).includes(f.uc);});
+  var alertas = D.alertas.filter(function(a){return (c.ucs||[]).includes(a.uc)&&!a.resolvido;});
+  var analises = D.analises.filter(function(a){return (c.ucs||[]).includes(a.uc);});
+  var custo = parseFloat(c.custo_medio)||0;
+  var ecoTotal = analises.reduce(function(s,a){return s+parseFloat(a.potencial_economia_anual||0);},0);
+  var ucs = (c.ucs||[]).join(', ');
 
-  if(!DADOS.recup.length){
-    // Gera casos automaticamente a partir das faturas
-    const ucsFat = [...new Set(DADOS.faturas.map(f=>f.uc))];
-    cont.innerHTML = ucsFat.map(uc=>{
-      const fat = DADOS.faturas.filter(f=>f.uc===uc);
-      const totalUC = fat.reduce((s,f)=>s+(f.total_a_pagar||0),0);
-      const est = totalUC * 0.025;
-      return `<div class="recup-card">
-        <div class="recup-header">
-          <span class="badge atencao" style="font-size:9px">Análise Técnica</span>
-          <span class="recup-uc">${uc}</span>
-          <span style="font-size:11px;color:var(--muted)">Confiança: Baixo</span>
-          <span style="font-size:11px;color:var(--muted)">Amazonas Energia</span>
-        </div>
-        <div class="recup-metrics">
-          <div class="recup-m"><div class="recup-m-label">Faturado</div><div class="recup-m-val">R$ ${totalUC.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>
-          <div class="recup-m"><div class="recup-m-label">Créditos</div><div class="recup-m-val" style="color:var(--green)">R$ 0,00</div></div>
-          <div class="recup-m"><div class="recup-m-label">Est. Base</div><div class="recup-m-val" style="color:var(--amber)">R$ ${est.toLocaleString('pt-BR',{minimumFractionDigits:0})}</div></div>
-        </div>
-      </div>`;
-    }).join('');
-  } else {
-    cont.innerHTML = DADOS.recup.map(r=>`
-      <div class="recup-card">
-        <div class="recup-header">
-          <span class="badge atencao" style="font-size:9px">Análise Técnica</span>
-          <span class="recup-uc">${r.uc||''}</span>
-          <span style="font-size:11px;color:var(--muted)">Confiança: ${r.confianca||'Baixo'}</span>
-        </div>
-        <div class="recup-metrics">
-          <div class="recup-m"><div class="recup-m-label">Faturado</div><div class="recup-m-val">R$ ${(r.total_faturado||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>
-          <div class="recup-m"><div class="recup-m-label">Créditos</div><div class="recup-m-val" style="color:var(--green)">R$ ${(r.creditos_r||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>
-          <div class="recup-m"><div class="recup-m-label">Est. Base</div><div class="recup-m-val" style="color:var(--amber)">R$ ${(r.estimativa_base||0).toLocaleString('pt-BR',{minimumFractionDigits:0})}</div></div>
-        </div>
-      </div>`).join('');
-  }
+  document.getElementById('mc-titulo').textContent = c.nome.slice(0,50);
+  document.getElementById('mc-sub').textContent = 'UC '+ucs+' · '+c.subgrupo+' · '+c.modalidade;
+
+  var statusBadges = '<span class="badge '+getStatusClass(c.status)+'">'+getStatusLabel(c.status)+'</span>';
+  var acoesBtn = buildAcoesBotoes(c);
+
+  var body = '<div class="metrics-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">'
+    +'<div class="metric-card"><div class="metric-label">Custo Médio</div><div class="metric-val">R$ '+custo.toLocaleString('pt-BR',{minimumFractionDigits:0})+'</div><div class="metric-sub">/mês</div></div>'
+    +'<div class="metric-card"><div class="metric-label">Faturas</div><div class="metric-val">'+fat.length+'</div></div>'
+    +'<div class="metric-card"><div class="metric-label">Economia Potencial</div><div class="metric-val green">R$ '+ecoTotal.toLocaleString('pt-BR',{minimumFractionDigits:0})+'</div><div class="metric-sub">/ano</div></div>'
+    +'<div class="metric-card"><div class="metric-label">Alertas Ativos</div><div class="metric-val '+(alertas.length>0?'red':'green')+'">'+alertas.length+'</div></div>'
+    +'</div>'
+    +'<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">'+statusBadges+acoesBtn+'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">'
+    +'<div><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:6px">DADOS DA UC</div>'
+    +'<div style="font-size:12px;color:var(--text);line-height:1.8">'
+    +'CNPJ: <b>'+formatCNPJ(c.cnpj||'')+'</b><br>'
+    +'Subgrupo: <b>'+c.subgrupo+'</b> · Modalidade: <b>'+c.modalidade+'</b><br>'
+    +(c.demanda_kw?'Demanda: <b>'+c.demanda_kw+' kW</b><br>':'')
+    +'</div></div>'
+    +'<div><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:6px">ALERTAS</div>'
+    +(alertas.length>0 ? alertas.slice(0,3).map(function(a){
+        return '<div style="font-size:11px;padding:4px 0;border-bottom:1px solid var(--border)">'
+          +'<span class="badge '+(a.severidade==='critico'?'critico':'alerta')+'" style="font-size:9px">'+a.severidade+'</span> '
+          +a.titulo+'</div>';
+      }).join('') : '<div style="font-size:11px;color:var(--hint)">Nenhum alerta crítico ✅</div>')
+    +'</div></div>';
+
+  document.getElementById('mc-body').innerHTML = body;
+  document.getElementById('modalCliente').style.display = 'block';
 }
 
-function novoRecup(){ alert('Em breve: adicionar caso de recuperação tributária manualmente.'); }
-
-// ── CONSOLIDADO MULTI-UC ──
-function gerarMultiUC(){
-  const nome = document.getElementById('multi-uc-empresa').value;
-  if(!nome){ alert('Selecione uma empresa.'); return; }
-  const fat = DADOS.faturas.filter(f=>f.cliente_nome===nome);
-  const ucs = [...new Set(fat.map(f=>f.uc))];
-  const cont = document.getElementById('multi-uc-resultado');
-  const totalPago = fat.reduce((s,f)=>s+(f.total_a_pagar||0),0);
-  const analises  = fat.map(f=>Array.isArray(f.faturas_analise)?f.faturas_analise[0]:(f.faturas_analise||null)).filter(Boolean);
-  const ecoTotal  = analises.reduce((s,a)=>s+(a?.potencial_economia_anual||0),0);
-  const scoreMedia= analises.length?Math.round(analises.reduce((s,a)=>s+(a?.score_eficiencia||0),0)/analises.length):0;
-  const sc = scoreMedia<60?'var(--red)':scoreMedia<80?'var(--amber)':'var(--green)';
-
-  cont.innerHTML = `
-    <div class="card">
-      <div style="font-size:15px;font-weight:700;margin-bottom:16px">📊 Análise Consolidada — ${nome.slice(0,50)}</div>
-      <div class="metrics-grid" style="margin-bottom:0">
-        <div class="metric-card"><div class="metric-label">Total de UCs</div><div class="metric-val">${ucs.length}</div></div>
-        <div class="metric-card"><div class="metric-label">Total Pago</div><div class="metric-val">R$ ${totalPago.toLocaleString('pt-BR',{minimumFractionDigits:0})}</div></div>
-        <div class="metric-card"><div class="metric-label">Economia Potencial</div><div class="metric-val green">R$ ${ecoTotal.toLocaleString('pt-BR',{minimumFractionDigits:0})}</div></div>
-        <div class="metric-card"><div class="metric-label">Score Médio</div><div class="metric-val" style="color:${sc}">${scoreMedia}/100</div></div>
-      </div>
-    </div>
-    <div class="table-wrap" style="margin-top:14px">
-      <div class="table-head" style="grid-template-columns:1fr 1fr 1fr 80px 80px">
-        <div class="th">UC</div>
-        <div class="th r">Total Pago</div>
-        <div class="th r">Economia/ano</div>
-        <div class="th r">Score</div>
-        <div class="th r">Alertas</div>
-      </div>
-      ${ucs.map(uc=>{
-        const f = fat.filter(x=>x.uc===uc);
-        const a = f.map(x=>Array.isArray(x.faturas_analise)?x.faturas_analise[0]:(x.faturas_analise||null)).find(Boolean)||{};
-        const total = f.reduce((s,x)=>s+(x.total_a_pagar||0),0);
-        const eco   = a?.potencial_economia_anual||0;
-        const sc2   = (a?.score_eficiencia||100);
-        const scC   = sc2<60?'var(--red)':sc2<80?'var(--amber)':'var(--green)';
-        return `<div class="table-row" style="grid-template-columns:1fr 1fr 1fr 80px 80px">
-          <div class="td">${uc}<div class="td muted">${f[0]?.subgrupo||''}</div></div>
-          <div class="td r">R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:0})}</div>
-          <div class="td r green">R$ ${eco.toLocaleString('pt-BR',{minimumFractionDigits:0})}</div>
-          <div class="td r" style="color:${scC};font-weight:600">${sc2}/100</div>
-          <div class="td r">${(a?.alertas||[]).length}</div>
-        </div>`;
-      }).join('')}
-    </div>`;
+function buildAcoesBotoes(c){
+  var id = JSON.stringify(c.id);
+  var nome = JSON.stringify(c.nome);
+  var uc = JSON.stringify((c.ucs||[])[0]||'');
+  var btns = '<button class="btn" onclick="fecharModal(\'modalCliente\');abrirAnaliseCompleta('+uc+','+nome+','+id+')">🔍 Análise Completa</button>';
+  if(c.status==='prospecto')
+    btns += '<button class="btn amber" onclick="fecharModal(\'modalCliente\');analisarCliente('+id+')">📊 Iniciar Análise</button>';
+  if(c.status==='analisando')
+    btns += '<button class="btn primary" onclick="fecharModal(\'modalCliente\');gerarProposta('+id+')">📧 Gerar Proposta</button>';
+  if(c.status==='proposta'||c.status==='negociando')
+    btns += '<button class="btn green" onclick="fecharModal(\'modalCliente\');fecharContrato('+id+')">🎯 Fechar Contrato</button>';
+  if(c.status==='ativo')
+    btns += '<button class="btn" onclick="fecharModal(\'modalCliente\');gerarContratoPDF('+id+')">📄 Ver Contrato</button>';
+  return btns;
 }
 
-// ── CONTESTAÇÃO ──
-function renderContestacao(){
-  const cont = document.getElementById('contestacao-lista');
-  // Gera contestações automáticas dos alertas
-  const alertasContestáveis = DADOS.alertas.filter(a=>
-    ['DEMANDA_SUPERDIMENSIONADA','DEMANDA_ULTRAPASSAGEM','FATOR_POTENCIA_BAIXO','COSIP_ELEVADA'].includes(a.tipo||a.titulo?.toUpperCase())
-    || (a.titulo||'').toLowerCase().includes('reativo')
-    || (a.titulo||'').toLowerCase().includes('demanda')
-    || (a.titulo||'').toLowerCase().includes('cosip')
-  );
-  const todasContestacoes = [...DADOS.contestacoes, ...alertasContestáveis.map((a,i)=>({
-    id:`CONT-${Date.now()-i*1000}-${Math.random().toString(36).slice(2,6).toUpperCase()}`,
-    uc:a.uc,
-    tipo:a.titulo?.toLowerCase().includes('reativo')?'reativo indevido':a.titulo?.toLowerCase().includes('cosip')?'cobrança indevida':'demanda excessiva',
-    valor_r:a.valor_r||0,
-    status:'gerado',
-    _auto:true
-  }))];
+// ── ANÁLISE COMPLETA ─────────────────────────────────────────────────────────
+async function abrirAnaliseCompleta(uc, nomeCliente, clienteId){
+  document.getElementById('ma-titulo').textContent = 'Análise — '+nomeCliente.slice(0,40);
+  document.getElementById('ma-body').innerHTML = '<div style="text-align:center;padding:40px"><div class="spinner"></div><div style="font-size:13px;color:var(--muted)">Gerando diagnóstico...</div></div>';
+  document.getElementById('modalAnalise').style.display = 'block';
 
-  document.getElementById('cont-total').textContent = todasContestacoes.length;
-  document.getElementById('cont-valor').textContent = 'R$ '+todasContestacoes.reduce((s,c)=>s+(c.valor_r||0),0).toLocaleString('pt-BR',{minimumFractionDigits:2});
-  document.getElementById('cont-gerados').textContent = todasContestacoes.filter(c=>c.status==='gerado').length;
-  document.getElementById('cont-concluidos').textContent = todasContestacoes.filter(c=>c.status==='concluido').length;
-
-  if(!todasContestacoes.length){
-    cont.innerHTML = '<div class="empty"><div class="empty-icon">⚖️</div><div class="empty-title">Nenhum caso de contestação ainda</div><div style="font-size:12px;color:var(--hint)">Clique em "Gerar Automaticamente" para criar casos com base nos alertas</div></div>';
+  if(_analiseCache[uc]){
+    renderAnaliseTexto(_analiseCache[uc], uc, nomeCliente, clienteId);
     return;
   }
-  cont.innerHTML = todasContestacoes.map(c=>`
-    <div class="cont-item">
-      <div style="width:32px;height:32px;background:var(--red-bg);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0">⚠️</div>
-      <div>
-        <div class="cont-id">${c.id}</div>
-        <div class="cont-tipo">${c.tipo||''}</div>
-      </div>
-      <span class="badge gray" style="margin-left:auto;margin-right:8px">${c.status||'gerado'}</span>
-      <div class="cont-valor">R$ ${(c.valor_r||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
-    </div>`).join('');
-}
 
-async function gerarContestacoes(){
-  const alertasContestáveis = DADOS.alertas.filter(a=>
-    (a.titulo||'').toLowerCase().includes('reativo') ||
-    (a.titulo||'').toLowerCase().includes('demanda') ||
-    (a.titulo||'').toLowerCase().includes('cosip')
-  );
-  for(const a of alertasContestáveis){
-    const tipo = (a.titulo||'').toLowerCase().includes('reativo')?'reativo indevido':(a.titulo||'').toLowerCase().includes('cosip')?'cobrança indevida':'demanda excessiva';
-    await sbPost('contestacoes',{fatura_id:a.fatura_id,uc:a.uc,tipo,valor_r:a.valor_r||0,status:'gerado',descricao:a.descricao});
-  }
-  await carregarDados();
-  renderContestacao();
-}
-
-// ── PDF ──
-function downloadPDF(faturaId, nome, mes){
-  if(!faturaId){ alert('Fatura não encontrada.'); return; }
-  const url = `${RAILWAY_URL}/relatorio/${faturaId}`;
-  const a = document.createElement('a');
-  a.href=url; a.download=`relatorio_${(nome||'').slice(0,20).replace(/\s+/g,'_')}_${(mes||'').replace('/','')}.pdf`;
-  a.target='_blank'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
-}
-
-function uploadLote(uc){ alert('Upload em lote para UC '+uc+' — em breve!'); }
-
-// ── MODAL EXTRAÇÃO ──
-function openFaturasModal(){
-  document.getElementById('faturasModal').style.display='block';
-  document.getElementById('faturasForm').style.display='block';
-  document.getElementById('faturasStatus').style.display='none';
-  document.getElementById('fm-cpf').value='';
-  document.getElementById('fm-senha').value='';
-  document.getElementById('fm-ucs').value='';
-  document.getElementById('fm-error').style.display='none';
-  document.getElementById('fm-toggle').classList.remove('on');
-  document.body.style.overflow='hidden';
-}
-function closeFaturasModal(){
-  document.getElementById('faturasModal').style.display='none';
-  document.body.style.overflow='';
-  if(_pollInterval){clearInterval(_pollInterval);_pollInterval=null;}
-}
-async function enviarExtracao(){
-  const cpf=document.getElementById('fm-cpf').value.replace(/\D/g,'');
-  const senha=document.getElementById('fm-senha').value;
-  const meses=parseInt(document.getElementById('fm-meses').value);
-  const ucsStr=document.getElementById('fm-ucs').value;
-  const monitorar=document.getElementById('fm-toggle').classList.contains('on');
-  const errEl=document.getElementById('fm-error');
-  if(!cpf||!senha){errEl.textContent='Preencha CPF/CNPJ e senha.';errEl.style.display='block';return;}
-  errEl.style.display='none';
-  const btn=document.getElementById('fm-btn');
-  btn.textContent='Enviando...';btn.disabled=true;
-  const creds={cpf_cnpj:cpf,senha,meses,monitorar};
-  if(ucsStr.trim()) creds.selected_ucs=ucsStr.split(',').map(u=>u.trim()).filter(Boolean);
   try{
-    const r=await fetch(`${SUPABASE_URL}/rest/v1/extraction_requests`,{method:'POST',headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({concessionaria:'amazonas_energia',credentials:creds,status:'pendente'})});
-    const data=await r.json();
-    if(!r.ok||!data[0]) throw new Error(data.message||'Erro.');
-    const taskId=data[0].id;
-    document.getElementById('faturasForm').style.display='none';
-    document.getElementById('faturasStatus').style.display='block';
-    setFsState('loading','Aguardando worker...',`Tarefa criada · ${taskId.slice(0,8)}...`);
-    addFsLog('✓ Tarefa criada');addFsLog('⏳ Worker pega em até 15s...');
-    _pollInterval=setInterval(async()=>await pollTask(taskId),5000);
-  }catch(e){btn.textContent='⚡ Buscar Faturas';btn.disabled=false;errEl.textContent=e.message;errEl.style.display='block';}
-}
-async function pollTask(taskId){
-  try{
-    const r=await fetch(`${SUPABASE_URL}/rest/v1/extraction_requests?id=eq.${taskId}&select=status,status_detail,pdf_links`,{headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`}});
-    const d=await r.json();const t=d[0];if(!t) return;
-    if(t.status==='em_progresso') addFsLog('🔄 Extraindo faturas...');
-    if(t.status==='concluido'){
-      clearInterval(_pollInterval);_pollInterval=null;
-      const nFat = t.pdf_links ? t.pdf_links.length : 0;
-      setFsState('success','Extração concluída! 🎉', nFat+' fatura(s) incorporadas ao dashboard.');
-      addFsLog('✓ '+nFat+' fatura(s) baixadas e analisadas');
-      addFsLog('🔄 Atualizando dashboard...');
-      await carregarDados();
-      addFsLog('✅ Dashboard atualizado!');
-      const btn = document.getElementById('fs-close-btn');
-      btn.style.display='block';
-      btn.textContent='✓ Ver faturas incorporadas';
-      btn.onclick = function(){ closeFaturasModal(); navegar('faturas-page', document.getElementById('sb-faturas-page')); };
-    }
-    if(t.status==='erro_extracao'||t.status==='credenciais_invalidas'){
-      clearInterval(_pollInterval);_pollInterval=null;
-      const d=t.status_detail||'';
-      const msg=d.includes('Limite')||d.includes('Timeout')?'Limite diário atingido (1x/dia por fatura). Tente amanhã.':d||'Erro desconhecido.';
-      setFsState('error',t.status==='credenciais_invalidas'?'CPF ou senha inválidos':'Erro na extração',msg);
-      addFsLog('❌ '+msg);document.getElementById('fs-close-btn').style.display='block';document.getElementById('fs-close-btn').textContent='Fechar';
-    }
-  }catch(e){}
-}
-function setFsState(type,title,sub){const icons={loading:'🔄',success:'✅',error:'❌'};document.getElementById('fs-icon').textContent=icons[type]||'⏳';document.getElementById('fs-title').textContent=title;document.getElementById('fs-sub').textContent=sub;}
-const _fsLogs=new Set();
-function addFsLog(msg){if(_fsLogs.has(msg))return;_fsLogs.add(msg);const el=document.getElementById('fs-log');el.innerHTML+=`<div>${msg}</div>`;}
-
-// ── UTILS ──
-function formatCpf(v){const n=v.replace(/\D/g,'').slice(0,14);if(n.length<=3)return n;if(n.length<=6)return n.slice(0,3)+'.'+n.slice(3);if(n.length<=9)return n.slice(0,3)+'.'+n.slice(3,6)+'.'+n.slice(6);if(n.length<=11)return n.slice(0,3)+'.'+n.slice(3,6)+'.'+n.slice(6,9)+'-'+n.slice(9);return n.slice(0,2)+'.'+n.slice(2,5)+'.'+n.slice(5,8)+'/'+n.slice(8,12)+'-'+n.slice(12);}
-
-
-function gerarContrato(nomeCliente, ucsStr, subgrupo){
-  var ucs = typeof ucsStr==='string' ? ucsStr.split(',') : [ucsStr];
-  var empresa = DADOS.empresas.find(function(e){return e.nome===nomeCliente;});
-  var cnpj = empresa ? empresa.cnpj||'' : '';
-  var cnpjFmt = cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,'$1.$2.$3/$4-$5');
-  var totalMensal = ucs.length * 500;
-  var dataHoje = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
-  var temGrupoA = (subgrupo||'').startsWith('A');
-  var servicos = [
-    'a) Gestão de energia completa, contemplando levantamento contratual, levantamento de multas e adequações de enquadramentos tarifários, levantamento de possíveis economias nas faturas de energia, levantamento de carga e visita técnica.',
-    'b) Auditoria retroativa completa nas faturas dos últimos 120 meses.',
-    'c) Prestação de contas mensal através de relatórios, sistema de gestão, dashboard e presencial se necessário.',
-    'd) Revisão e ajustes junto à distribuidora: grupo, subgrupo, classe, modalidade, COSIP, demanda, reativo.',
-  ];
-  if(temGrupoA) servicos.splice(2,0,'e) Migração do Ambiente de Contratação Regulada (ACR) para o Ambiente de Contratação Livre (ACL).');
-  var win = window.open('','_blank');
-  win.document.write('<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Contrato — '+nomeCliente+'</title>'
-    +'<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:12px;color:#1a1a1a;padding:20mm}'
-    +'.logo{display:flex;align-items:center;gap:12px;margin-bottom:28px;padding-bottom:16px;border-bottom:2px solid #0d2137}'
-    +'.logo-box{width:44px;height:44px;background:#0d2137;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff}'
-    +'.logo-nome{font-size:16px;font-weight:700;color:#0d2137}.logo-sub{font-size:10px;color:#64748b}'
-    +'h1{font-size:13px;font-weight:700;text-align:center;text-transform:uppercase;letter-spacing:.08em;margin-bottom:20px;color:#0d2137}'
-    +'.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}'
-    +'.box{border:1px solid #e2e8f0;border-radius:6px;padding:10px}'
-    +'.box-label{font-size:9px;font-weight:700;text-transform:uppercase;color:#64748b;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #e2e8f0}'
-    +'.box-nome{font-size:11px;font-weight:600;margin-bottom:3px}.box-info{font-size:10px;color:#64748b;line-height:1.5}'
-    +'.intro{font-size:11px;line-height:1.7;margin-bottom:14px;color:#374151}'
-    +'h2{font-size:11px;font-weight:700;margin:12px 0 6px;color:#0d2137}'
-    +'.sv{display:flex;gap:6px;margin-bottom:4px;font-size:10px;line-height:1.6;color:#374151}'
-    +'.highlight{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:10px;margin:12px 0}'
-    +'.hl-val{font-size:14px;font-weight:700;color:#059669}'
-    +'.cl{font-size:10px;line-height:1.6;margin-bottom:8px}'
-    +'.sigs{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:28px}'
-    +'.sig{text-align:center}.sig-line{border-top:1px solid #1a1a1a;padding-top:5px;font-size:10px}'
-    +'.footer{margin-top:14px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:9px;color:#94a3b8;text-align:center}'
-    +'@media print{button{display:none!important}}</style></head><body>'
-    +'<div class="logo"><div class="logo-box">⚡</div><div><div class="logo-nome">TRIANON GESTÃO DE ENERGIA</div><div class="logo-sub">Gestão Inteligente de Energia · Manaus, AM</div></div>'
-    +'<button onclick="window.print()" style="margin-left:auto;padding:7px 16px;background:#0d2137;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px">🖨 Imprimir PDF</button></div>'
-    +'<h1>Instrumento Particular de Contrato de Prestação de Serviços</h1>'
-    +'<div class="grid">'
-    +'<div class="box"><div class="box-label">Contratante</div><div class="box-nome">'+nomeCliente+'</div><div class="box-info">'+(cnpjFmt?'CNPJ: '+cnpjFmt+'<br>':'')+ucs.map(function(u){return 'UC: '+u;}).join(' · ')+'</div></div>'
-    +'<div class="box"><div class="box-label">Contratada</div><div class="box-nome">TRIANON GESTÃO DE ENERGIA LTDA</div><div class="box-info">CNPJ: 58.843.586/0001-36<br>Rua Dom José Moraes Torres, 69 – Flores, Manaus, AM</div></div>'
-    +'</div>'
-    +'<p class="intro">As Partes acima identificadas têm entre si justo e acertado o presente Contrato de Prestação de Serviços, que se regerá pelas cláusulas e condições a seguir:</p>'
-    +'<h2>Objeto do Contrato</h2>'
-    +servicos.map(function(s){return '<div class="sv"><span>•</span><span>'+s+'</span></div>';}).join('')
-    +'<div class="highlight"><div style="font-size:10px;color:#065f46;margin-bottom:3px;font-weight:600">💰 REMUNERAÇÃO MENSAL</div>'
-    +'<div class="hl-val">R$ '+totalMensal.toLocaleString('pt-BR',{minimumFractionDigits:2})+'/mês</div>'
-    +'<div style="font-size:10px;color:#065f46;margin-top:3px">'+ucs.length+' UC(s) × R$ 500,00 — pagamento até o dia 05 de cada mês</div></div>'
-    +'<div class="cl"><strong>Auditoria Retroativa:</strong> Em caso de êxito, a CONTRATADA fará jus a 30% sobre os valores efetivamente recuperados.</div>'
-    +'<div class="cl"><strong>Vigência:</strong> 1 (um) ano, com renovação automática e reajuste anual pelo IPCA.</div>'
-    +'<div class="cl"><strong>Rescisão:</strong> Sem penalidade quando o custo do serviço superar a economia gerada. Por outros motivos: multa de 30% sobre o saldo restante.</div>'
-    +'<div class="cl"><strong>Foro:</strong> Comarca de Manaus, Estado do Amazonas.</div>'
-    +'<p style="text-align:center;margin:18px 0;font-size:11px">Manaus, '+dataHoje+'.</p>'
-    +'<div class="sigs"><div class="sig"><div style="height:36px"></div><div class="sig-line">TRIANON GESTÃO DE ENERGIA LTDA<br><span style="font-size:9px;color:#64748b">Contratada</span></div></div>'
-    +'<div class="sig"><div style="height:36px"></div><div class="sig-line">'+nomeCliente+'<br><span style="font-size:9px;color:#64748b">Contratante</span></div></div></div>'
-    +'<div class="sigs" style="margin-top:20px"><div class="sig"><div style="height:36px"></div><div class="sig-line">Testemunha 1<br>Nome: _______________ CPF: _______________</div></div>'
-    +'<div class="sig"><div style="height:36px"></div><div class="sig-line">Testemunha 2<br>Nome: _______________ CPF: _______________</div></div></div>'
-    +'<div class="footer">TRIANON GESTÃO DE ENERGIA LTDA · CNPJ: 58.843.586/0001-36 · Manaus, AM</div>'
-    +'</body></html>');
-  win.document.close();
-}
-
-function _gcContrato(nome, ucs, sub){
-  nome = String(nome).replace(/&quot;/g,'"');
-  ucs  = String(ucs).replace(/&quot;/g,'"');
-  sub  = String(sub).replace(/&quot;/g,'"');
-  gerarContrato(nome, ucs, sub);
-}
-function _openAnalise(uc){ abrirAnaliseUC(uc, _ucClienteMap[uc] || uc); }
-
-function switchTab(tab){
-  ['servicos','mercado'].forEach(function(t){
-    var c = document.getElementById('tab-'+t+'-content');
-    var b = document.getElementById('tab-'+t);
-    if(c) c.style.display = t===tab?'block':'none';
-    if(b){
-      if(t===tab){b.style.background='var(--accent)';b.style.color='#fff';b.style.border='none';}
-      else{b.style.background='transparent';b.style.color='var(--muted)';b.style.border='1px solid var(--border2)';}
-    }
-  });
-  if(tab==='mercado') popularMLSelect();
-}
-
-function popularMLSelect(){
-  var sel = document.getElementById('ml-uc');
-  if(!sel) return;
-  var allUcs = [...new Set(DADOS.faturas.map(function(f){return f.uc;}))];
-  sel.innerHTML = '<option value="">Selecione uma UC para simular</option>' +
-    allUcs.map(function(uc){
-      var f = DADOS.faturas.find(function(x){return x.uc===uc;});
-      var nome = f ? f.cliente_nome||uc : uc;
-      var elegivel = f && (f.subgrupo||'').startsWith('A') || parseFloat((f&&f.demanda_contratada_fora_ponta_kw)||0)>=300;
-      return '<option value="'+uc+'">'+nome.slice(0,40)+' — UC '+uc+(elegivel?' ⭐':'')+'</option>';
-    }).join('');
-}
-
-function simularML(){
-  var uc = (document.getElementById('ml-uc')||{}).value;
-  var desconto = parseFloat((document.getElementById('ml-desconto')||{}).value)||15;
-  var cont = document.getElementById('ml-resultado');
-  if(!cont) return;
-  if(!uc){ cont.innerHTML=''; return; }
-  var faturas = DADOS.faturas.filter(function(f){return f.uc===uc;}).sort(function(a,b){return (b.mes_referencia||'').localeCompare(a.mes_referencia||'');});
-  if(!faturas.length){ cont.innerHTML='<div class="empty">Sem dados para esta UC.</div>'; return; }
-  var f0 = faturas[0];
-  var nome = f0.cliente_nome||uc;
-  var subgrupo = f0.subgrupo||'B';
-  var demCtda = parseFloat(f0.demanda_contratada_fora_ponta_kw)||0;
-  var n = Math.min(faturas.length,12);
-  var custoMedio = faturas.slice(0,n).reduce(function(s,f){return s+parseFloat(f.total_a_pagar||0);},0)/n;
-  var consumoMedio = faturas.slice(0,n).reduce(function(s,f){return s+parseFloat(f.consumo_total_kwh||0);},0)/n;
-  var custoTotal12 = faturas.slice(0,n).reduce(function(s,f){return s+parseFloat(f.total_a_pagar||0);},0);
-  var elegivel = subgrupo.startsWith('A') || demCtda>=300;
-  var pcts = [desconto, desconto-5, desconto-8, desconto-10];
-  var bandeiras = ['Bandeira Verde','Bandeira Amarela','Vermelha P1','Vermelha P2'];
-  var cores = ['#059669','#d97706','#dc2626','#991b1b'];
-  var bgs = ['#d1fae5','#fef3c7','#fee2e2','#fecaca'];
-  var econMensal = custoMedio * (desconto-4)/100;
-  var anos = [2027,2028,2029,2030,2031];
-  var proj = anos.map(function(ano,i){
-    var r = Math.pow(1.05,i);
-    var c = custoMedio*r*12;
-    var l = custoMedio*(1-desconto/100)*r*12;
-    return {ano:ano, c:c, l:l, e:c-l};
-  });
-  var totalEco = proj.reduce(function(s,p){return s+p.e;},0);
-  var tarifaKwh = consumoMedio>0 ? custoMedio/consumoMedio : 0;
-  var fmtBR = function(v,d){ return v.toLocaleString('pt-BR',{minimumFractionDigits:d||0,maximumFractionDigits:d||0}); };
-  var bandCards = bandeiras.map(function(b,i){
-    var custo = custoMedio*(1-pcts[i]/100);
-    var eco = custoMedio-custo;
-    return '<div style="background:'+bgs[i]+';border:1px solid '+cores[i]+'30;border-radius:8px;padding:12px;text-align:center">'
-      +'<div style="font-size:10px;font-weight:600;color:'+cores[i]+';margin-bottom:6px">'+b+'</div>'
-      +'<div style="font-size:13px;font-weight:700">R$ '+fmtBR(custo,2)+'</div>'
-      +'<div style="font-size:10px;color:var(--muted);margin:2px 0">custo no ML</div>'
-      +'<div style="font-size:12px;font-weight:600;color:'+(eco>0?'var(--green)':'var(--red)')+'">'+
-      (eco>0?'↓':'↑')+' '+Math.abs(pcts[i])+'% | R$ '+fmtBR(Math.abs(eco),2)+'</div></div>';
-  }).join('');
-  var projRows = proj.map(function(p){
-    return '<div class="table-row" style="grid-template-columns:80px 1fr 1fr 1fr">'
-      +'<div class="td"><strong>'+p.ano+'</strong></div>'
-      +'<div class="td r">R$ '+fmtBR(p.c)+'</div>'
-      +'<div class="td r">R$ '+fmtBR(p.l)+'</div>'
-      +'<div class="td r" style="color:'+(p.e>0?'var(--green)':'var(--red)')+';font-weight:600">R$ '+fmtBR(p.e)+'</div></div>';
-  }).join('');
-  cont.innerHTML = '<div class="card" style="margin-bottom:14px;border-color:'+(elegivel?'#bbf7d0':'#fde68a')+'">'
-    +'<div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">'
-    +'<div><div style="font-size:15px;font-weight:700">'+(elegivel?'✅':'⚠️')+' '+nome.slice(0,50)+' — UC '+uc+'</div>'
-    +'<div style="font-size:12px;color:var(--muted);margin-top:4px">Subgrupo '+subgrupo+' • Demanda '+(demCtda>0?demCtda+' kW':'—')+
-    ' • <span style="color:'+(elegivel?'var(--green)':'var(--amber)')+'">'+( elegivel?'✅ Elegível ML':'⚠️ Verificar elegibilidade')+'</span></div></div>'
-    +'<div style="text-align:right"><div style="font-size:22px;font-weight:700;color:'+(econMensal>0?'var(--green)':'var(--red)')+'">R$ '+fmtBR(Math.abs(econMensal),2)+'/mês</div>'
-    +'<div style="font-size:11px;color:var(--muted)">Economia estimada ('+desconto+'% desconto)</div></div></div>'
-    +'<div class="metrics-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">'
-    +'<div class="metric-card"><div class="metric-label">Custo Cativo Médio</div><div class="metric-val">R$ '+fmtBR(custoMedio,2)+'</div><div class="metric-sub">/mês</div></div>'
-    +'<div class="metric-card"><div class="metric-label">Consumo Médio</div><div class="metric-val">'+Math.round(consumoMedio).toLocaleString('pt-BR')+'</div><div class="metric-sub">kWh/mês</div></div>'
-    +'<div class="metric-card"><div class="metric-label">Tarifa Média</div><div class="metric-val">R$ '+tarifaKwh.toFixed(4)+'</div><div class="metric-sub">/kWh</div></div>'
-    +'<div class="metric-card"><div class="metric-label">Gasto 12 meses</div><div class="metric-val">R$ '+fmtBR(custoTotal12)+'</div></div></div>'
-    +'<h3 style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:10px">Comparativo por Bandeira</h3>'
-    +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">'+bandCards+'</div>'
-    +'<h3 style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:10px">Projeção 5 Anos (IPCA 5%/ano)</h3>'
-    +'<div class="table-wrap" style="margin-bottom:16px"><div class="table-head" style="grid-template-columns:80px 1fr 1fr 1fr">'
-    +'<div class="th">Ano</div><div class="th r">Cativo</div><div class="th r">ML Est.</div><div class="th r">Economia</div></div>'
-    +projRows
-    +'<div style="padding:12px 16px;background:var(--bg3);display:grid;grid-template-columns:80px 1fr 1fr 1fr;font-weight:700;font-size:12px">'
-    +'<div>TOTAL</div><div></div><div></div><div style="text-align:right;color:'+(totalEco>0?'var(--green)':'var(--red)')+'">R$ '+fmtBR(totalEco)+'</div></div></div>'
-    +'<div style="background:'+(elegivel?'#f0fdf4':'#fff7ed')+';border:1px solid '+(elegivel?'#bbf7d0':'#fed7aa')+';border-radius:8px;padding:14px">'
-    +'<div style="font-size:13px;font-weight:700;color:'+(elegivel?'var(--green)':'var(--amber)')+';margin-bottom:6px">'+(elegivel?'✅ RECOMENDADO migrar para o Mercado Livre':'⚠️ Análise detalhada necessária')+'</div>'
-    +'<div style="font-size:12px;color:var(--muted);line-height:1.6">'
-    +(elegivel ? 'Com '+desconto+'% de desconto, economia estimada de <strong>R$ '+fmtBR(Math.abs(econMensal*12))+'</strong>/ano. Em 5 anos: <strong>R$ '+fmtBR(totalEco)+'</strong>.'
-               : 'UC pode não ser elegível (demanda '+demCtda+' kW < 300 kW). Priorize auditoria e gestão de eficiência.')
-    +'</div>'
-    +'<button class="btn green" style="margin-top:12px" onclick="_gcContrato('+JSON.stringify(nome)+',' +JSON.stringify(uc)+','+JSON.stringify(subgrupo)+')">📄 Gerar Contrato</button>'
-    +'</div></div>';
-}
-
-function renderEstrategico(){
-  var cont = document.getElementById('estrategico-lista');
-  if(!cont) return;
-  cont.innerHTML = '';
-  _ucClienteMap = {};
-  var porCliente = {};
-  DADOS.faturas.forEach(function(f){
-    var nome = f.cliente_nome || f.uc;
-    _ucClienteMap[f.uc] = nome;
-    if(!porCliente[nome]) porCliente[nome] = {nome:nome, ucs:[]};
-    if(!porCliente[nome].ucs.find(function(u){return u.uc===f.uc;})){
-      var analise = Array.isArray(f.faturas_analise)?f.faturas_analise[0]:(f.faturas_analise||null);
-      if(!analise) analise = DADOS.analises.find(function(a){return a.fatura_id===f.id;})||{};
-      var alertas = Array.isArray(analise.alertas)?analise.alertas:[];
-      var hasGD = alertas.some(function(a){return (a.codigo||'').includes('GD');});
-      var hasReativo = alertas.some(function(a){return (a.codigo||'').includes('FATOR')||(a.titulo||'').toLowerCase().includes('reativo');});
-      var hasCOSIP = alertas.some(function(a){return (a.codigo||'').includes('COSIP');});
-      var isGrupoA = (f.subgrupo||'').startsWith('A');
-      var demCtda = parseFloat(f.demanda_contratada_fora_ponta_kw)||0;
-      var servicos = [
-        {icone:'⚡',nome:'Gestão de Energia Completa',descricao:'Levantamento tarifário, revisão de enquadramento, relatório mensal e dashboard.',fit:'alto',valor:'R$ 500/mês'},
-        {icone:'🔍',nome:'Auditoria Retroativa (até 120 meses)',descricao:'Revisão dos últimos 10 anos. Identifica cobranças indevidas e recuperação de créditos ICMS/TUSD.',fit:'alto',valor:'30% sobre recuperado'},
-      ];
-      if(hasReativo) servicos.push({icone:'🔋',nome:'Correção de Fator de Potência',descricao:'Instalação de banco de capacitores. ROI em 6-18 meses.',fit:'critico',valor:'Incluído na gestão'});
-      if(hasCOSIP) servicos.push({icone:'💡',nome:'Contestação de COSIP',descricao:'Verificação e contestação junto à Prefeitura de Manaus.',fit:'alto',valor:'Incluído na gestão'});
-      if(isGrupoA||demCtda>=300) servicos.push({icone:'🏭',nome:'Migração para Mercado Livre (ACL)',descricao:'Grupo '+f.subgrupo+(demCtda>0?' com demanda '+demCtda+' kW':'')+' — elegível para contratação livre. Economia potencial 15-30%.',fit:'alto',valor:'Comissão sobre economia'});
-      if(hasGD) servicos.push({icone:'☀️',nome:'Otimização de Geração Distribuída',descricao:'Gestão de créditos acumulados e verificação de compensação entre UCs.',fit:'medio',valor:'Incluído na gestão'});
-      porCliente[nome].ucs.push({uc:f.uc,subgrupo:f.subgrupo||'',modalidade:f.modalidade||'',demanda_ctda:demCtda,total_pago:parseFloat(f.total_a_pagar)||0,score:analise.score_eficiencia||100,servicos:servicos,hasGD:hasGD,hasReativo:hasReativo});
-    }
-  });
-  Object.values(porCliente).forEach(function(cli){
-    var totalMensal = cli.ucs.length*500;
-    var criticos = cli.ucs.reduce(function(s,u){return s+u.servicos.filter(function(sv){return sv.fit==='critico';}).length;},0);
-    var div = document.createElement('div');
-    div.className = 'card';
-    div.style.marginBottom = '20px';
-    var ucCards = cli.ucs.map(function(uc){
-      var svCards = uc.servicos.map(function(sv){
-        var bg = sv.fit==='critico'?'#fff5f5':sv.fit==='alto'?'#f0fdf4':'var(--bg3)';
-        var bc = sv.fit==='critico'?'#fecaca':sv.fit==='alto'?'#bbf7d0':'var(--border)';
-        var badgeCls = sv.fit==='critico'?'critico':sv.fit==='alto'?'ok':'info';
-        var badgeTxt = sv.fit==='critico'?'URGENTE':sv.fit==='alto'?'Recomendado':'Opcional';
-        return '<div style="display:flex;gap:10px;padding:10px;background:'+bg+';border-radius:8px;border:1px solid '+bc+';margin-bottom:8px">'
-          +'<span style="font-size:20px;flex-shrink:0">'+sv.icone+'</span>'
-          +'<div style="flex:1"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">'
-          +'<span style="font-size:12px;font-weight:600">'+sv.nome+'</span>'
-          +'<span class="badge '+badgeCls+'" style="font-size:9px">'+badgeTxt+'</span>'
-          +'<span style="font-size:10px;color:var(--muted);margin-left:auto">'+sv.valor+'</span></div>'
-          +'<div style="font-size:11px;color:var(--muted);line-height:1.5">'+sv.descricao+'</div></div></div>';
-      }).join('');
-      var ucNome = JSON.stringify(uc.uc);
-      return '<div style="border:1px solid var(--border);border-radius:8px;margin-bottom:10px;overflow:hidden">'
-        +'<div style="padding:10px 14px;background:var(--bg3);display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)">'
-        +'<span style="font-size:12px;font-weight:600">UC '+uc.uc+'</span>'
-        +'<span class="badge gray" style="font-size:9px">'+uc.subgrupo+' • '+uc.modalidade+'</span>'
-        +(uc.demanda_ctda>0?'<span class="badge info" style="font-size:9px">Demanda '+uc.demanda_ctda+' kW</span>':'')
-        +'<span class="badge '+(uc.score>=85?'ok':uc.score>=70?'atencao':'critico')+'" style="font-size:9px">Score '+uc.score+'/100</span>'
-        +'<span style="margin-left:auto;font-size:11px;font-weight:600">R$ '+uc.total_pago.toLocaleString('pt-BR',{minimumFractionDigits:2})+'/mês</span>'
-        +'<button class="btn primary" style="font-size:11px;padding:5px 12px" onclick="_openAnalise('+ucNome+')">🔍 Análise Completa</button>'
-        +'</div>'
-        +'<div style="padding:12px 14px">'+svCards+'</div></div>';
-    }).join('');
-    var nomeJson = JSON.stringify(cli.nome).replace(/"/g,'&quot;');
-    var ucsJson = JSON.stringify(cli.ucs.map(function(u){return u.uc;}).join(',')).replace(/"/g,'&quot;');
-    var subJson = JSON.stringify(cli.ucs[0]?cli.ucs[0].subgrupo:'').replace(/"/g,'&quot;');
-    div.innerHTML = '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">'
-      +'<div><div style="font-size:15px;font-weight:700">'+cli.nome.slice(0,60)+'</div>'
-      +'<div style="font-size:12px;color:var(--muted);margin-top:3px">'+cli.ucs.length+' UC(s)</div></div>'
-      +'<div style="display:flex;gap:8px;align-items:center">'
-      +(criticos>0?'<span class="badge critico">⚠ '+criticos+' ação urgente</span>':'')
-      +'<div style="text-align:right">'
-      +'<div style="font-size:18px;font-weight:700;color:var(--green)">R$ '+totalMensal.toLocaleString('pt-BR')+'/mês</div>'
-      +'<div style="font-size:11px;color:var(--muted)">R$ '+(totalMensal*12).toLocaleString('pt-BR')+'/ano</div></div>'
-      +'<button class="btn green" onclick="_gcContrato('+nomeJson+','+ucsJson+','+subJson+')">📄 Gerar Contrato</button>'
-      +'</div></div>'+ucCards;
-    cont.appendChild(div);
-  });
-  if(!cont.children.length) cont.innerHTML = '<div class="empty"><div class="empty-icon">📊</div><div class="empty-title">Nenhum cliente para analisar</div></div>';
-}
-
-async function abrirAnaliseUC(uc, nomeCliente){
-  var modal = document.getElementById('analiseUCModal');
-  var loading = document.getElementById('auc-loading');
-  var texto = document.getElementById('auc-texto');
-  if(!modal) return;
-  document.getElementById('auc-titulo').textContent = 'Análise Completa — UC '+uc;
-  document.getElementById('auc-sub').textContent = nomeCliente;
-  modal.style.display = 'block';
-  loading.style.display = 'block';
-  texto.style.display = 'none';
-  texto.innerHTML = '';
-  var faturas = DADOS.faturas.filter(function(f){return f.uc===uc;}).sort(function(a,b){return (b.mes_referencia||'').localeCompare(a.mes_referencia||'');});
-  var analises = DADOS.analises.filter(function(a){return a.uc===uc;});
-  var alertas = DADOS.alertas.filter(function(a){return a.uc===uc&&!a.resolvido;});
-  var f0 = faturas[0]||{};
-  var a0 = analises[0]||{};
-  var n = Math.min(faturas.length,12);
-  var custoMedio = faturas.slice(0,n).reduce(function(s,f){return s+parseFloat(f.total_a_pagar||0);},0)/(n||1);
-  var consumoMedio = faturas.slice(0,n).reduce(function(s,f){return s+parseFloat(f.consumo_total_kwh||0);},0)/(n||1);
-  var custoTotal12 = faturas.slice(0,n).reduce(function(s,f){return s+parseFloat(f.total_a_pagar||0);},0);
-  var demCtda = parseFloat(f0.demanda_contratada_fora_ponta_kw)||0;
-  var demMedi = parseFloat(f0.demanda_medida_fora_ponta_kw)||0;
-  var hasGD = analises.some(function(a){return (a.alertas||[]).some(function(al){return (al.codigo||'').includes('GD');});});
-  var hasReativo = alertas.some(function(a){return (a.titulo||'').toLowerCase().includes('reativo')||(a.codigo||'').includes('FATOR');});
-  var elegML = (f0.subgrupo||'').startsWith('A')||demCtda>=300;
-  var fmtBR = function(v){ return v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); };
-  var alertasSample = alertas.slice(0,5).map(function(a){return {tipo:a.titulo,sev:a.severidade,val:a.valor_r};});
-  var analisesClaude = analises.slice(0,3).map(function(a){return a.analise_claude||'';}).filter(Boolean).join(' | ').slice(0,400);
-  var prompt = [
-    'Você é especialista em eficiência energética no Brasil, focado em clientes da Amazonas Energia em Manaus.',
-    '',
-    'Gere um DIAGNÓSTICO EXECUTIVO COMPLETO da UC abaixo. Profissional, direto, orientado a negócios.',
-    '',
-    'DADOS DA UC:',
-    '- Cliente: '+nomeCliente,
-    '- UC: '+uc,
-    '- Subgrupo: '+(f0.subgrupo||'?')+' | Modalidade: '+(f0.modalidade||'?'),
-    '- Demanda Contratada: '+(demCtda>0?demCtda+' kW':'nao disponivel'),
-    '- Demanda Medida: '+(demMedi>0?demMedi+' kW':'nao disponivel'),
-    '- Consumo Medio: '+Math.round(consumoMedio).toLocaleString('pt-BR')+' kWh/mes',
-    '- Custo Medio: R$ '+fmtBR(custoMedio)+'/mes',
-    '- Gasto 12 meses: R$ '+fmtBR(custoTotal12),
-    '- Score Eficiencia: '+(a0.score_eficiencia||'?')+'/100',
-    '- Geracao Distribuida: '+(hasGD?'SIM':'Nao'),
-    '- Energia Reativa: '+(hasReativo?'SIM - cobrancas detectadas':'Normal'),
-    '- Elegivel ML: '+(elegML?'SIM':'Verificar'),
-    '- Alertas: '+JSON.stringify(alertasSample),
-    '- Analise IA anterior: '+analisesClaude,
-    '',
-    'ESTRUTURA OBRIGATORIA (use markdown ## para secoes):',
-    '## 🔍 Diagnostico Atual',
-    '## ⚡ Oportunidades Identificadas',
-    '## 🚨 Acoes Urgentes',
-    '## 🏭 Adequacao ao Mercado Livre',
-    '## 📋 Escopo de Servicos Recomendado',
-    '## 💰 Estimativa de Resultado',
-    '## 📅 Proximos Passos',
-    '',
-    'Use os numeros reais. Escreva de forma que convenca o cliente a fechar contrato.'
-  ].join('\n');
-  try{
-    var resp = await fetch('https://saas-faturas-production.up.railway.app/analise/uc/'+uc);
+    var resp = await fetch(RW+'/analise/uc/'+uc);
     var data = await resp.json();
     if(data.error) throw new Error(data.error);
-    var md = data.analise || 'Erro ao gerar análise.';
-    var html = md
-      .replace(/^## (.+)$/gm,'<h2 style="font-size:16px;font-weight:700;color:#0d2137;margin:24px 0 10px;padding-bottom:6px;border-bottom:2px solid #e2e8f0">$1</h2>')
-      .replace(/^### (.+)$/gm,'<h3 style="font-size:14px;font-weight:600;margin:16px 0 8px">$1</h3>')
-      .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-      .replace(/^- (.+)$/gm,'<li style="margin-bottom:4px">$1</li>')
-      .replace(/\n\n/g,'<br><br>')
-      .replace(/\n/g,'<br>');
-    loading.style.display = 'none';
-    texto.style.display = 'block';
-    var ucConf = JSON.stringify(uc).replace(/"/g,'&quot;');
-    var nomeConf = JSON.stringify(nomeCliente).replace(/"/g,'&quot;');
-    var subConf = JSON.stringify(f0.subgrupo||'').replace(/"/g,'&quot;');
-    texto.innerHTML = '<div style="font-size:13px;line-height:1.8;color:#374151">'
-      +'<div style="background:linear-gradient(135deg,#0d2137,#1e3a5f);border-radius:10px;padding:16px 20px;margin-bottom:20px">'
-      +'<div style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:4px">DIAGNÓSTICO EXECUTIVO</div>'
-      +'<div style="font-size:18px;font-weight:700;color:#fff">'+nomeCliente+'</div>'
-      +'<div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:4px">UC '+uc+' • Gerado por IA em '+new Date().toLocaleDateString('pt-BR')+'</div></div>'
-      +html+'</div>'
-      +'<div style="margin-top:24px;padding-top:16px;border-top:1px solid #e2e8f0;display:flex;gap:10px">'
-      +'<button class="btn green" onclick="_gcContrato('+nomeConf+','+ucConf+','+subConf+')">📄 Gerar Contrato</button>'
-      +'<button class="btn" onclick="imprimirAnalise()">🖨 Imprimir</button></div>';
-  }catch(err){
-    loading.style.display = 'none';
-    texto.style.display = 'block';
-    texto.innerHTML = '<div style="color:var(--red);padding:20px">Erro: '+err.message+'</div>';
+    _analiseCache[uc] = data.analise;
+    renderAnaliseTexto(data.analise, uc, nomeCliente, clienteId);
+    // Avança status para analisando se ainda for prospecto
+    if(clienteId){
+      var c = D.clientes.find(function(x){return x.id===clienteId;});
+      if(c && c.status==='prospecto') await mudarStatus(clienteId,'analisando');
+    }
+  } catch(e){
+    document.getElementById('ma-body').innerHTML = '<div style="color:var(--red);padding:24px">Erro: '+e.message+'<br><br>Verifique se o Railway está online.</div>';
   }
+}
+
+function renderAnaliseTexto(md, uc, nome, clienteId){
+  var html = md
+    .replace(/^## (.+)$/gm,'<h2 style="font-size:15px;font-weight:700;color:#0d2137;margin:20px 0 8px;padding-bottom:5px;border-bottom:2px solid #e2e8f0">$1</h2>')
+    .replace(/^### (.+)$/gm,'<h3 style="font-size:13px;font-weight:600;margin:12px 0 6px">$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/^- (.+)$/gm,'<li style="margin-bottom:4px;margin-left:16px">$1</li>')
+    .replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');
+
+  var idJson = JSON.stringify(clienteId||'');
+  var ucJson = JSON.stringify(uc);
+  var nomeJson = JSON.stringify(nome);
+
+  document.getElementById('ma-body').innerHTML =
+    '<div style="background:linear-gradient(135deg,#0d2137,#1e3a5f);border-radius:10px;padding:14px 18px;margin-bottom:20px">'
+    +'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:3px">DIAGNÓSTICO EXECUTIVO — IA</div>'
+    +'<div style="font-size:16px;font-weight:700;color:#fff">'+nome.slice(0,50)+'</div>'
+    +'<div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">UC '+uc+' · '+new Date().toLocaleDateString('pt-BR')+'</div>'
+    +'</div>'
+    +'<div style="font-size:13px;line-height:1.8;color:#374151">'+html+'</div>'
+    +'<div style="margin-top:20px;padding-top:14px;border-top:1px solid #e2e8f0;display:flex;gap:10px;flex-wrap:wrap">'
+    +(clienteId?'<button class="btn green" onclick="fecharModal(\'modalAnalise\');gerarProposta('+idJson+')">📧 Gerar Proposta</button>':'')
+    +'<button class="btn" onclick="imprimirAnalise()">🖨 Imprimir PDF</button>'
+    +'</div>';
 }
 
 function imprimirAnalise(){
-  var c = document.getElementById('auc-texto');
-  var t = document.getElementById('auc-titulo');
+  var c = document.getElementById('ma-body');
+  var t = document.getElementById('ma-titulo');
   if(!c) return;
   var w = window.open('','_blank');
   w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+(t?t.textContent:'')+'</title>'
-    +'<style>body{font-family:Arial,sans-serif;font-size:13px;padding:30px;max-width:800px;margin:0 auto}'
-    +'h2{color:#0d2137;border-bottom:2px solid #e2e8f0;padding-bottom:6px}'
-    +'@media print{button{display:none!important}}</style></head>'
+    +'<style>body{font-family:Arial,sans-serif;font-size:13px;padding:30px;max-width:800px;margin:0 auto;color:#1a1a1a}'
+    +'h2{color:#0d2137;border-bottom:2px solid #e2e8f0;padding-bottom:5px;margin:18px 0 8px}'
+    +'li{margin-bottom:4px}@media print{button{display:none}}</style></head>'
     +'<body>'+c.innerHTML+'<br><button onclick="window.print()">Imprimir</button></body></html>');
   w.document.close();
 }
 
+// ── PROPOSTA ─────────────────────────────────────────────────────────────────
+async function gerarPropostaParaCliente(clienteId){
+  var c = D.clientes.find(function(x){return x.id===clienteId;});
+  if(!c) return;
+  var uc = (c.ucs||[])[0];
+  var analise = _analiseCache[uc]||'Análise não disponível. Execute a análise completa primeiro.';
+  var ucs = c.ucs||[];
+  var valorMensal = ucs.length * 500;
+  var fat = D.faturas.filter(function(f){return ucs.includes(f.uc);});
+  var custo = parseFloat(c.custo_medio)||0;
+  var n = Math.max(fat.length,1);
+  var ecoEstimada = custo * 0.15 * 12;
 
-// ── INIT ──
+  // Cria proposta no banco
+  var prop = await sbPost('propostas',{
+    cliente_id: clienteId, cliente_nome: c.nome, ucs: ucs,
+    valor_mensal: valorMensal, economia_anual: ecoEstimada,
+    diagnostico: analise, status: 'rascunho'
+  });
+
+  // Muda status
+  await mudarStatus(clienteId, 'proposta');
+
+  // Abre PDF da proposta
+  abrirPdfProposta(c, prop[0]||{}, analise, valorMensal, ecoEstimada);
+}
+
+function abrirPdfProposta(c, prop, analise, valorMensal, ecoEstimada){
+  var ucs = (c.ucs||[]).join(', ');
+  var dataHoje = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+  var analiseHtml = (analise||'').replace(/^## (.+)$/gm,'<h3>$1</h3>').replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>');
+
+  var w = window.open('','_blank');
+  w.document.write('<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">'
+    +'<title>Proposta — '+c.nome+'</title>'
+    +'<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:12px;color:#1a1a1a;padding:20mm}'
+    +'.logo{display:flex;align-items:center;gap:12px;margin-bottom:24px;padding-bottom:14px;border-bottom:3px solid #059669}'
+    +'.logo-box{width:44px;height:44px;background:#059669;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff}'
+    +'.logo-nome{font-size:16px;font-weight:700;color:#0d2137}.logo-sub{font-size:10px;color:#64748b}'
+    +'h1{font-size:18px;font-weight:700;color:#0d2137;text-align:center;margin-bottom:6px}'
+    +'h2{font-size:13px;font-weight:700;color:#0d2137;margin:16px 0 8px;border-left:3px solid #059669;padding-left:8px}'
+    +'h3{font-size:12px;font-weight:700;margin:10px 0 4px}'
+    +'.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}'
+    +'.box{border:1px solid #e2e8f0;border-radius:6px;padding:12px;background:#f8fafc}'
+    +'.box-label{font-size:9px;font-weight:700;text-transform:uppercase;color:#64748b;margin-bottom:6px}'
+    +'.hl{background:#f0fdf4;border:1px solid #6ee7b7;border-radius:8px;padding:14px;margin:14px 0;text-align:center}'
+    +'.hl-val{font-size:22px;font-weight:700;color:#059669}'
+    +'.hl-sub{font-size:11px;color:#065f46;margin-top:4px}'
+    +'.row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #e2e8f0;font-size:11px}'
+    +'.sigs{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:32px}'
+    +'.sig{text-align:center}.sig-line{border-top:1px solid #1a1a1a;padding-top:5px;font-size:10px;color:#374151}'
+    +'.footer{margin-top:16px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:9px;color:#94a3b8;text-align:center}'
+    +'@media print{.no-print{display:none}}</style></head><body>'
+    +'<div class="logo">'
+    +'<div class="logo-box">⚡</div>'
+    +'<div><div class="logo-nome">TRIANON GESTÃO DE ENERGIA</div><div class="logo-sub">Gestão Inteligente · Manaus, AM</div></div>'
+    +'<button class="no-print" onclick="window.print()" style="margin-left:auto;padding:8px 16px;background:#059669;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600">🖨 Salvar PDF</button>'
+    +'</div>'
+    +'<h1>PROPOSTA COMERCIAL</h1>'
+    +'<p style="text-align:center;font-size:11px;color:#64748b;margin-bottom:20px">Gestão de Energia e Eficiência Energética</p>'
+    +'<div class="grid">'
+    +'<div class="box"><div class="box-label">Cliente</div><b>'+c.nome+'</b><br><span style="font-size:10px;color:#64748b">CNPJ: '+formatCNPJ(c.cnpj||'')+'<br>UC: '+ucs+'</span></div>'
+    +'<div class="box"><div class="box-label">Fornecedor</div><b>TRIANON GESTÃO DE ENERGIA LTDA</b><br><span style="font-size:10px;color:#64748b">CNPJ: 58.843.586/0001-36<br>Manaus, AM</span></div>'
+    +'</div>'
+    +'<div class="hl">'
+    +'<div class="hl-val">R$ '+valorMensal.toLocaleString('pt-BR',{minimumFractionDigits:2})+'/mês</div>'
+    +'<div class="hl-sub">'+(c.ucs||[]).length+' UC(s) × R$ 500,00 · Economia estimada: R$ '+ecoEstimada.toLocaleString('pt-BR',{minimumFractionDigits:0})+'/ano</div>'
+    +'</div>'
+    +'<h2>Diagnóstico e Justificativa</h2>'
+    +'<div style="font-size:11px;line-height:1.7;color:#374151">'+analiseHtml.slice(0,2000)+'</div>'
+    +'<h2>Serviços Incluídos</h2>'
+    +'<div class="row"><span>✅ Gestão de energia completa (levantamento, revisão tarifária, relatórios)</span><span style="color:#059669">R$ '+valorMensal.toLocaleString('pt-BR')+'/mês</span></div>'
+    +'<div class="row"><span>✅ Auditoria retroativa (120 meses)</span><span style="color:#059669">30% sobre recuperado</span></div>'
+    +'<div class="row"><span>✅ Dashboard e relatório mensal</span><span style="color:#059669">Incluído</span></div>'
+    +'<div class="row" style="border:none"><span>✅ Suporte técnico contínuo</span><span style="color:#059669">Incluído</span></div>'
+    +'<h2>Condições Comerciais</h2>'
+    +'<div style="font-size:11px;line-height:1.8;color:#374151">'
+    +'• <b>Vigência:</b> 12 meses, renovação automática com reajuste anual pelo IPCA<br>'
+    +'• <b>Rescisão sem multa:</b> quando o custo do serviço superar a economia gerada<br>'
+    +'• <b>Auditoria retroativa:</b> 30% de comissão sobre valores efetivamente recuperados<br>'
+    +'• <b>Foro:</b> Comarca de Manaus, Amazonas'
+    +'</div>'
+    +'<p style="text-align:center;margin:20px 0;font-size:11px;color:#374151">Manaus, '+dataHoje+'</p>'
+    +'<div class="sigs">'
+    +'<div class="sig"><div style="height:40px"></div><div class="sig-line">TRIANON GESTÃO DE ENERGIA LTDA<br>Fornecedor</div></div>'
+    +'<div class="sig"><div style="height:40px"></div><div class="sig-line">'+c.nome.slice(0,40)+'<br>Contratante</div></div>'
+    +'</div>'
+    +'<div class="footer">TRIANON GESTÃO DE ENERGIA LTDA · CNPJ: 58.843.586/0001-36 · Manaus, AM · Esta proposta tem validade de 15 dias.</div>'
+    +'</body></html>');
+  w.document.close();
+}
+
+async function gerarProposta(clienteId){
+  var c = D.clientes.find(function(x){return x.id===clienteId;});
+  if(!c) return;
+  var uc = (c.ucs||[])[0];
+  if(!uc) { alert('Nenhuma UC encontrada para este cliente.'); return; }
+  if(!_analiseCache[uc]){
+    if(!confirm('Análise não gerada ainda. Gerar agora?')) return;
+    await abrirAnaliseCompleta(uc, c.nome, clienteId);
+    setTimeout(function(){ gerarPropostaParaCliente(clienteId); }, 2000);
+  } else {
+    gerarPropostaParaCliente(clienteId);
+  }
+}
+
+// ── CONTRATO PDF ──────────────────────────────────────────────────────────────
+function gerarContratoPDF(clienteId){
+  var c = D.clientes.find(function(x){return x.id===clienteId;});
+  if(!c) return;
+  var ucs = c.ucs||[];
+  var valorMensal = ucs.length * 500;
+  var dataHoje = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+  var cnpjFmt = formatCNPJ(c.cnpj||'');
+  var temGrupoA = (c.subgrupo||'').startsWith('A');
+  var servicos = [
+    'a) Gestão de energia completa, contemplando levantamento contratual, levantamento de multas e adequações de enquadramentos tarifários.',
+    'b) Auditoria retroativa completa nas faturas dos últimos 120 meses.',
+    'c) Prestação de contas mensal através de relatórios, dashboard e presencial se necessário.',
+    'd) Revisão e ajustes junto à distribuidora: grupo, subgrupo, classe, modalidade, COSIP, demanda e reativo.',
+  ];
+  if(temGrupoA) servicos.splice(2,0,'e) Migração do Ambiente de Contratação Regulada (ACR) para o Ambiente de Contratação Livre (ACL).');
+
+  var w = window.open('','_blank');
+  w.document.write('<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Contrato — '+c.nome+'</title>'
+    +'<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:12px;color:#1a1a1a;padding:20mm}'
+    +'.logo{display:flex;align-items:center;gap:12px;margin-bottom:24px;padding-bottom:14px;border-bottom:2px solid #0d2137}'
+    +'.logo-box{width:40px;height:40px;background:#0d2137;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff}'
+    +'h1{font-size:13px;font-weight:700;text-align:center;text-transform:uppercase;letter-spacing:.06em;margin-bottom:18px;color:#0d2137}'
+    +'.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}'
+    +'.box{border:1px solid #e2e8f0;border-radius:6px;padding:10px}'
+    +'.box-label{font-size:9px;font-weight:700;text-transform:uppercase;color:#64748b;margin-bottom:5px;padding-bottom:4px;border-bottom:1px solid #e2e8f0}'
+    +'h2{font-size:11px;font-weight:700;margin:12px 0 6px;color:#0d2137}'
+    +'.sv{display:flex;gap:6px;margin-bottom:4px;font-size:10px;line-height:1.6;color:#374151}'
+    +'.hl{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:10px;margin:12px 0}'
+    +'.cl{font-size:10px;line-height:1.6;margin-bottom:6px}'
+    +'.sigs{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:24px}'
+    +'.sig{text-align:center}.sig-line{border-top:1px solid #1a1a1a;padding-top:5px;font-size:10px}'
+    +'.footer{margin-top:14px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:9px;color:#94a3b8;text-align:center}'
+    +'@media print{button{display:none}}</style></head><body>'
+    +'<div class="logo"><div class="logo-box">⚡</div>'
+    +'<div><div style="font-size:15px;font-weight:700;color:#0d2137">TRIANON GESTÃO DE ENERGIA</div><div style="font-size:10px;color:#64748b">Gestão Inteligente de Energia · Manaus, AM</div></div>'
+    +'<button onclick="window.print()" style="margin-left:auto;padding:7px 14px;background:#0d2137;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px">🖨 Imprimir PDF</button></div>'
+    +'<h1>Instrumento Particular de Contrato de Prestação de Serviços</h1>'
+    +'<div class="grid">'
+    +'<div class="box"><div class="box-label">Contratante</div><b style="font-size:11px">'+c.nome+'</b><br><span style="font-size:10px;color:#64748b">'+(cnpjFmt?'CNPJ: '+cnpjFmt+'<br>':'')+ucs.map(function(u){return 'UC: '+u;}).join(' · ')+'</span></div>'
+    +'<div class="box"><div class="box-label">Contratada</div><b style="font-size:11px">TRIANON GESTÃO DE ENERGIA LTDA</b><br><span style="font-size:10px;color:#64748b">CNPJ: 58.843.586/0001-36<br>Rua Dom José Moraes Torres, 69 – Flores, Manaus, AM</span></div>'
+    +'</div>'
+    +'<p style="font-size:11px;line-height:1.7;color:#374151;margin-bottom:14px">As Partes têm entre si justo e acertado o presente Contrato de Prestação de Serviços, que se regerá pelas cláusulas e condições a seguir:</p>'
+    +'<h2>Objeto do Contrato</h2>'
+    +servicos.map(function(s){return '<div class="sv"><span>•</span><span>'+s+'</span></div>';}).join('')
+    +'<div class="hl"><div style="font-size:10px;color:#065f46;margin-bottom:3px;font-weight:600">💰 REMUNERAÇÃO MENSAL</div>'
+    +'<div style="font-size:16px;font-weight:700;color:#059669">R$ '+valorMensal.toLocaleString('pt-BR',{minimumFractionDigits:2})+'/mês</div>'
+    +'<div style="font-size:10px;color:#065f46;margin-top:3px">'+ucs.length+' UC(s) × R$ 500,00 — pagamento até o dia 05 de cada mês</div></div>'
+    +'<div class="cl"><b>Auditoria Retroativa:</b> 30% de comissão sobre valores efetivamente recuperados.</div>'
+    +'<div class="cl"><b>Vigência:</b> 1 (um) ano, renovação automática com reajuste anual pelo IPCA.</div>'
+    +'<div class="cl"><b>Rescisão:</b> Sem penalidade quando o custo do serviço superar a economia gerada. Por outros motivos: multa de 30% sobre o saldo restante.</div>'
+    +'<div class="cl"><b>Foro:</b> Comarca de Manaus, Estado do Amazonas.</div>'
+    +'<p style="text-align:center;margin:16px 0;font-size:11px">Manaus, '+dataHoje+'.</p>'
+    +'<div class="sigs">'
+    +'<div class="sig"><div style="height:36px"></div><div class="sig-line">TRIANON GESTÃO DE ENERGIA LTDA<br><span style="font-size:9px;color:#64748b">Contratada</span></div></div>'
+    +'<div class="sig"><div style="height:36px"></div><div class="sig-line">'+c.nome.slice(0,40)+'<br><span style="font-size:9px;color:#64748b">Contratante</span></div></div>'
+    +'</div>'
+    +'<div class="sigs" style="margin-top:18px">'
+    +'<div class="sig"><div style="height:36px"></div><div class="sig-line">Testemunha 1<br>Nome: ___________ CPF: ___________</div></div>'
+    +'<div class="sig"><div style="height:36px"></div><div class="sig-line">Testemunha 2<br>Nome: ___________ CPF: ___________</div></div>'
+    +'</div>'
+    +'<div class="footer">TRIANON GESTÃO DE ENERGIA LTDA · CNPJ: 58.843.586/0001-36 · Manaus, AM</div>'
+    +'</body></html>');
+  w.document.close();
+}
+
+// ── NOVA EXTRAÇÃO ────────────────────────────────────────────────────────────
+function abrirModalNovoCliente(){
+  document.getElementById('modalNovoCliente').style.display='block';
+  document.getElementById('form-novo-cliente').style.display='block';
+  document.getElementById('status-extracao').style.display='none';
+  document.getElementById('nc-cpf').value='';
+  document.getElementById('nc-senha').value='';
+  document.getElementById('nc-email').value='';
+  document.getElementById('nc-error').style.display='none';
+  document.getElementById('nc-toggle').classList.add('on');
+  document.body.style.overflow='hidden';
+}
+
+async function iniciarExtracao(){
+  var cpf = document.getElementById('nc-cpf').value.replace(/\D/g,'');
+  var senha = document.getElementById('nc-senha').value;
+  var email = document.getElementById('nc-email').value;
+  var monitorar = document.getElementById('nc-toggle').classList.contains('on');
+  var errEl = document.getElementById('nc-error');
+
+  if(!cpf||!senha){ errEl.textContent='Preencha CPF/CNPJ e senha.'; errEl.style.display='block'; return; }
+
+  var btn = document.getElementById('nc-btn');
+  btn.textContent='Enviando...'; btn.disabled=true;
+  errEl.style.display='none';
+
+  try{
+    var creds = {cpf_cnpj:cpf, senha:senha, meses:12, monitorar:monitorar};
+    if(email) creds.email_contato = email;
+    var r = await sbPost('extraction_requests',{concessionaria:'amazonas_energia',credentials:creds,status:'pendente'});
+    if(!r||!r[0]) throw new Error('Erro ao criar tarefa.');
+    var taskId = r[0].id;
+
+    document.getElementById('form-novo-cliente').style.display='none';
+    document.getElementById('status-extracao').style.display='block';
+    extLog('✓ Tarefa criada — aguardando worker...');
+    extSet('⏳','Conectando ao portal Amazonas Energia...','Isso pode levar até 2 minutos');
+
+    if(_poll) clearInterval(_poll);
+    _poll = setInterval(async function(){ await pollExtracao(taskId, email); }, 5000);
+  } catch(e){
+    btn.textContent='⚡ Buscar Faturas Automaticamente'; btn.disabled=false;
+    errEl.textContent=e.message; errEl.style.display='block';
+  }
+}
+
+async function pollExtracao(taskId, email){
+  try{
+    var r = await fetch(SB+'/rest/v1/extraction_requests?id=eq.'+taskId+'&select=status,status_detail,pdf_links',{headers:{apikey:KEY,Authorization:'Bearer '+KEY}});
+    var d = await r.json(); var t = d[0]; if(!t) return;
+
+    if(t.status==='em_progresso') extLog('🔄 Extraindo faturas do portal...');
+
+    if(t.status==='concluido'){
+      clearInterval(_poll); _poll=null;
+      var n = t.pdf_links ? t.pdf_links.length : 0;
+      extSet('✅','Faturas incorporadas com sucesso!', n+' fatura(s) extraída(s) e analisadas.');
+      extLog('✓ '+n+' fatura(s) baixadas');
+      extLog('✓ Parse e análise IA concluídos');
+      extLog('🔄 Incorporando ao dashboard...');
+      await carregarDados();
+      extLog('✅ Cliente adicionado ao Kanban!');
+      document.getElementById('ext-btn-ver').style.display='block';
+
+      // Salva email de contato se informado
+      if(email){
+        var cpf = document.getElementById('nc-cpf').value.replace(/\D/g,'');
+        var cliente = D.clientes.find(function(c){return c.cnpj===cpf||c.portal_cpf_cnpj===cpf;});
+        if(cliente) await sbPatch('clientes?id=eq.'+cliente.id, {email_contato:email});
+      }
+    }
+
+    if(t.status==='erro_extracao'||t.status==='credenciais_invalidas'){
+      clearInterval(_poll); _poll=null;
+      var msg = t.status==='credenciais_invalidas' ? 'CPF/CNPJ ou senha inválidos.' : (t.status_detail||'Erro no portal. Tente novamente.');
+      if(msg.includes('Limite')||msg.includes('Timeout')) msg='Limite diário atingido. Tente novamente amanhã.';
+      extSet('❌', t.status==='credenciais_invalidas'?'Credenciais inválidas':'Erro na extração', msg);
+      extLog('❌ '+msg);
+      var btnVer = document.getElementById('ext-btn-ver');
+      btnVer.style.display='block'; btnVer.textContent='Fechar'; btnVer.style.background='transparent'; btnVer.style.color='var(--text)';
+      btnVer.onclick=function(){ fecharModal('modalNovoCliente'); };
+    }
+  } catch(e){}
+}
+
+function extSet(icon, titulo, sub){ document.getElementById('ext-icon').textContent=icon; document.getElementById('ext-titulo').textContent=titulo; document.getElementById('ext-sub').textContent=sub; }
+var _extLogs = new Set();
+function extLog(msg){ if(_extLogs.has(msg)) return; _extLogs.add(msg); document.getElementById('ext-log').innerHTML+='<div>'+msg+'</div>'; }
+
+// ── FATURAS ──────────────────────────────────────────────────────────────────
+function renderFaturas(){
+  var cli = (document.getElementById('filtro-cliente-fat')||{}).value||'';
+  var uc  = (document.getElementById('filtro-uc-fat')||{}).value||'';
+  var fat = D.faturas.filter(function(f){return (!cli||f.cliente_nome===cli)&&(!uc||f.uc===uc);});
+
+  // Popula filtros
+  var nomes = [...new Set(D.faturas.map(function(f){return f.cliente_nome;}).filter(Boolean))].sort();
+  var ucs   = [...new Set(D.faturas.map(function(f){return f.uc;}).filter(Boolean))].sort();
+  var fc = document.getElementById('filtro-cliente-fat');
+  var fu = document.getElementById('filtro-uc-fat');
+  if(fc) fc.innerHTML='<option value="">Todos os Clientes</option>'+nomes.map(function(n){return '<option value="'+n+'"'+(n===cli?' selected':'')+'>'+n.slice(0,40)+'</option>';}).join('');
+  if(fu) fu.innerHTML='<option value="">Todas as UCs</option>'+ucs.map(function(u){return '<option value="'+u+'"'+(u===uc?' selected':'')+'>UC '+u+'</option>';}).join('');
+  var fc2 = document.getElementById('fat-count');
+  if(fc2) fc2.textContent = fat.length+' fatura(s)';
+
+  // Agrupa por cliente
+  var porCli = {};
+  fat.forEach(function(f){ var n=f.cliente_nome||f.uc; if(!porCli[n]){porCli[n]={nome:n,itens:[]};} porCli[n].itens.push(f); });
+  var cont = document.getElementById('faturas-lista');
+  cont.innerHTML = '';
+  Object.values(porCli).forEach(function(cli){
+    var div=document.createElement('div');
+    div.className='card';
+    div.style.padding='0';
+    div.style.marginBottom='12px';
+    var rows = cli.itens.map(function(f){
+      var a = Array.isArray(f.faturas_analise)?f.faturas_analise[0]:(f.faturas_analise||{});
+      return '<div class="table-row" style="grid-template-columns:2fr 1fr 1fr 80px 80px">'
+        +'<div class="td">'+f.uc+'<div class="td muted">'+f.mes_referencia+'</div></div>'
+        +'<div class="td">'+f.subgrupo+' · '+f.modalidade+'</div>'
+        +'<div class="td r">R$ '+(parseFloat(f.total_a_pagar)||0).toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div>'
+        +'<div class="td r"><span class="badge '+(a.score_eficiencia?'ok':'gray')+'" style="font-size:9px">'+(a.score_eficiencia?a.score_eficiencia+'/100':'—')+'</span></div>'
+        +'<div class="td r"><button class="btn" style="font-size:10px;padding:3px 8px" onclick="downloadRelatorio(\''+f.id+'\')">PDF</button></div>'
+        +'</div>';
+    }).join('');
+    div.innerHTML='<div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">'
+      +'<div style="font-size:13px;font-weight:600">'+cli.nome.slice(0,50)+'</div>'
+      +'<span class="badge gray">'+cli.itens.length+' faturas</span></div>'
+      +'<div class="table-head" style="grid-template-columns:2fr 1fr 1fr 80px 80px"><div class="th">UC / Mês</div><div class="th">Tipo</div><div class="th r">Valor</div><div class="th r">Score</div><div class="th r">PDF</div></div>'
+      +rows;
+    cont.appendChild(div);
+  });
+  if(!cont.children.length) cont.innerHTML='<div class="empty"><div class="empty-icon">📄</div><div>Nenhuma fatura encontrada</div></div>';
+}
+
+function downloadRelatorio(faturaId){
+  window.open(RW+'/relatorio/'+faturaId,'_blank');
+}
+
+// ── ALERTAS ──────────────────────────────────────────────────────────────────
+function renderAlertas(){
+  var cont = document.getElementById('alertas-lista');
+  var al = D.alertas.filter(function(a){return !a.resolvido;});
+  if(!al.length){ cont.innerHTML='<div class="empty"><div class="empty-icon">✅</div><div>Nenhum alerta ativo</div></div>'; return; }
+  cont.innerHTML = al.map(function(a){
+    var fat = D.faturas.find(function(f){return f.id===a.fatura_id;});
+    var bg = a.severidade==='critico'?'var(--red-bg)':a.severidade==='atencao'?'var(--amber-bg)':'var(--blue-bg)';
+    var ico = a.severidade==='critico'?'🔴':a.severidade==='atencao'?'🟡':'ℹ️';
+    return '<div class="alert-item">'
+      +'<div style="width:30px;height:30px;border-radius:7px;background:'+bg+';display:flex;align-items:center;justify-content:center;flex-shrink:0">'+ico+'</div>'
+      +'<div style="flex:1">'
+      +'<div style="font-size:12px;font-weight:500">'+a.titulo+'</div>'
+      +'<div style="font-size:11px;color:var(--muted);margin-top:2px">'+(fat?fat.cliente_nome:'')+ ' · UC '+a.uc+' · '+(fat?fat.mes_referencia:'')+'</div>'
+      +'</div>'
+      +'<span class="badge '+(a.severidade==='critico'?'critico':'alerta')+'">'+a.severidade+'</span>'
+      +'</div>';
+  }).join('');
+}
+
+// ── RELATÓRIOS MENSAIS ────────────────────────────────────────────────────────
+function renderRelatorios(){
+  var cont = document.getElementById('relatorios-lista');
+  if(!D.relatorios.length){
+    cont.innerHTML='<div class="empty"><div class="empty-icon">📋</div><div>Nenhum relatório ainda</div><div style="font-size:12px;color:var(--hint);margin-top:8px">Clique em "Gerar Relatórios do Mês" para criar relatórios dos clientes ativos</div></div>';
+    return;
+  }
+  cont.innerHTML = '<div class="table-wrap"><div class="table-head" style="grid-template-columns:2fr 1fr 1fr 80px 80px"><div class="th">Cliente</div><div class="th">Mês</div><div class="th">Status</div><div class="th r">Custo</div><div class="th r">Ação</div></div>'
+    +D.relatorios.map(function(r){
+      var st = r.status==='ok'?'ok':r.status==='alerta'?'alerta':'gray';
+      return '<div class="table-row" style="grid-template-columns:2fr 1fr 1fr 80px 80px">'
+        +'<div class="td">'+r.cliente_id+'</div>'
+        +'<div class="td">'+r.mes_referencia+'</div>'
+        +'<div class="td"><span class="badge '+st+'">'+r.status+'</span></div>'
+        +'<div class="td r">R$ '+(parseFloat(r.custo_total)||0).toLocaleString('pt-BR',{minimumFractionDigits:0})+'</div>'
+        +'<div class="td r"><button class="btn" style="font-size:10px;padding:3px 8px">PDF</button></div>'
+        +'</div>';
+    }).join('')+'</div>';
+}
+
+async function gerarRelatoriosMensais(){
+  var ativos = D.clientes.filter(function(c){return c.status==='ativo';});
+  if(!ativos.length){ alert('Nenhum cliente ativo ainda.'); return; }
+  var mes = new Date().toLocaleDateString('pt-BR',{month:'2-digit',year:'numeric'}).replace('/','/');
+  for(var c of ativos){
+    var existe = D.relatorios.find(function(r){return r.cliente_id===c.id && r.mes_referencia===mes;});
+    if(!existe){
+      await sbPost('relatorios_mensais',{cliente_id:c.id,mes_referencia:mes,ucs:c.ucs,status:'pendente'});
+    }
+  }
+  await carregarDados();
+  alert('✅ Relatórios de '+mes+' criados para '+ativos.length+' cliente(s) ativos!');
+}
+
+// ── PROPOSTAS ────────────────────────────────────────────────────────────────
+function renderPropostas(){
+  var cont = document.getElementById('propostas-lista');
+  if(!D.propostas.length){ cont.innerHTML='<div class="empty"><div class="empty-icon">📧</div><div>Nenhuma proposta ainda</div></div>'; return; }
+  cont.innerHTML='<div class="table-wrap"><div class="table-head" style="grid-template-columns:2fr 1fr 1fr 80px 80px"><div class="th">Cliente</div><div class="th">Criada</div><div class="th">Status</div><div class="th r">Valor</div><div class="th r">Ação</div></div>'
+    +D.propostas.map(function(p){
+      var st = p.status==='aceita'?'ok':p.status==='enviada'?'info':'gray';
+      return '<div class="table-row" style="grid-template-columns:2fr 1fr 1fr 80px 80px">'
+        +'<div class="td">'+p.cliente_nome.slice(0,40)+'</div>'
+        +'<div class="td muted">'+new Date(p.created_at).toLocaleDateString('pt-BR')+'</div>'
+        +'<div class="td"><span class="badge '+st+'">'+p.status+'</span></div>'
+        +'<div class="td r">R$ '+(parseFloat(p.valor_mensal)||0).toLocaleString('pt-BR')+'</div>'
+        +'<div class="td r"><button class="btn green" style="font-size:10px;padding:3px 8px" onclick="fecharContrato('+JSON.stringify(p.cliente_id)+')">🎯 Fechar</button></div>'
+        +'</div>';
+    }).join('')+'</div>';
+}
+
+// ── CONTRATOS ────────────────────────────────────────────────────────────────
+function renderContratos(){
+  var cont = document.getElementById('contratos-lista');
+  if(!D.contratos.length){ cont.innerHTML='<div class="empty"><div class="empty-icon">📄</div><div>Nenhum contrato ainda</div></div>'; return; }
+  cont.innerHTML='<div class="table-wrap"><div class="table-head" style="grid-template-columns:2fr 1fr 1fr 80px 80px 80px"><div class="th">Cliente</div><div class="th">Início</div><div class="th">Fim</div><div class="th r">Valor</div><div class="th r">Status</div><div class="th r">PDF</div></div>'
+    +D.contratos.map(function(c){
+      return '<div class="table-row" style="grid-template-columns:2fr 1fr 1fr 80px 80px 80px">'
+        +'<div class="td">'+c.cliente_nome.slice(0,40)+'</div>'
+        +'<div class="td muted">'+new Date(c.inicio+'T00:00:00').toLocaleDateString('pt-BR')+'</div>'
+        +'<div class="td muted">'+new Date(c.fim+'T00:00:00').toLocaleDateString('pt-BR')+'</div>'
+        +'<div class="td r">R$ '+(parseFloat(c.valor_mensal)||0).toLocaleString('pt-BR')+'/mês</div>'
+        +'<div class="td r"><span class="badge '+(c.status==='ativo'?'ok':'gray')+'">'+c.status+'</span></div>'
+        +'<div class="td r"><button class="btn" style="font-size:10px;padding:3px 8px" onclick="gerarContratoPDF('+JSON.stringify(c.cliente_id)+')">PDF</button></div>'
+        +'</div>';
+    }).join('')+'</div>';
+}
+
+// ── UTILITÁRIOS ──────────────────────────────────────────────────────────────
+function fecharModal(id){ document.getElementById(id).style.display='none'; document.body.style.overflow=''; }
+function formatDoc(v){ var n=v.replace(/\D/g,'').slice(0,14); if(n.length<=3)return n; if(n.length<=6)return n.slice(0,3)+'.'+n.slice(3); if(n.length<=9)return n.slice(0,3)+'.'+n.slice(3,6)+'.'+n.slice(6); if(n.length<=11)return n.slice(0,3)+'.'+n.slice(3,6)+'.'+n.slice(6,9)+'-'+n.slice(9); return n.slice(0,2)+'.'+n.slice(2,5)+'.'+n.slice(5,8)+'/'+n.slice(8,12)+'-'+n.slice(12); }
+function formatCNPJ(c){ return c.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,'$1.$2.$3/$4-$5')||c; }
+function getStatusClass(s){ var m={prospecto:'info',analisando:'alerta',proposta:'info',negociando:'alerta',ativo:'ok',inativo:'gray'}; return m[s]||'gray'; }
+function getStatusLabel(s){ var m={prospecto:'🔍 Prospecto',analisando:'📊 Analisando',proposta:'📧 Proposta Enviada',negociando:'🤝 Negociando',ativo:'✅ Ativo',inativo:'⏸️ Inativo'}; return m[s]||s; }
+function verRelatorio(clienteId){ navegar('relatorios',document.getElementById('sb-relatorios')); }
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
 carregarDados();
 setInterval(carregarDados, 30000);
 </script>
-
-<!-- ══ MODAL ANÁLISE COMPLETA UC ══ -->
-<div id="analiseUCModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;overflow:auto;padding:24px 16px">
-  <div style="background:#fff;border-radius:16px;width:100%;max-width:780px;margin:0 auto;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.25)">
-    <div style="background:var(--accent2);padding:18px 24px;display:flex;align-items:center;justify-content:space-between">
-      <div>
-        <div style="font-size:15px;font-weight:700;color:#fff" id="auc-titulo">Análise Completa da UC</div>
-        <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px" id="auc-sub">Diagnóstico executivo gerado por IA</div>
-      </div>
-      <div style="display:flex;gap:8px">
-        <button onclick="imprimirAnalise()" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;padding:7px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600">🖨 Imprimir</button>
-        <button onclick="document.getElementById('analiseUCModal').style.display='none'" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:16px">✕</button>
-      </div>
-    </div>
-    <div id="auc-conteudo" style="padding:28px;max-height:80vh;overflow-y:auto">
-      <div id="auc-loading" style="text-align:center;padding:48px">
-        <div style="width:40px;height:40px;border:3px solid #e5e7eb;border-top:3px solid var(--blue);border-radius:50%;margin:0 auto 16px;animation:spin 1s linear infinite"></div>
-        <div style="font-size:14px;font-weight:600;color:var(--text)">Gerando análise completa...</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:6px">A IA está analisando todos os dados da UC</div>
-      </div>
-      <div id="auc-texto" style="display:none"></div>
-    </div>
-  </div>
-</div>
-
 </body>
 </html>

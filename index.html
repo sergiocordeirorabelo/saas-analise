@@ -227,9 +227,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h12M8 2l4 6-4 6"/></svg>
     Recup. Tributária
   </div>
-  <div class="sb-item" id="sb-estrategico" onclick="navegar('estrategico',this)">
+  <div class="sb-item" id="sb-estrategico" onclick="navegar('estrategico',this)" style="margin:6px 8px;border-radius:8px;background:linear-gradient(135deg,rgba(5,150,105,.25),rgba(37,99,235,.15));border:1px solid rgba(5,150,105,.3);padding:10px 12px;color:#6ee7b7">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12l4-4 3 3 5-6"/></svg>
-    Estratégico
+    <span style="font-weight:700;font-size:13px">Estratégico</span>
+    <span style="margin-left:auto;font-size:9px;background:rgba(5,150,105,.3);padding:2px 6px;border-radius:10px;color:#6ee7b7">NOVO</span>
   </div>
   <div class="sb-item" id="sb-multi-uc" onclick="navegar('multi-uc',this)">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="10" rx="1"/><path d="M5 7h6M5 10h4"/></svg>
@@ -390,10 +391,32 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 
   <!-- ══ ESTRATÉGICO ══ -->
   <div id="page-estrategico" class="page">
-    <div style="margin-bottom:20px">
-      <p style="font-size:13px;color:var(--muted)">Análise por cliente — quais serviços se encaixam e proposta de contrato personalizada.</p>
+    <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+      <button id="tab-servicos" onclick="switchTab('servicos')" style="padding:8px 20px;border-radius:20px;border:none;background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer">📋 Serviços por Cliente</button>
+      <button id="tab-mercado" onclick="switchTab('mercado')" style="padding:8px 20px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--muted);font-size:13px;font-weight:500;cursor:pointer">🏭 Simulador Mercado Livre</button>
     </div>
-    <div id="estrategico-lista"></div>
+    <div id="tab-servicos-content"><div id="estrategico-lista"></div></div>
+    <div id="tab-mercado-content" style="display:none">
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header">
+          <div>
+            <div class="card-title">⚡ Simulador de Viabilidade — Mercado Livre</div>
+            <div class="card-sub">Baseado nos dados reais das faturas extraídas</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <select id="ml-uc" onchange="simularML()" style="flex:1;padding:10px 14px;border:1px solid var(--border2);border-radius:8px;font-size:13px;background:var(--bg2);cursor:pointer">
+            <option value="">Selecione uma UC para simular</option>
+          </select>
+          <div style="display:flex;gap:8px;align-items:center">
+            <label style="font-size:12px;color:var(--muted)">Desconto ML:</label>
+            <input id="ml-desconto" type="number" value="15" min="1" max="40" onchange="simularML()" style="width:60px;padding:8px;border:1px solid var(--border2);border-radius:6px;font-size:13px;text-align:center">
+            <span style="font-size:12px;color:var(--muted)">%</span>
+          </div>
+        </div>
+      </div>
+      <div id="ml-resultado"></div>
+    </div>
   </div>
 
   <!-- ══ CONSOLIDADO MULTI-UC ══ -->
@@ -1550,6 +1573,173 @@ function gerarContrato(nomeCliente, ucsStr, subgrupo){
 </div>
 </body></html>`);
   win.document.close();
+}
+
+
+// ── TABS ESTRATÉGICO ──
+function switchTab(tab){
+  ['servicos','mercado'].forEach(t=>{
+    document.getElementById('tab-'+t+'-content').style.display = t===tab?'block':'none';
+    const btn = document.getElementById('tab-'+t);
+    if(t===tab){ btn.style.background='var(--accent)';btn.style.color='#fff';btn.style.border='none'; }
+    else{ btn.style.background='transparent';btn.style.color='var(--muted)';btn.style.border='1px solid var(--border2)'; }
+  });
+  if(tab==='mercado') popularMLSelect();
+}
+
+function popularMLSelect(){
+  const sel = document.getElementById('ml-uc');
+  const ucs = [...new Set(DADOS.faturas.filter(f=>f.subgrupo?.startsWith('A')||parseFloat(f.demanda_contratada_fora_ponta_kw)>=100).map(f=>f.uc))];
+  // Also include all UCs
+  const allUcs = [...new Set(DADOS.faturas.map(f=>f.uc))];
+  const allUcsUniq = [...new Set([...ucs, ...allUcs])];
+  sel.innerHTML = '<option value="">Selecione uma UC para simular</option>' +
+    allUcsUniq.map(uc=>{
+      const f = DADOS.faturas.find(x=>x.uc===uc);
+      const nome = f?.cliente_nome||uc;
+      const elegivel = f?.subgrupo?.startsWith('A') || parseFloat(f?.demanda_contratada_fora_ponta_kw||0)>=300;
+      return `<option value="${uc}">${nome.slice(0,40)} — UC ${uc}${elegivel?' ⭐':''}</option>`;
+    }).join('');
+}
+
+function simularML(){
+  const uc = document.getElementById('ml-uc').value;
+  const desconto = parseFloat(document.getElementById('ml-desconto').value)||15;
+  const cont = document.getElementById('ml-resultado');
+  if(!uc){ cont.innerHTML=''; return; }
+
+  // Pega faturas desta UC
+  const faturas = DADOS.faturas.filter(f=>f.uc===uc).sort((a,b)=>(b.mes_referencia||'').localeCompare(a.mes_referencia||''));
+  if(!faturas.length){ cont.innerHTML='<div class="empty">Sem dados para esta UC.</div>'; return; }
+
+  const f0 = faturas[0];
+  const nome = f0.cliente_nome||uc;
+  const subgrupo = f0.subgrupo||'B';
+  const demCtda = parseFloat(f0.demanda_contratada_fora_ponta_kw)||0;
+  const consumoMedio = faturas.slice(0,12).reduce((s,f)=>s+parseFloat(f.consumo_total_kwh||0),0) / Math.min(faturas.length,12);
+  const custoMedio = faturas.slice(0,12).reduce((s,f)=>s+parseFloat(f.total_a_pagar||0),0) / Math.min(faturas.length,12);
+  const custoTotal12 = faturas.slice(0,12).reduce((s,f)=>s+parseFloat(f.total_a_pagar||0),0);
+  const tarifaMedioKwh = consumoMedio>0 ? custoMedio/consumoMedio : 0;
+
+  // Elegibilidade
+  const elegivel = subgrupo.startsWith('A') || demCtda>=300;
+  const elegibilidade2025 = demCtda>=500;
+  const elegibilidade2024 = demCtda>=300;
+
+  // Cálculo de economia estimada
+  const custoML_verde = custoMedio * (1 - desconto/100);
+  const custoML_amarela = custoMedio * (1 - (desconto-5)/100);
+  const custoML_verm1  = custoMedio * (1 - (desconto-8)/100);
+  const custoML_verm2  = custoMedio * (1 - (desconto-10)/100);
+  const economiaMensal_verde = custoMedio - custoML_verde;
+  const economiaMensal_media = custoMedio * (desconto-4)/100; // média ponderada bandeiras
+  const economiaAnual = economiaMensal_media * 12;
+
+  // Projeção 5 anos (com reajuste IPCA ~5% ao ano)
+  const anos = [2027,2028,2029,2030,2031];
+  const projecao = anos.map((ano,i)=>{
+    const reajuste = Math.pow(1.05, i);
+    const custoC = custoMedio * reajuste * 12;
+    const custoL = custoML_verde * reajuste * 12;
+    const eco = custoC - custoL;
+    return {ano, custoC, custoL, eco};
+  });
+  const totalEco5anos = projecao.reduce((s,p)=>s+p.eco,0);
+
+  const corEco = economiaMensal_media > 0 ? 'var(--green)' : 'var(--red)';
+  const icone = elegivel ? '✅' : '⚠️';
+
+  cont.innerHTML = `
+    <div class="card" style="margin-bottom:14px;border-color:${elegivel?'#bbf7d0':'#fde68a'}">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+        <div>
+          <div style="font-size:15px;font-weight:700">${icone} ${nome.slice(0,50)} — UC ${uc}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">
+            Subgrupo ${subgrupo} • Demanda ${demCtda>0?demCtda+' kW':'não disponível'} •
+            <span style="color:${elegivel?'var(--green)':'var(--amber)'}">
+              ${elegivel?'✅ ELEGÍVEL para Mercado Livre':'⚠️ Verificar elegibilidade (demanda < 300 kW)'}
+            </span>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:22px;font-weight:700;color:${corEco}">
+            ${economiaMensal_media>0?'':''}R$ ${Math.abs(economiaMensal_media).toLocaleString('pt-BR',{minimumFractionDigits:2})}/mês
+          </div>
+          <div style="font-size:11px;color:var(--muted)">Economia estimada (${desconto}% desconto)</div>
+        </div>
+      </div>
+
+      <!-- Métricas base -->
+      <div class="metrics-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+        <div class="metric-card"><div class="metric-label">Custo Cativo Médio</div><div class="metric-val">R$ ${custoMedio.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="metric-sub">/mês</div></div>
+        <div class="metric-card"><div class="metric-label">Consumo Médio</div><div class="metric-val">${Math.round(consumoMedio).toLocaleString('pt-BR')}</div><div class="metric-sub">kWh/mês</div></div>
+        <div class="metric-card"><div class="metric-label">Tarifa Média</div><div class="metric-val">R$ ${tarifaMedioKwh.toFixed(4)}</div><div class="metric-sub">/kWh cativo</div></div>
+        <div class="metric-card"><div class="metric-label">Gasto 12 meses</div><div class="metric-val">R$ ${custoTotal12.toLocaleString('pt-BR',{minimumFractionDigits:0})}</div><div class="metric-sub">total</div></div>
+      </div>
+
+      <!-- Comparativo por bandeira -->
+      <h3 style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:10px">Comparativo por Bandeira Tarifária</h3>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
+        ${[
+          {nome:'Bandeira Verde', cor:'#059669', bg:'#d1fae5', custoML:custoML_verde, eco:economiaMensal_verde, pct:desconto},
+          {nome:'Bandeira Amarela', cor:'#d97706', bg:'#fef3c7', custoML:custoML_amarela, eco:custoMedio-custoML_amarela, pct:desconto-5},
+          {nome:'Vermelha P1', cor:'#dc2626', bg:'#fee2e2', custoML:custoML_verm1, eco:custoMedio-custoML_verm1, pct:desconto-8},
+          {nome:'Vermelha P2', cor:'#991b1b', bg:'#fecaca', custoML:custoML_verm2, eco:custoMedio-custoML_verm2, pct:desconto-10},
+        ].map(b=>`
+          <div style="background:${b.bg};border:1px solid ${b.cor}30;border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:10px;font-weight:600;color:${b.cor};margin-bottom:6px">${b.nome}</div>
+            <div style="font-size:13px;font-weight:700;color:var(--text)">R$ ${b.custoML.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+            <div style="font-size:10px;color:var(--muted);margin:2px 0">custo no ML</div>
+            <div style="font-size:12px;font-weight:600;color:${b.eco>0?'var(--green)':'var(--red)'}">
+              ${b.eco>0?'↓':'↑'} ${Math.abs(b.pct)}% | R$ ${Math.abs(b.eco).toLocaleString('pt-BR',{minimumFractionDigits:2})}
+            </div>
+          </div>`).join('')}
+      </div>
+
+      <!-- Projeção 5 anos -->
+      <h3 style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:10px">Projeção 5 Anos (com IPCA ~5%/ano)</h3>
+      <div class="table-wrap" style="margin-bottom:16px">
+        <div class="table-head" style="grid-template-columns:80px 1fr 1fr 1fr">
+          <div class="th">Ano</div>
+          <div class="th r">Custo Cativo</div>
+          <div class="th r">Custo ML Est.</div>
+          <div class="th r">Economia</div>
+        </div>
+        ${projecao.map(p=>`
+          <div class="table-row" style="grid-template-columns:80px 1fr 1fr 1fr">
+            <div class="td"><strong>${p.ano}</strong></div>
+            <div class="td r">R$ ${p.custoC.toLocaleString('pt-BR',{minimumFractionDigits:0})}</div>
+            <div class="td r">R$ ${p.custoL.toLocaleString('pt-BR',{minimumFractionDigits:0})}</div>
+            <div class="td r" style="color:${p.eco>0?'var(--green)':'var(--red)'};font-weight:600">
+              R$ ${p.eco.toLocaleString('pt-BR',{minimumFractionDigits:0})}
+            </div>
+          </div>`).join('')}
+        <div style="padding:12px 16px;background:var(--bg3);display:grid;grid-template-columns:80px 1fr 1fr 1fr;font-weight:700;font-size:12px">
+          <div>TOTAL</div>
+          <div></div>
+          <div></div>
+          <div style="text-align:right;color:${totalEco5anos>0?'var(--green)':'var(--red)'}">R$ ${totalEco5anos.toLocaleString('pt-BR',{minimumFractionDigits:0})}</div>
+        </div>
+      </div>
+
+      <!-- Conclusão -->
+      <div style="background:${elegivel&&economiaMensal_media>0?'#f0fdf4':'#fff7ed'};border:1px solid ${elegivel&&economiaMensal_media>0?'#bbf7d0':'#fed7aa'};border-radius:8px;padding:14px">
+        <div style="font-size:13px;font-weight:700;color:${elegivel&&economiaMensal_media>0?'var(--green)':'var(--amber)'};margin-bottom:6px">
+          ${elegivel&&economiaMensal_media>0?'✅ RECOMENDADO migrar para o Mercado Livre':'⚠️ Análise detalhada necessária'}
+        </div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.6">
+          ${elegivel
+            ? `Com ${desconto}% de desconto no ML, a economia estimada é de <strong>R$ ${economiaAnual.toLocaleString('pt-BR',{minimumFractionDigits:0})}/ano</strong>. 
+               Em 5 anos, a economia projetada é de <strong>R$ ${totalEco5anos.toLocaleString('pt-BR',{minimumFractionDigits:0})}</strong> (com IPCA 5%/ano).
+               ${demCtda>=300?'Demanda elegível para migração imediata.':'Verifique a demanda mínima com a distribuidora.'}`
+            : `Esta UC pode não ser elegível para o Mercado Livre com a demanda atual (${demCtda} kW). 
+               O limiar é 300 kW. Considere gestão de eficiência energética e auditoria de faturas como prioridade.`
+          }
+        </div>
+        <button class="btn green" style="margin-top:12px" onclick="gerarContrato('${nome.replace(/'/g,"\'")}','${uc}','${subgrupo}')">📄 Gerar Contrato para este Cliente</button>
+      </div>
+    </div>
+  `;
 }
 
 // ── INIT ──

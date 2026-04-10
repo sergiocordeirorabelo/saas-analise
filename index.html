@@ -456,7 +456,7 @@ async function carregarDados(){
 }
 
 function renderAtivo(){
-  var pages = ['pipeline','faturas','alertas','relatorios','propostas','contratos'];
+  var pages = ['pipeline','analises','faturas','alertas','relatorios','propostas','contratos'];
   pages.forEach(function(p){
     if(document.getElementById('page-'+p)?.classList.contains('active')){
       if(p==='pipeline') renderKanban();
@@ -1503,7 +1503,8 @@ function renderAnalises(){
     var custo = parseFloat(cl.custo_medio)||0;
     var alertas = D.alertas.filter(function(a){return (cl.ucs||[]).includes(a.uc)&&!a.resolvido;});
     var temAlerta = alertas.some(function(a){return a.severidade==='critico';});
-    return '<div onclick="abrirAnaliseCliente('+JSON.stringify(cl.id)+')" style="padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;background:'+(ativo?'var(--blue-bg)':'transparent')+';border-left:3px solid '+(ativo?'var(--blue)':'transparent')+';">'
+    var clIdQ = "'" + cl.id + "'";
+    return '<div onclick="abrirAnaliseCliente('+clIdQ+')" style="padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;background:'+(ativo?'var(--blue-bg)':'transparent')+';border-left:3px solid '+(ativo?'var(--blue)':'transparent')+';">'
       +'<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:3px">'+cl.nome.slice(0,35)+(cl.nome.length>35?'...':'')+'</div>'
       +'<div style="font-size:11px;color:var(--muted)">'+(cl.ucs||[]).join(', ')+(cl.subgrupo?' · '+cl.subgrupo:'')+'</div>'
       +(custo>0?'<div style="font-size:12px;font-weight:600;margin-top:4px">R$ '+custo.toLocaleString('pt-BR',{minimumFractionDigits:0})+'/mês</div>':'')

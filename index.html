@@ -806,7 +806,7 @@ function renderFaturas(){
           </div>
         </div>
         <div class="table-wrap" style="border:none;border-radius:0">
-          <div class="table-head" style="grid-template-columns:80px 1fr 1fr 1fr 80px 80px 80px">
+          <div class="table-head" style="grid-template-columns:2fr 100px 1fr 1fr 90px 90px 70px">
             <div class="th">Arquivo</div>
             <div class="th">Origem</div>
             <div class="th">UC</div>
@@ -818,8 +818,8 @@ function renderFaturas(){
           ${faturas.map(f=>{
             const a = Array.isArray(f.faturas_analise)?f.faturas_analise[0]:(f.faturas_analise||{});
             const analisada = !!a?.score_eficiencia;
-            return `<div class="table-row" style="grid-template-columns:80px 1fr 1fr 1fr 80px 80px 80px">
-              <div class="td" style="font-size:11px;font-family:monospace;color:var(--blue)">detalhada_${f.uc}_${(f.mes_referencia||'').replace('/','')}</div>
+            return `<div class="table-row" style="grid-template-columns:2fr 100px 1fr 1fr 90px 90px 70px">
+              <div class="td" style="font-size:11px;font-family:monospace;color:var(--blue);word-break:break-all">detalhada_${f.uc}_${(f.mes_referencia||'').replace('/','')}</div>
               <div class="td"><span class="badge info" style="font-size:9px">PDF oficial</span></div>
               <div class="td">${f.uc}</div>
               <div class="td">${f.mes_referencia||''}</div>

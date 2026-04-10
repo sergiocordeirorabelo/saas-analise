@@ -647,25 +647,109 @@ async function abrirAnaliseCompleta(uc, nomeCliente, clienteId){
   document.getElementById('ma-titulo').textContent = 'Análise — '+nomeCliente.slice(0,40);
   document.getElementById('ma-body').innerHTML = '<div style="text-align:center;padding:40px"><div class="spinner"></div><div style="font-size:13px;color:var(--muted)">Gerando diagnóstico...</div></div>';
   document.getElementById('modalAnalise').style.display = 'block';
+  document.body.style.overflow = 'hidden';
 
   if(_analiseCache[uc]){
     renderAnaliseTexto(_analiseCache[uc], uc, nomeCliente, clienteId);
     return;
   }
 
+  // 1. Tenta Railway (IA completa)
   try{
-    var resp = await fetch(RW+'/analise/uc/'+uc);
+    var resp = await fetch(RW+'/analise/uc/'+uc, {signal: AbortSignal.timeout(12000)});
+    if(!resp.ok) throw new Error('Railway offline');
     var data = await resp.json();
     if(data.error) throw new Error(data.error);
     _analiseCache[uc] = data.analise;
     renderAnaliseTexto(data.analise, uc, nomeCliente, clienteId);
-    // Avança status para analisando se ainda for prospecto
     if(clienteId){
-      var c = D.clientes.find(function(x){return x.id===clienteId;});
-      if(c && c.status==='prospecto') await mudarStatus(clienteId,'analisando');
+      var cl = D.clientes.find(function(x){return x.id===clienteId;});
+      if(cl && cl.status==='prospecto') await mudarStatus(clienteId,'analisando');
     }
-  } catch(e){
-    document.getElementById('ma-body').innerHTML = '<div style="color:var(--red);padding:24px">Erro: '+e.message+'<br><br>Verifique se o Railway está online.</div>';
+    return;
+  } catch(e){ /* Railway offline — usa dados locais */ }
+
+  // 2. Fallback: monta análise com dados já no Supabase
+  try{
+    var faturas  = D.faturas.filter(function(f){return f.uc===uc;});
+    var analises = D.analises.filter(function(a){return a.uc===uc;});
+    var alertas  = D.alertas.filter(function(a){return a.uc===uc && !a.resolvido;});
+    if(!faturas.length) throw new Error('Nenhuma fatura encontrada para UC '+uc);
+
+    var f0 = faturas[0];
+    var a0 = analises[0]||{};
+    var n  = Math.min(faturas.length,12);
+    var custoMedio   = faturas.slice(0,n).reduce(function(s,f){return s+parseFloat(f.total_a_pagar||0);},0)/n;
+    var consumoMedio = faturas.slice(0,n).reduce(function(s,f){return s+parseFloat(f.consumo_total_kwh||0);},0)/n;
+    var demCtda = parseFloat(f0.demanda_contratada_fora_ponta_kw)||0;
+    var demMedi = parseFloat(f0.demanda_medida_fora_ponta_kw)||0;
+    var elegML  = (f0.subgrupo||'').startsWith('A') || demCtda>=300;
+    var hasGD   = alertas.some(function(a){return (a.tipo||'').includes('GD');});
+    var hasReat = alertas.some(function(a){return (a.titulo||'').toLowerCase().includes('reativo');});
+    var fmt = function(v){ return v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); };
+    var alertasList = alertas.map(function(a){
+      return '<li><b>'+a.titulo+'</b>'+(a.valor_r?' — R$ '+fmt(parseFloat(a.valor_r||0))+'/mês':'')+': '+a.descricao+'</li>';
+    }).join('');
+    var analiseAnterior = analises.slice(0,2).map(function(a){return a.analise_claude||'';}).filter(Boolean).join(' ');
+
+    var parts = [];
+    parts.push('## Diagnóstico Atual');
+    parts.push('');
+    parts.push('Cliente **'+nomeCliente+'** — UC **'+uc+'** ('+f0.subgrupo+' · '+f0.modalidade+')');
+    parts.push('');
+    parts.push('Custo médio mensal de **R$ '+fmt(custoMedio)+'**, consumo médio de **'+Math.round(consumoMedio).toLocaleString('pt-BR')+' kWh/mês**.'
+      +(demCtda>0?' Demanda contratada de **'+demCtda+' kW** com utilização de **'+Math.round(demMedi/demCtda*100)+'%**.':'')
+      +(a0.score_eficiencia?' Score de eficiência: **'+a0.score_eficiencia+'/100**.':''));
+    parts.push('');
+    parts.push('## Oportunidades Identificadas');
+    parts.push('');
+    if(alertas.length>0){
+      alertas.forEach(function(a){ parts.push('- **'+a.titulo+'**'+(a.valor_r?' — R$ '+fmt(parseFloat(a.valor_r||0))+'/mês':'')+': '+(a.descricao||''));});
+    } else { parts.push('Nenhum alerta crítico. UC com bom desempenho.'); }
+    parts.push('');
+    parts.push('## Ações Urgentes');
+    parts.push('');
+    var criticos = alertas.filter(function(a){return a.severidade==='critico';});
+    if(criticos.length>0){ criticos.forEach(function(a){ parts.push('- **'+a.titulo+'**: '+(a.descricao||'')); }); }
+    else { parts.push('Nenhuma ação urgente identificada.'); }
+    parts.push('');
+    parts.push('## Adequação ao Mercado Livre');
+    parts.push('');
+    if(elegML){
+      parts.push('Elegível para o Mercado Livre. '+(demCtda>=300?'Demanda de '+demCtda+' kW acima do limiar de 300 kW.':'Grupo '+f0.subgrupo+' habilitado para migração.')+' Economia potencial de 10-20%.');
+    } else {
+      parts.push('Demanda de '+demCtda+' kW (abaixo de 300 kW) — verificar elegibilidade. Foco na gestão eficiente no mercado cativo.');
+    }
+    parts.push('');
+    parts.push('## Escopo de Serviços Recomendado');
+    parts.push('');
+    parts.push('- **Gestão de energia completa** (R$ 500/mês): levantamento tarifário, revisão de enquadramento, relatório mensal');
+    parts.push('- **Auditoria retroativa** (30% sobre recuperado): revisão dos últimos 120 meses de faturas');
+    if(hasReat) parts.push('- **Correção de fator de potência** (incluído): banco de capacitores para eliminar reativo');
+    if(elegML)  parts.push('- **Migração para Mercado Livre** (comissão): estudo e acompanhamento da migração');
+    parts.push('');
+    parts.push('## Estimativa de Resultado');
+    parts.push('');
+    parts.push('- Economia potencial: **R$ '+fmt(parseFloat(a0.potencial_economia_anual||0))+'/ano**');
+    parts.push('- Investimento: **R$ 500/mês** (R$ 6.000/ano)');
+    parts.push('- ROI: '+(parseFloat(a0.potencial_economia_anual||0)>6000?'positivo — economia supera o investimento':'análise aprofundada necessária'));
+    parts.push('');
+    parts.push('## Próximos Passos');
+    parts.push('');
+    parts.push('1. Apresentar diagnóstico ao cliente');
+    parts.push('2. Enviar proposta comercial');
+    parts.push('3. Assinatura do contrato de gestão');
+    parts.push('4. Início: levantamento completo e auditoria retroativa');
+    if(analiseAnterior) { parts.push(''); parts.push('---'); parts.push('*Análise IA anterior: '+analiseAnterior.slice(0,300)+'*'); }
+    var md = parts.join('\n');
+    _analiseCache[uc] = md;
+    renderAnaliseTexto(md, uc, nomeCliente, clienteId);
+    if(clienteId){
+      var cl2 = D.clientes.find(function(x){return x.id===clienteId;});
+      if(cl2 && cl2.status==='prospecto') await mudarStatus(clienteId,'analisando');
+    }
+  } catch(e2){
+    document.getElementById('ma-body').innerHTML = '<div style="color:var(--red);padding:24px">Erro: '+e2.message+'</div>';
   }
 }
 

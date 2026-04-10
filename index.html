@@ -312,6 +312,24 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
         <input id="nc-senha" class="form-input" type="password" placeholder="Senha de acesso">
       </div>
       <div class="form-group">
+        <label class="form-label">Período de extração</label>
+        <select id="nc-meses" class="form-input">
+          <option value="1">Último mês — só para prospectar</option>
+          <option value="3">Últimos 3 meses</option>
+          <option value="6">Últimos 6 meses</option>
+          <option value="12" selected>Últimos 12 meses — recomendado</option>
+          <option value="24">Últimos 24 meses (2 anos)</option>
+          <option value="36">Últimos 36 meses (3 anos)</option>
+          <option value="48">Últimos 48 meses (4 anos)</option>
+          <option value="60">Últimos 60 meses (5 anos)</option>
+          <option value="72">Últimos 72 meses (6 anos)</option>
+          <option value="84">Últimos 84 meses (7 anos)</option>
+          <option value="96">Últimos 96 meses (8 anos)</option>
+          <option value="108">Últimos 108 meses (9 anos)</option>
+          <option value="120">Últimos 120 meses (10 anos) — auditoria completa</option>
+        </select>
+      </div>
+      <div class="form-group">
         <label class="form-label">E-mail do cliente <span style="font-weight:400;color:var(--hint)">(para envio de relatórios)</span></label>
         <input id="nc-email" class="form-input" type="email" placeholder="cliente@empresa.com">
       </div>
@@ -888,7 +906,8 @@ async function iniciarExtracao(){
   errEl.style.display='none';
 
   try{
-    var creds = {cpf_cnpj:cpf, senha:senha, meses:12, monitorar:monitorar};
+    var meses = parseInt(document.getElementById('nc-meses').value)||12;
+  var creds = {cpf_cnpj:cpf, senha:senha, meses:meses, monitorar:monitorar};
     if(email) creds.email_contato = email;
     var r = await sbPost('extraction_requests',{concessionaria:'amazonas_energia',credentials:creds,status:'pendente'});
     if(!r||!r[0]) throw new Error('Erro ao criar tarefa.');

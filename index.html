@@ -2402,11 +2402,9 @@ async function abrirAnaliseCliente(clienteId){
     [
       {l:'📧 Gerar Proposta PDF', cls:'btn primary', style:'padding:12px 22px;font-size:13px;font-weight:700', fn:function(){gerarProposta(cId);}},
       {l:'🎯 Fechar Contrato',    cls:'btn green',   style:'padding:12px 22px;font-size:13px;font-weight:700', fn:function(){fecharContrato(cId);}},
-      {l:'📥 Relatório PDF', cls:'btn', style:'padding:12px 18px', fn:function(){
+      {l:'📄 Imprimir Análise PDF', cls:'btn', style:'padding:12px 18px', fn:function(){
         // Tenta Railway primeiro, fallback para print
-        fetch(RW+'/health',{signal:AbortSignal.timeout(4000)})
-          .then(function(r){if(r.ok) window.open(RW+'/relatorio/uc/'+_analiseAtualUC,'_blank'); else imprimirAnaliseCompleta();})
-          .catch(function(){imprimirAnaliseCompleta();});
+        imprimirAnaliseCompleta();
       }},
       {l:'📄 Contrato PDF',       cls:'btn',         style:'padding:12px 18px', fn:function(){gerarContratoPDF(cId);}},
     ].forEach(function(b){
@@ -2427,43 +2425,52 @@ function imprimirAnaliseCompleta(){
 
   var cl = D.clientes.find(function(x){return x.id===_analiseAtualId;})||{};
   var titulo = cl.nome||_analiseAtualNome||'Análise';
+  var dataHoje = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
 
-  // Clona o conteúdo removendo os botões
   var clone = painel.cloneNode(true);
+  // Remove botões e spinner
   var btns = clone.querySelector('#analise-btns-cta');
-  if(btns) btns.parentElement.remove();
+  if(btns && btns.parentElement) btns.parentElement.remove();
+  var spinner = clone.querySelector('.spinner');
+  if(spinner) spinner.remove();
 
   var w = window.open('','_blank');
   w.document.write('<!DOCTYPE html><html lang="pt-BR"><head>'
     +'<meta charset="UTF-8">'
-    +'<title>Diagnóstico — '+titulo+'</title>'
+    +'<title>Diagnóstico Executivo — '+titulo+'</title>'
     +'<style>'
     +'*{box-sizing:border-box;margin:0;padding:0}'
-    +'body{font-family:Arial,sans-serif;font-size:12px;color:#1a1a1a;background:#fff;padding:16mm 18mm}'
-    +'h2{font-size:13px!important;font-weight:700;color:#0d2137}'
+    +'body{font-family:Arial,sans-serif;font-size:11.5px;color:#1a1a1a;background:#fff}'
+    +'.page{padding:16mm 18mm;max-width:210mm;margin:0 auto}'
+    +'h2{font-size:13px!important;font-weight:700;color:#0d2137!important}'
     +'b,strong{font-weight:700}'
-    +'table{width:100%;border-collapse:collapse}'
-    +'td{padding:8px 12px;font-size:12px}'
-    +'hr{border:none;border-top:1px solid #e2e8f0;margin:12px 0}'
-    +'.spinner{display:none}'
-    +'[id="analise-btns-cta"]{display:none}'
-    +'/* Header gradiente → branco no print */'
-    +'div[style*="gradient"]{background:#0d2137!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
-    +'@media print{'
-    +'  body{padding:10mm 12mm}'
-    +'  .no-print{display:none!important}'
-    +'  div[style*="gradient"]{background:#0d2137!important}'
-    +'}'
+    +'table{width:100%;border-collapse:collapse;border-radius:0!important}'
+    +'td{padding:8px 12px;font-size:11.5px}'
+    +'hr{border:none;border-top:1px solid #e2e8f0;margin:10px 0}'
+    +'/* Preserva cores no print */'
+    +'-webkit-print-color-adjust:exact;print-color-adjust:exact;color-adjust:exact'
     +'</style>'
     +'</head><body>'
-    +'<div style="display:flex;align-items:center;gap:10px;padding-bottom:10px;margin-bottom:16px;border-bottom:3px solid #059669">'
-    +'<div style="width:36px;height:36px;background:#059669;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff">⚡</div>'
-    +'<div><div style="font-size:14px;font-weight:700;color:#0d2137">TRIANON GESTÃO DE ENERGIA</div>'
-    +'<div style="font-size:10px;color:#64748b">Gestão Inteligente de Energia · Manaus, AM</div></div>'
-    +'<div style="margin-left:auto">'
-    +'<button class="no-print" onclick="window.print()" style="padding:8px 18px;background:#0d2137;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">🖨 Salvar PDF</button>'
-    +'</div></div>'
-    +clone.innerHTML
+    +'<div class="page">'
+    // Cabeçalho profissional
+    +'<div style="display:flex;align-items:center;gap:12px;padding-bottom:12px;margin-bottom:18px;border-bottom:3px solid #059669">'
+    +'<div style="width:40px;height:40px;background:#059669;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;flex-shrink:0">⚡</div>'
+    +'<div style="flex:1"><div style="font-size:16px;font-weight:700;color:#0d2137">TRIANON GESTÃO DE ENERGIA</div>'
+    +'<div style="font-size:10px;color:#64748b">Gestão Inteligente de Energia · Manaus, AM · CNPJ: 58.843.586/0001-36</div></div>'
+    +'<div style="text-align:right">'
+    +'<div style="font-size:10px;color:#64748b">Diagnóstico Executivo</div>'
+    +'<div style="font-size:10px;color:#64748b">'+dataHoje+'</div>'
+    +'</div>'
+    +'<button onclick="window.print()" style="margin-left:16px;padding:8px 18px;background:#0d2137;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;flex-shrink:0">🖨 Salvar PDF</button>'
+    +'</div>'
+    + clone.innerHTML
+    // Rodapé
+    +'<div style="margin-top:24px;padding-top:10px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;font-size:9px;color:#94a3b8">'
+    +'<span>TRIANON GESTÃO DE ENERGIA LTDA · CNPJ: 58.843.586/0001-36 · Manaus, AM</span>'
+    +'<span>Documento confidencial · '+dataHoje+'</span>'
+    +'</div>'
+    +'</div>'
+    +'<script>window.onload=function(){window.print();}<\/script>'
     +'</body></html>');
   w.document.close();
 }

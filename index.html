@@ -2079,20 +2079,63 @@ async function pollExtracao(taskId, email){
     if(t.status==='concluido'){
       clearInterval(_poll); _poll=null;
       var n = t.pdf_links ? t.pdf_links.length : 0;
-      extSet('✅','Faturas incorporadas com sucesso!', n+' fatura(s) extraída(s) e analisadas.');
+      extSet('✅','Faturas extraídas!', n+' fatura(s) baixadas e analisadas.');
       extLog('✓ '+n+' fatura(s) baixadas');
       extLog('✓ Parse e análise IA concluídos');
-      extLog('🔄 Incorporando ao dashboard...');
-      await carregarDados();
-      extLog('✅ Cliente adicionado ao Kanban!');
-      document.getElementById('ext-btn-ver').style.display='block';
+      extLog('🔄 Registrando cliente no pipeline...');
 
-      // Salva email de contato se informado
-      if(email){
-        var cpf = document.getElementById('nc-cpf').value.replace(/\D/g,'');
-        var cliente = D.clientes.find(function(c){return c.cnpj===cpf||c.portal_cpf_cnpj===cpf;});
-        if(cliente) await sbPatch('clientes?id=eq.'+cliente.id, {email_contato:email});
+      // Busca dados do cliente das faturas recém-extraídas
+      var cpfVal = document.getElementById('nc-cpf').value.replace(/\D/g,'');
+      try{
+        // Busca faturas do request
+        var fatReq = await fetch(SB+'/rest/v1/faturas_parsed?extraction_id=eq.'+taskId+'&select=*&limit=1',
+          {headers:{apikey:KEY,Authorization:'Bearer '+KEY}});
+        var fatData = await fatReq.json();
+        if(!fatData||!fatData[0]) throw new Error('faturas não encontradas');
+        var f0 = fatData[0];
+
+        // Busca TODAS as UCs deste CNPJ
+        var allFatReq = await fetch(SB+'/rest/v1/faturas_parsed?extraction_id=eq.'+taskId+'&select=uc,subgrupo,modalidade,demanda_contratada_fora_ponta_kw,consumo_total_kwh,total_a_pagar',
+          {headers:{apikey:KEY,Authorization:'Bearer '+KEY}});
+        var allFat = await allFatReq.json()||[];
+        var ucs = [...new Set(allFat.map(function(f){return f.uc;}).filter(Boolean))];
+        var custoMedio = allFat.reduce(function(s,f){return s+parseFloat(f.total_a_pagar||0);},0)/Math.max(allFat.length,1);
+
+        // Verifica se já existe na tabela clientes
+        var existeReq = await fetch(SB+'/rest/v1/clientes?portal_cpf_cnpj=eq.'+cpfVal+'&select=id',
+          {headers:{apikey:KEY,Authorization:'Bearer '+KEY}});
+        var existe = await existeReq.json();
+
+        if(!existe||!existe[0]){
+          // Cria novo cliente
+          var novoCliente = {
+            nome: f0.cliente_nome||cpfVal,
+            cnpj: cpfVal,
+            ucs: ucs,
+            subgrupo: f0.subgrupo||'',
+            modalidade: f0.modalidade||'',
+            demanda_kw: parseFloat(f0.demanda_contratada_fora_ponta_kw)||null,
+            consumo_medio: parseFloat(f0.consumo_total_kwh)||null,
+            custo_medio: custoMedio||null,
+            portal_cpf_cnpj: cpfVal,
+            status: 'prospecto',
+            monitorar: document.getElementById('nc-toggle').classList.contains('on'),
+          };
+          if(email) novoCliente.email_contato = email;
+          await sbPost('clientes', novoCliente);
+          extLog('✅ Cliente registrado no Kanban como Prospecto!');
+        } else {
+          // Atualiza UCs e dados
+          await sbPatch('clientes?id=eq.'+existe[0].id, {ucs:ucs, custo_medio:custoMedio});
+          if(email) await sbPatch('clientes?id=eq.'+existe[0].id, {email_contato:email});
+          extLog('✅ Cliente atualizado no Kanban!');
+        }
+      } catch(err){
+        extLog('⚠️ Cliente nas faturas mas não no Kanban — atualize a página');
       }
+
+      await carregarDados();
+      document.getElementById('ext-btn-ver').style.display='block';
     }
 
     if(t.status==='erro_extracao'||t.status==='credenciais_invalidas'){

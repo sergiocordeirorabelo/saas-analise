@@ -2095,16 +2095,31 @@ async function pollExtracao(taskId, email){
       var monitorarVal = document.getElementById('nc-toggle') ? document.getElementById('nc-toggle').classList.contains('on') : true;
       try{
         // 1. Busca TODAS as faturas desta extração (pode ter várias UCs)
-        var r1 = await sbGet('faturas_parsed?extraction_id=eq.'+taskId+'&select=uc,cliente_nome,cnpj,subgrupo,modalidade,demanda_contratada_fora_ponta_kw,consumo_total_kwh,total_a_pagar&order=parsed_at.desc');
+        // Tenta buscar faturas parseadas primeiro
+        var r1 = await sbGet('faturas_parsed?extraction_id=eq.'+taskId+'&select=uc,cliente_nome,subgrupo,modalidade,demanda_contratada_fora_ponta_kw,consumo_total_kwh,total_a_pagar&order=parsed_at.desc');
         var faturas = Array.isArray(r1) ? r1 : [];
-        if(!faturas.length) throw new Error('Aguardando parse...');
 
-        var f0 = faturas[0];
-        var ucs = [...new Set(faturas.map(function(f){return f.uc;}).filter(Boolean))];
-        var nMeses = Math.max(faturas.length, 1);
-        var custoMedio = faturas.reduce(function(s,f){return s+parseFloat(f.total_a_pagar||0);},0)/nMeses;
-        var cnpjFinal = f0.cnpj || cpfVal;
-        var nomeFinal = f0.cliente_nome || cpfVal;
+        var ucs, custoMedio, nomeFinal, cnpjFinal;
+
+        if(faturas.length){
+          // Usa dados do parse
+          var f0 = faturas[0];
+          ucs = [...new Set(faturas.map(function(f){return f.uc;}).filter(Boolean))];
+          custoMedio = faturas.reduce(function(s,f){return s+parseFloat(f.total_a_pagar||0);},0)/Math.max(faturas.length,1);
+          cnpjFinal = cpfVal;
+          nomeFinal = f0.cliente_nome || cpfVal;
+        } else {
+          // Parse ainda não rodou — usa dados direto do pdf_links da extraction_request
+          var r0 = await sbGet('extraction_requests?id=eq.'+taskId+'&select=pdf_links');
+          var extr = Array.isArray(r0) ? r0[0] : null;
+          var pdfLinks = extr ? (extr.pdf_links||[]) : t.pdf_links||[];
+          if(!pdfLinks.length) throw new Error('Aguardando processamento das faturas...');
+          ucs = [...new Set(pdfLinks.map(function(p){return String(p.uc);}).filter(Boolean))];
+          custoMedio = pdfLinks.reduce(function(s,p){return s+parseFloat(p.valor||0);},0)/Math.max(pdfLinks.length,1);
+          cnpjFinal = cpfVal;
+          nomeFinal = cpfVal; // será atualizado quando o parse rodar
+          extLog('⚠️ Parse em andamento — cliente criado com dados parciais');
+        }
 
         // 2. Verifica se já existe (por CNPJ ou portal_cpf_cnpj)
         var r2 = await sbGet('clientes?or=(cnpj.eq.'+cnpjFinal+',portal_cpf_cnpj.eq.'+cpfVal+')&select=id&limit=1');

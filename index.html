@@ -2612,20 +2612,10 @@ async function downloadRelatorio(faturaId){
 
   if(!path){ alert('PDF não disponível para esta fatura.'); return; }
 
-  // Gera URL assinada via Supabase Storage API
-  var bucket = 'Faturas';
-  var signResp = await fetch(SB+'/storage/v1/object/sign/'+bucket+'/'+path, {
-    method:'POST',
-    headers:{apikey:KEY, Authorization:'Bearer '+KEY, 'Content-Type':'application/json'},
-    body:JSON.stringify({expiresIn:3600})
-  });
-  var signData = await signResp.json();
-  var url = signData.signedURL || signData.signedUrl;
-  if(url) window.open(SB+url,'_blank');
-  else {
-    // Fallback: tenta URL pública
-    window.open(SB+'/storage/v1/object/public/'+bucket+'/'+path,'_blank');
-  }
+  // Abre via URL autenticada com anon key
+  // RLS policy "anon_read_faturas_storage" permite leitura
+  var url = SB+'/storage/v1/object/Faturas/'+path+'?apikey='+KEY;
+  window.open(url,'_blank');
 }
 
 // ── ALERTAS ──────────────────────────────────────────────────────────────────

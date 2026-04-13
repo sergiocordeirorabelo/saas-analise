@@ -539,6 +539,13 @@ async function deletarCliente(clienteId, nome){
   await carregarDados();
 }
 
+
+function mesRefSort(a, b){
+  // Converte MM/YYYY → YYYYMM para ordenação correta
+  function toNum(m){ var p=m.split('/'); return p.length===2?parseInt(p[1]+p[0].padStart(2,'0')):0; }
+  return toNum(b) - toNum(a); // desc
+}
+
 function navegarAnalise(id){ navegar("analises",document.getElementById("sb-analises")); abrirAnaliseCliente(id); }
 
 function renderKanban(){
@@ -2235,7 +2242,7 @@ async function abrirAnaliseCliente(clienteId){
   // ── Dados brutos ──────────────────────────────────────────────────────────
   var ucs    = cl.ucs||[];
   var fat    = D.faturas.filter(function(f){return ucs.includes(f.uc);})
-                .sort(function(a,b){return b.mes_referencia>a.mes_referencia?1:-1;});
+                .sort(function(a,b){return mesRefSort(a.mes_referencia,b.mes_referencia);});
   var alerts = D.alertas.filter(function(a){return ucs.includes(a.uc);});
   var ans    = D.analises.filter(function(a){return ucs.includes(a.uc);});
 
@@ -2655,7 +2662,7 @@ function mostrarResumoMensal(){
     porMes[m].total += parseFloat(f.total_a_pagar||0);
   });
 
-  var meses = Object.values(porMes).sort(function(a,b){return b.mes>a.mes?1:-1;});
+  var meses = Object.values(porMes).sort(function(a,b){return mesRefSort(a.mes,b.mes);});
 
   var html = '<div style="font-size:13px;font-weight:700;color:#0d2137;margin-bottom:12px;display:flex;align-items:center;gap:8px"><span style="font-size:18px">📅</span> Faturas Analisadas por Mês</div>';
   html += '<div class="table-wrap"><div class="table-head" style="grid-template-columns:1fr 60px 60px 120px"><div class="th">Mês</div><div class="th r">UCs</div><div class="th r">Clientes</div><div class="th r">Custo Total</div></div>';
@@ -2697,7 +2704,7 @@ function renderRelatorios(){
     html += '<div class="table-head" style="grid-template-columns:2fr 1fr 1fr 1fr 100px"><div class="th">Cliente</div><div class="th">UCs</div><div class="th">Última Fatura</div><div class="th">Status do Mês</div><div class="th r">Ação</div></div>';
     ativos.forEach(function(cl){
       var fat = D.faturas.filter(function(f){return (cl.ucs||[]).includes(f.uc);})
-        .sort(function(a,b){return b.mes_referencia>a.mes_referencia?1:-1;});
+        .sort(function(a,b){return mesRefSort(a.mes_referencia,b.mes_referencia);});
       var ultimaFat = fat[0];
       var ultimoMes = ultimaFat ? ultimaFat.mes_referencia : '—';
       var temMesAtual = fat.some(function(f){return f.mes_referencia===mesAtual;});
@@ -2727,7 +2734,7 @@ function renderRelatorios(){
     html += '<div class="table-head" style="grid-template-columns:2fr 1fr 1fr 100px"><div class="th">Cliente</div><div class="th">Status</div><div class="th">Última Fatura</div><div class="th r">Ação</div></div>';
     pipeline.forEach(function(cl){
       var fat = D.faturas.filter(function(f){return (cl.ucs||[]).includes(f.uc);})
-        .sort(function(a,b){return b.mes_referencia>a.mes_referencia?1:-1;});
+        .sort(function(a,b){return mesRefSort(a.mes_referencia,b.mes_referencia);});
       var ultimoMes = fat[0] ? fat[0].mes_referencia : '—';
       var statusLabel = getStatusLabel(cl.status);
       var cIdJ = JSON.stringify(cl.id);

@@ -300,12 +300,16 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
     </div>
   </div>
 
-  <!-- ══ RELATÓRIOS MENSAIS ══ -->
+  <!-- ══ ACOMPANHAMENTO MENSAL ══ -->
   <div id="page-relatorios" class="page">
-    <div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
-      <p style="font-size:13px;color:var(--muted)">Relatórios gerados mensalmente para clientes com contrato ativo.</p>
-      <button class="btn green" onclick="gerarRelatoriosMensais()">⚡ Gerar Relatórios do Mês</button>
+    <div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+      <p style="font-size:13px;color:var(--muted)">Monitoramento de faturas por cliente e mês.</p>
+      <div style="display:flex;gap:8px">
+        <button class="btn" onclick="mostrarResumoMensal()">📅 Faturas por Mês</button>
+        <button class="btn green" onclick="gerarRelatoriosMensais()">⚡ Iniciar Acompanhamento</button>
+      </div>
     </div>
+    <div id="resumo-mensal" style="display:none;margin-bottom:20px"></div>
     <div id="relatorios-lista"></div>
   </div>
 
@@ -521,6 +525,16 @@ var COLUNAS = [
   {key:'ativo',     label:'✅ Ativo',      cor:'#059669'},
 ];
 
+
+async function deletarCliente(clienteId, nome){
+  if(!confirm('Remover "'+nome+'" do pipeline?\nAs faturas extraídas serão mantidas no banco.')) return;
+  await fetch(SB+'/rest/v1/clientes?id=eq.'+clienteId, {
+    method:'DELETE',
+    headers:{apikey:KEY, Authorization:'Bearer '+KEY}
+  });
+  await carregarDados();
+}
+
 function navegarAnalise(id){ navegar("analises",document.getElementById("sb-analises")); abrirAnaliseCliente(id); }
 
 function renderKanban(){
@@ -563,7 +577,9 @@ function buildClientCard(c, status){
   }
 
   var cIdS = JSON.stringify(c.id);
-  return '<div class="client-card" style="cursor:pointer" onclick="navegarAnalise('+cIdS+')">'
+  var cNomeS = JSON.stringify(c.nome.slice(0,40));
+  return '<div class="client-card" style="cursor:pointer;position:relative" onclick="navegarAnalise('+cIdS+')">'
+    +'<button id="del-'+c.id+'" onclick="event.stopPropagation();deletarCliente('+cIdS+','+cNomeS+')" title="Remover" style="position:absolute;top:6px;right:6px;background:transparent;border:none;cursor:pointer;color:#cbd5e1;font-size:13px;padding:2px 5px;border-radius:4px">✕</button>'
     +'<div class="client-card-nome">'+c.nome.slice(0,40)+(c.nome.length>40?'...':'')+'</div>'
     +'<div class="client-card-sub">'+(ucs?'UC '+ucs:'')+(c.subgrupo?' · '+c.subgrupo:'')+'</div>'
     +(custo>0?'<div class="client-card-val">R$ '+custo.toLocaleString('pt-BR',{minimumFractionDigits:0})+'/mês</div>':'')
@@ -2609,6 +2625,41 @@ function renderAlertas(){
 }
 
 // ── RELATÓRIOS MENSAIS ────────────────────────────────────────────────────────
+
+function mostrarResumoMensal(){
+  var div = document.getElementById('resumo-mensal');
+  if(div.style.display !== 'none'){ div.style.display='none'; return; }
+
+  // Agrupa faturas por mês
+  var porMes = {};
+  D.faturas.forEach(function(f){
+    var m = f.mes_referencia||'?';
+    if(!porMes[m]) porMes[m] = {mes:m, ucs:[], clientes:[], total:0};
+    if(!porMes[m].ucs.includes(f.uc)) porMes[m].ucs.push(f.uc);
+    var cl = D.clientes.find(function(c){return (c.ucs||[]).includes(f.uc);});
+    var nome = cl ? cl.nome.slice(0,30) : f.uc;
+    if(!porMes[m].clientes.includes(nome)) porMes[m].clientes.push(nome);
+    porMes[m].total += parseFloat(f.total_a_pagar||0);
+  });
+
+  var meses = Object.values(porMes).sort(function(a,b){return b.mes>a.mes?1:-1;});
+
+  var html = '<div style="font-size:13px;font-weight:700;color:#0d2137;margin-bottom:12px;display:flex;align-items:center;gap:8px"><span style="font-size:18px">📅</span> Faturas Analisadas por Mês</div>';
+  html += '<div class="table-wrap"><div class="table-head" style="grid-template-columns:1fr 60px 60px 120px"><div class="th">Mês</div><div class="th r">UCs</div><div class="th r">Clientes</div><div class="th r">Custo Total</div></div>';
+  meses.forEach(function(m){
+    html += '<div class="table-row" style="grid-template-columns:1fr 60px 60px 120px">';
+    html += '<div class="td"><b>'+m.mes+'</b><div class="td muted" style="font-size:10px">'+m.clientes.join(', ')+'</div></div>';
+    html += '<div class="td r">'+m.ucs.length+'</div>';
+    html += '<div class="td r">'+m.clientes.length+'</div>';
+    html += '<div class="td r green">R$ '+m.total.toLocaleString('pt-BR',{minimumFractionDigits:0})+'</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  div.innerHTML = html;
+  div.style.display = 'block';
+}
+
 function renderRelatorios(){
   var cont = document.getElementById('relatorios-lista');
   var mesAtual = new Date().toLocaleDateString('pt-BR',{month:'2-digit',year:'numeric'});

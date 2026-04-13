@@ -526,6 +526,13 @@ var COLUNAS = [
 ];
 
 
+function deletarClienteById(btn){
+  var id = btn.getAttribute('data-cid');
+  var cl = D.clientes.find(function(x){return x.id===id;});
+  var nome = cl ? cl.nome.slice(0,40) : id;
+  deletarCliente(id, nome);
+}
+
 async function deletarCliente(clienteId, nome){
   if(!confirm('Remover "'+nome+'" do pipeline?\nAs faturas extraídas serão mantidas no banco.')) return;
   await fetch(SB+'/rest/v1/clientes?id=eq.'+clienteId, {
@@ -577,9 +584,8 @@ function buildClientCard(c, status){
   }
 
   var cIdS = JSON.stringify(c.id);
-  var cNomeS = JSON.stringify(c.nome.slice(0,40));
   return '<div class="client-card" style="cursor:pointer;position:relative" onclick="navegarAnalise('+cIdS+')">'
-    +'<button id="del-'+c.id+'" onclick="event.stopPropagation();deletarCliente('+cIdS+','+cNomeS+')" title="Remover" style="position:absolute;top:6px;right:6px;background:transparent;border:none;cursor:pointer;color:#cbd5e1;font-size:13px;padding:2px 5px;border-radius:4px">✕</button>'
+    +'<button data-cid="'+c.id+'" onclick="event.stopPropagation();deletarClienteById(this)" title="Remover" style="position:absolute;top:6px;right:6px;background:transparent;border:none;cursor:pointer;color:#cbd5e1;font-size:13px;padding:2px 6px;border-radius:4px">✕</button>'
     +'<div class="client-card-nome">'+c.nome.slice(0,40)+(c.nome.length>40?'...':'')+'</div>'
     +'<div class="client-card-sub">'+(ucs?'UC '+ucs:'')+(c.subgrupo?' · '+c.subgrupo:'')+'</div>'
     +(custo>0?'<div class="client-card-val">R$ '+custo.toLocaleString('pt-BR',{minimumFractionDigits:0})+'/mês</div>':'')

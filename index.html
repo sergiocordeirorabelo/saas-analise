@@ -2612,9 +2612,8 @@ async function downloadRelatorio(faturaId){
 
   if(!path){ alert('PDF não disponível para esta fatura.'); return; }
 
-  // Abre via URL autenticada com anon key
-  // RLS policy "anon_read_faturas_storage" permite leitura
-  var url = SB+'/storage/v1/object/Faturas/'+path+'?apikey='+KEY;
+  // Bucket público — URL direta sem auth
+  var url = SB+'/storage/v1/object/public/Faturas/'+path;
   window.open(url,'_blank');
 }
 

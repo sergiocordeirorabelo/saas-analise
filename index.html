@@ -248,11 +248,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
   <!-- ══ KANBAN ══ -->
   <div id="page-pipeline" class="page active">
     <!-- Métricas topo -->
-    <div class="metrics-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:20px">
+    <div class="metrics-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
       <div class="metric-card"><div class="metric-label">Prospectos</div><div class="metric-val blue" id="kpi-prospectos">0</div></div>
       <div class="metric-card"><div class="metric-label">Em Análise</div><div class="metric-val amber" id="kpi-analisando">0</div></div>
       <div class="metric-card"><div class="metric-label">Proposta Enviada</div><div class="metric-val" id="kpi-proposta">0</div></div>
-      <div class="metric-card"><div class="metric-label">Negociando</div><div class="metric-val" style="color:var(--purple)" id="kpi-negociando">0</div></div>
       <div class="metric-card"><div class="metric-label">Clientes Ativos</div><div class="metric-val green" id="kpi-ativos">0</div><div class="metric-sub" id="kpi-mrr">R$ 0/mês</div></div>
     </div>
 
@@ -494,7 +493,6 @@ function atualizarBadges(){
   document.getElementById('kpi-prospectos').textContent = st.prospecto;
   document.getElementById('kpi-analisando').textContent = st.analisando;
   document.getElementById('kpi-proposta').textContent   = st.proposta;
-  document.getElementById('kpi-negociando').textContent = st.negociando;
   document.getElementById('kpi-ativos').textContent     = st.ativo;
   document.getElementById('kpi-mrr').textContent        = 'R$ '+mrr.toLocaleString('pt-BR')+'/mês';
 }
@@ -521,7 +519,6 @@ var COLUNAS = [
   {key:'prospecto', label:'🔍 Prospecto',  cor:'#6366f1'},
   {key:'analisando',label:'📊 Analisando', cor:'#d97706'},
   {key:'proposta',  label:'📧 Proposta',   cor:'#2563eb'},
-  {key:'negociando',label:'🤝 Negociando', cor:'#7c3aed'},
   {key:'ativo',     label:'✅ Ativo',      cor:'#059669'},
 ];
 
@@ -577,8 +574,6 @@ function buildClientCard(c, status){
     acoes = '<span style="font-size:10px;color:var(--amber);font-weight:600">Análise em andamento →</span>';
   } else if(status==='proposta'){
     acoes = '<span style="font-size:10px;color:var(--blue);font-weight:600">Proposta enviada →</span>';
-  } else if(status==='negociando'){
-    acoes = '<span style="font-size:10px;color:var(--purple);font-weight:600">Em negociação →</span>';
   } else if(status==='ativo'){
     acoes = '<span style="font-size:10px;color:var(--green);font-weight:600">✅ Cliente ativo</span>';
   }
@@ -665,8 +660,7 @@ function abrirCliente(clienteId, tab){
     pipelineBtns = '<button class="btn amber" onclick="mudarStatus('+idJ+',\'analisando\');fecharModal(\'modalCliente\')">📊 Mover para Analisando</button>';
   if(cl.status==='analisando')
     pipelineBtns = '<button class="btn primary" onclick="mudarStatus('+idJ+',\'proposta\');fecharModal(\'modalCliente\')">📧 Proposta Enviada</button>';
-  if(cl.status==='proposta')
-    pipelineBtns = '<button class="btn" onclick="mudarStatus('+idJ+',\'negociando\');fecharModal(\'modalCliente\')">🤝 Em Negociação</button>';
+
 
   // KPI bar
   var kpis = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px">'
@@ -1298,8 +1292,7 @@ function abrirCliente(clienteId, tab){
     pipelineBtns = '<button class="btn amber" onclick="mudarStatus('+idJ+',\'analisando\');fecharModal(\'modalCliente\')">📊 Mover para Analisando</button>';
   if(cl.status==='analisando')
     pipelineBtns = '<button class="btn primary" onclick="mudarStatus('+idJ+',\'proposta\');fecharModal(\'modalCliente\')">📧 Proposta Enviada</button>';
-  if(cl.status==='proposta')
-    pipelineBtns = '<button class="btn" onclick="mudarStatus('+idJ+',\'negociando\');fecharModal(\'modalCliente\')">🤝 Em Negociação</button>';
+
 
   // KPI bar
   var kpis = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px">'
@@ -2711,7 +2704,7 @@ function renderRelatorios(){
     html += '</div></div>';
   }
 
-  // ── Clientes em Pipeline (prospecto/analisando/proposta/negociando) ─────
+  // ── Clientes em Pipeline ─────────────────────────────────────────────────
   var pipeline = todos.filter(function(c){return c.status!=='ativo';});
   if(pipeline.length){
     html += '<div style="margin-bottom:20px">';
@@ -2828,8 +2821,8 @@ function renderContratos(){
 function fecharModal(id){ document.getElementById(id).style.display='none'; document.body.style.overflow=''; }
 function formatDoc(v){ var n=v.replace(/\D/g,'').slice(0,14); if(n.length<=3)return n; if(n.length<=6)return n.slice(0,3)+'.'+n.slice(3); if(n.length<=9)return n.slice(0,3)+'.'+n.slice(3,6)+'.'+n.slice(6); if(n.length<=11)return n.slice(0,3)+'.'+n.slice(3,6)+'.'+n.slice(6,9)+'-'+n.slice(9); return n.slice(0,2)+'.'+n.slice(2,5)+'.'+n.slice(5,8)+'/'+n.slice(8,12)+'-'+n.slice(12); }
 function formatCNPJ(c){ return c.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,'$1.$2.$3/$4-$5')||c; }
-function getStatusClass(s){ var m={prospecto:'info',analisando:'alerta',proposta:'info',negociando:'alerta',ativo:'ok',inativo:'gray'}; return m[s]||'gray'; }
-function getStatusLabel(s){ var m={prospecto:'🔍 Prospecto',analisando:'📊 Analisando',proposta:'📧 Proposta Enviada',negociando:'🤝 Negociando',ativo:'✅ Ativo',inativo:'⏸️ Inativo'}; return m[s]||s; }
+function getStatusClass(s){ var m={prospecto:'info',analisando:'alerta',proposta:'info',ativo:'ok',inativo:'gray'}; return m[s]||'gray'; }
+function getStatusLabel(s){ var m={prospecto:'🔍 Prospecto',analisando:'📊 Analisando',proposta:'📧 Proposta Enviada',ativo:'✅ Ativo',inativo:'⏸️ Inativo'}; return m[s]||s; }
 function verRelatorio(clienteId){ navegar('relatorios',document.getElementById('sb-relatorios')); }
 
 // ── INIT ─────────────────────────────────────────────────────────────────────

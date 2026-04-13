@@ -2599,8 +2599,33 @@ function renderFaturas(){
   if(!cont.children.length) cont.innerHTML='<div class="empty"><div class="empty-icon">📄</div><div>Nenhuma fatura encontrada</div></div>';
 }
 
-function downloadRelatorio(faturaId){
-  window.open(RW+'/relatorio/'+faturaId,'_blank');
+async function downloadRelatorio(faturaId){
+  var fat = D.faturas.find(function(f){return f.id===faturaId;});
+  var path = fat && fat.source_pdf_path;
+
+  if(!path){
+    var r = await fetch(SB+'/rest/v1/faturas_parsed?id=eq.'+faturaId+'&select=source_pdf_path',
+      {headers:{apikey:KEY,Authorization:'Bearer '+KEY}});
+    var d = await r.json();
+    path = d&&d[0]&&d[0].source_pdf_path;
+  }
+
+  if(!path){ alert('PDF não disponível para esta fatura.'); return; }
+
+  // Gera URL assinada via Supabase Storage API
+  var bucket = 'Faturas';
+  var signResp = await fetch(SB+'/storage/v1/object/sign/'+bucket+'/'+path, {
+    method:'POST',
+    headers:{apikey:KEY, Authorization:'Bearer '+KEY, 'Content-Type':'application/json'},
+    body:JSON.stringify({expiresIn:3600})
+  });
+  var signData = await signResp.json();
+  var url = signData.signedURL || signData.signedUrl;
+  if(url) window.open(SB+url,'_blank');
+  else {
+    // Fallback: tenta URL pública
+    window.open(SB+'/storage/v1/object/public/'+bucket+'/'+path,'_blank');
+  }
 }
 
 // ── ALERTAS ──────────────────────────────────────────────────────────────────

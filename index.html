@@ -452,7 +452,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
         <div style="font-size:40px;margin-bottom:12px">⚠️</div>
         <div style="font-size:14px;font-weight:600;color:var(--red);margin-bottom:8px" id="me-error-msg">Erro ao gerar</div>
         <div style="font-size:12px;color:var(--muted);margin-bottom:16px">O servidor pode estar reiniciando. Tente novamente em alguns segundos.</div>
-        <button class="btn primary" onclick="abrirEstudoTecnico(_analiseAtualUC)" style="padding:10px 20px">🔄 Tentar novamente</button>
+        <button class="btn primary" onclick="abrirEstudoTecnico(_analiseAtualUC,_analiseFatLimit)" style="padding:10px 20px">🔄 Tentar novamente</button>
       </div>
     </div>
   </div>
@@ -2231,6 +2231,7 @@ function extLog(msg){ if(_extLogs.has(msg)) return; _extLogs.add(msg); document.
 var _analiseAtualUC = null;
 var _analiseAtualNome = null;
 var _analiseAtualId = null;
+var _analiseFatLimit = 12;
 
 function renderAnalises(){
   var cont = document.getElementById('analises-lista-clientes');
@@ -2271,8 +2272,9 @@ async function abrirAnaliseCliente(clienteId){
 
   // ── Dados brutos ──────────────────────────────────────────────────────────
   var ucs    = cl.ucs||[];
-  var fat    = D.faturas.filter(function(f){return ucs.includes(f.uc);})
+  var fatAll = D.faturas.filter(function(f){return ucs.includes(f.uc);})
                 .sort(function(a,b){return mesRefSort(a.mes_referencia,b.mes_referencia);});
+  var fat    = fatAll.slice(0, _analiseFatLimit);
   var alerts = D.alertas.filter(function(a){return ucs.includes(a.uc);});
   var ans    = D.analises.filter(function(a){return ucs.includes(a.uc);});
 
@@ -2351,7 +2353,15 @@ async function abrirAnaliseCliente(clienteId){
   H += '<div><div style="font-size:10px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Diagnóstico Executivo · Trianon Gestão de Energia</div>';
   H += '<div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:5px">'+cl.nome+'</div>';
   H += '<div style="font-size:12px;color:rgba(255,255,255,.45)">'+ucs.map(function(u){return 'UC '+u;}).join(' · ')+(subg!=='?'?' · '+subg:'')+(mod!=='?'?' · '+mod:'')+'</div></div>';
-  H += '<div style="display:flex;gap:10px">';
+  H += '<div style="display:flex;gap:10px;align-items:center">';
+  // Seletor de faturas para análise
+  H += '<div style="text-align:center;background:rgba(255,255,255,.12);border-radius:10px;padding:8px 12px">';
+  H += '<select id="sel-fat-limit" onchange="_analiseFatLimit=parseInt(this.value);abrirAnaliseCliente(\''+clienteId+'\')" style="background:transparent;border:none;color:#fff;font-size:14px;font-weight:700;text-align:center;cursor:pointer;outline:none">';
+  for(var fi=1;fi<=Math.min(fatAll.length,12);fi++){
+    H += '<option value="'+fi+'" style="color:#0d2137"'+(fi===_analiseFatLimit?' selected':'')+'>'+fi+'</option>';
+  }
+  H += '</select>';
+  H += '<div style="font-size:9px;color:rgba(255,255,255,.4);text-transform:uppercase;margin-top:2px">Faturas</div></div>';
   if(scoreMedio) H += '<div style="text-align:center;background:rgba(255,255,255,.12);border-radius:10px;padding:12px 18px"><div style="font-size:28px;font-weight:700;color:'+sc+'">'+scoreMedio+'</div><div style="font-size:9px;color:rgba(255,255,255,.4);text-transform:uppercase;margin-top:2px">Score</div></div>';
   var nCrit = alertas.filter(function(a){return a.severidade==='critico';}).length;
   if(nCrit>0) H += '<div style="text-align:center;background:rgba(220,38,38,.25);border-radius:10px;padding:12px 18px"><div style="font-size:28px;font-weight:700;color:#fca5a5">'+nCrit+'</div><div style="font-size:9px;color:rgba(255,255,255,.4);text-transform:uppercase;margin-top:2px">Críticos</div></div>';
@@ -2521,7 +2531,7 @@ async function abrirAnaliseCliente(clienteId){
         // Tenta Railway primeiro, fallback para print
         imprimirAnaliseCompleta();
       }},
-      {l:'📊 Estudo Técnico + Proposta', cls:'btn primary', style:'padding:12px 22px;font-size:13px;font-weight:700;background:#7c3aed;border-color:#7c3aed', fn:function(){abrirEstudoTecnico(_analiseAtualUC);}},
+      {l:'📊 Estudo Técnico + Proposta', cls:'btn primary', style:'padding:12px 22px;font-size:13px;font-weight:700;background:#7c3aed;border-color:#7c3aed', fn:function(){abrirEstudoTecnico(_analiseAtualUC,_analiseFatLimit);}},
       {l:'📄 Contrato PDF',       cls:'btn',         style:'padding:12px 18px', fn:function(){gerarContratoPDF(cId);}},
     ].forEach(function(b){
       var el=document.createElement('button');
@@ -2878,8 +2888,9 @@ function getStatusLabel(s){ var m={prospecto:'🔍 Prospecto',analisando:'📊 A
 function verRelatorio(clienteId){ navegar('relatorios',document.getElementById('sb-relatorios')); }
 
 // ── ESTUDO TÉCNICO (preview modal) ─────────────────────────────────────────
-async function abrirEstudoTecnico(uc){
+async function abrirEstudoTecnico(uc,limit){
   if(!uc){ alert('Selecione um cliente primeiro.'); return; }
+  limit = limit || _analiseFatLimit || 12;
   var modal = document.getElementById('modalEstudo');
   var loading = document.getElementById('me-loading');
   var iframe = document.getElementById('me-iframe');
@@ -2901,7 +2912,7 @@ async function abrirEstudoTecnico(uc){
   document.getElementById('me-titulo').textContent='📊 Estudo Técnico — '+(cl?cl.nome.slice(0,40):'UC '+uc);
   document.getElementById('me-sub').textContent='Gerando PDF com dados reais...';
 
-  var url = RW+'/estudo/uc/'+uc;
+  var url = RW+'/estudo/uc/'+uc+'?limit='+limit;
 
   try{
     var resp = await fetch(url, {signal:AbortSignal.timeout(30000)});

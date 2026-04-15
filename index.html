@@ -358,14 +358,20 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
 
 <!-- ══ MODAL NOVO CLIENTE ══ -->
 <div id="modalNovoCliente" class="modal-bg">
-  <div class="modal-box">
+  <div class="modal-box" style="max-width:560px">
     <div class="modal-head">
       <div>
         <div class="modal-title">+ Novo Cliente</div>
-        <div class="modal-sub">Informe as credenciais — o resto é automático</div>
+        <div class="modal-sub" id="nc-modal-sub">Cadastre via credenciais ou envie a fatura</div>
       </div>
       <button class="modal-close" onclick="fecharModal('modalNovoCliente')">✕</button>
     </div>
+    <!-- ABAS -->
+    <div style="display:flex;border-bottom:2px solid var(--border);background:var(--bg3)">
+      <button id="tab-cred" onclick="trocarAbaNC('cred')" style="flex:1;padding:12px;font-size:13px;font-weight:600;border:none;background:transparent;cursor:pointer;border-bottom:3px solid var(--blue);color:var(--blue)">🔑 Via Credenciais</button>
+      <button id="tab-pdf" onclick="trocarAbaNC('pdf')" style="flex:1;padding:12px;font-size:13px;font-weight:600;border:none;background:transparent;cursor:pointer;border-bottom:3px solid transparent;color:var(--muted)">📄 Via Fatura PDF</button>
+    </div>
+    <!-- ABA 1: CREDENCIAIS (existente) -->
     <div id="form-novo-cliente" class="modal-body">
       <div class="form-group">
         <label class="form-label">CPF ou CNPJ do portal Amazonas Energia *</label>
@@ -407,6 +413,28 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
       <div id="nc-error" style="display:none;background:var(--red-bg);border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin-bottom:14px;color:var(--red);font-size:12px"></div>
       <button id="nc-btn" class="btn green" style="width:100%;padding:13px;font-size:14px" onclick="iniciarExtracao()">⚡ Buscar Faturas Automaticamente</button>
     </div>
+    <!-- ABA 2: UPLOAD PDF (novo) -->
+    <div id="form-upload-pdf" class="modal-body" style="display:none">
+      <div style="background:var(--bg3);border-radius:10px;padding:20px;text-align:center;margin-bottom:18px;border:2px dashed var(--border2);cursor:pointer;transition:all .2s" id="drop-zone" onclick="document.getElementById('pdf-file').click()" ondragover="event.preventDefault();this.style.borderColor='var(--blue)';this.style.background='var(--blue-bg)'" ondragleave="this.style.borderColor='var(--border2)';this.style.background='var(--bg3)'" ondrop="event.preventDefault();this.style.borderColor='var(--border2)';this.style.background='var(--bg3)';handlePdfDrop(event)">
+        <div id="pdf-icon" style="font-size:40px;margin-bottom:8px">📄</div>
+        <div id="pdf-label" style="font-size:14px;font-weight:600;color:var(--text)">Arraste a fatura PDF aqui</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">ou clique para selecionar</div>
+        <input type="file" id="pdf-file" accept=".pdf" style="display:none" onchange="handlePdfSelect(this)">
+      </div>
+      <div id="pdf-info" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px 14px;margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:20px">✅</span>
+          <div>
+            <div id="pdf-nome" style="font-size:13px;font-weight:600;color:#166534"></div>
+            <div id="pdf-tam" style="font-size:11px;color:var(--muted)"></div>
+          </div>
+          <button onclick="limparPdf()" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:16px;color:var(--muted)">✕</button>
+        </div>
+      </div>
+      <div id="pdf-error" style="display:none;background:var(--red-bg);border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin-bottom:14px;color:var(--red);font-size:12px"></div>
+      <button id="pdf-btn" class="btn primary" style="width:100%;padding:13px;font-size:14px" onclick="enviarFaturaPdf()" disabled>📊 Analisar Fatura e Cadastrar Cliente</button>
+    </div>
+    <!-- STATUS (compartilhado) -->
     <div id="status-extracao" style="display:none;padding:24px">
       <div style="text-align:center;padding:8px 0 20px">
         <div id="ext-icon" style="font-size:40px;margin-bottom:12px">⏳</div>
@@ -2115,13 +2143,117 @@ function gerarContratoPDF(clienteId){
 function abrirModalNovoCliente(){
   document.getElementById('modalNovoCliente').style.display='block';
   document.getElementById('form-novo-cliente').style.display='block';
+  document.getElementById('form-upload-pdf').style.display='none';
   document.getElementById('status-extracao').style.display='none';
   document.getElementById('nc-cpf').value='';
   document.getElementById('nc-senha').value='';
   document.getElementById('nc-email').value='';
   document.getElementById('nc-error').style.display='none';
   document.getElementById('nc-toggle').classList.add('on');
+  trocarAbaNC('cred');
+  limparPdf();
   document.body.style.overflow='hidden';
+}
+
+function trocarAbaNC(aba){
+  var tabCred=document.getElementById('tab-cred');
+  var tabPdf=document.getElementById('tab-pdf');
+  var formCred=document.getElementById('form-novo-cliente');
+  var formPdf=document.getElementById('form-upload-pdf');
+  if(aba==='pdf'){
+    tabCred.style.borderBottomColor='transparent';tabCred.style.color='var(--muted)';
+    tabPdf.style.borderBottomColor='var(--blue)';tabPdf.style.color='var(--blue)';
+    formCred.style.display='none';formPdf.style.display='block';
+    document.getElementById('nc-modal-sub').textContent='Envie a fatura PDF — análise automática';
+  } else {
+    tabCred.style.borderBottomColor='var(--blue)';tabCred.style.color='var(--blue)';
+    tabPdf.style.borderBottomColor='transparent';tabPdf.style.color='var(--muted)';
+    formCred.style.display='block';formPdf.style.display='none';
+    document.getElementById('nc-modal-sub').textContent='Informe as credenciais — o resto é automático';
+  }
+}
+
+var _pdfFile=null;
+function handlePdfSelect(input){
+  if(input.files&&input.files[0]) setPdfFile(input.files[0]);
+}
+function handlePdfDrop(e){
+  var files=e.dataTransfer.files;
+  if(files&&files[0]&&files[0].name.endsWith('.pdf')) setPdfFile(files[0]);
+}
+function setPdfFile(file){
+  _pdfFile=file;
+  document.getElementById('pdf-info').style.display='block';
+  document.getElementById('pdf-nome').textContent=file.name;
+  document.getElementById('pdf-tam').textContent=(file.size/1024).toFixed(0)+' KB';
+  document.getElementById('pdf-icon').textContent='✅';
+  document.getElementById('pdf-label').textContent=file.name;
+  document.getElementById('pdf-btn').disabled=false;
+  document.getElementById('pdf-error').style.display='none';
+}
+function limparPdf(){
+  _pdfFile=null;
+  document.getElementById('pdf-info').style.display='none';
+  document.getElementById('pdf-icon').textContent='📄';
+  document.getElementById('pdf-label').textContent='Arraste a fatura PDF aqui';
+  document.getElementById('pdf-btn').disabled=true;
+  document.getElementById('pdf-file').value='';
+}
+
+async function enviarFaturaPdf(){
+  if(!_pdfFile){document.getElementById('pdf-error').textContent='Selecione um PDF.';document.getElementById('pdf-error').style.display='block';return;}
+  var btn=document.getElementById('pdf-btn');
+  btn.textContent='⏳ Analisando com IA...';btn.disabled=true;
+  document.getElementById('pdf-error').style.display='none';
+
+  // Mostra status
+  document.getElementById('form-upload-pdf').style.display='none';
+  document.getElementById('status-extracao').style.display='block';
+  _extLogs=new Set();
+  document.getElementById('ext-log').innerHTML='';
+  extSet('⏳','Analisando fatura com IA...','Isso pode levar até 30 segundos');
+  extLog('📄 Upload: '+_pdfFile.name);
+  extLog('🤖 Enviando para análise com IA...');
+
+  try{
+    var form=new FormData();
+    form.append('pdf',_pdfFile);
+    var resp=await fetch(RW+'/diagnostico',{method:'POST',body:form,signal:AbortSignal.timeout(60000)});
+    if(!resp.ok){var err=await resp.json().catch(function(){return{error:'Erro '+resp.status}});throw new Error(err.error);}
+    var dados=await resp.json();
+
+    extLog('✅ Parse concluído: '+(dados.source_parser||'IA'));
+    extLog('✅ UC: '+(dados.uc||'—')+' | Mês: '+(dados.mes_referencia||'—'));
+    extLog('✅ Cliente: '+(dados.cliente_nome||'—'));
+    extLog('✅ Total: R$ '+parseFloat(dados.total_a_pagar||0).toLocaleString('pt-BR',{minimumFractionDigits:2}));
+
+    if(dados._saved){
+      if(dados._saved.cliente_id) extLog('✅ Cliente cadastrado no Kanban!');
+      if(dados._saved.fatura_id) extLog('✅ Fatura salva no banco!');
+    }
+
+    if(dados.analise&&dados.analise.alertas){
+      var als=dados.analise.alertas;
+      extLog('⚠️ '+als.length+' alerta(s) identificado(s)');
+    }
+
+    extSet('✅','Análise concluída!',
+      (dados.cliente_nome||'Cliente')+' — UC '+(dados.uc||'?')+
+      ' — R$ '+parseFloat(dados.total_a_pagar||0).toLocaleString('pt-BR',{minimumFractionDigits:0})+'/mês');
+
+    await carregarDados();
+    document.getElementById('ext-btn-ver').style.display='block';
+
+  }catch(e){
+    extSet('❌','Erro na análise',e.message||'Tente novamente');
+    extLog('❌ '+e.message);
+    var btnVer=document.getElementById('ext-btn-ver');
+    btnVer.style.display='block';btnVer.textContent='Fechar';
+    btnVer.style.background='transparent';btnVer.style.color='var(--text)';
+    btnVer.onclick=function(){fecharModal('modalNovoCliente');};
+  }
+
+  btn.textContent='📊 Analisar Fatura e Cadastrar Cliente';btn.disabled=false;
 }
 
 async function iniciarExtracao(){

@@ -428,6 +428,36 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
   </div>
 </div>
 
+<div id="modalEstudo" class="modal-bg">
+  <div class="modal-box wide" style="max-width:1100px;height:90vh">
+    <div class="modal-head" style="background:linear-gradient(135deg,#5b21b6,#7c3aed)">
+      <div>
+        <div class="modal-title" id="me-titulo">📊 Estudo Técnico + Proposta</div>
+        <div class="modal-sub" id="me-sub">Gerando PDF...</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <a id="me-download" href="#" target="_blank" style="display:none;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);color:#fff;padding:6px 14px;border-radius:7px;text-decoration:none;font-size:12px;font-weight:600">⬇ Baixar PDF</a>
+        <a id="me-newtab" href="#" target="_blank" style="display:none;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;padding:6px 12px;border-radius:7px;text-decoration:none;font-size:11px">↗ Nova aba</a>
+        <button class="modal-close" onclick="fecharModal('modalEstudo')">✕</button>
+      </div>
+    </div>
+    <div id="me-body" style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+      <div style="text-align:center;padding:60px" id="me-loading">
+        <div class="spinner" style="margin:0 auto 16px"></div>
+        <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px">Gerando Estudo Técnico...</div>
+        <div style="font-size:12px;color:var(--muted)">Analisando faturas e montando proposta comercial</div>
+      </div>
+      <iframe id="me-iframe" style="display:none;flex:1;width:100%;border:none;background:#f1f5f9" allowfullscreen></iframe>
+      <div id="me-error" style="display:none;text-align:center;padding:40px">
+        <div style="font-size:40px;margin-bottom:12px">⚠️</div>
+        <div style="font-size:14px;font-weight:600;color:var(--red);margin-bottom:8px" id="me-error-msg">Erro ao gerar</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:16px">O servidor pode estar reiniciando. Tente novamente em alguns segundos.</div>
+        <button class="btn primary" onclick="abrirEstudoTecnico(_analiseAtualUC)" style="padding:10px 20px">🔄 Tentar novamente</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 const SB = 'https://shaihalexolocjjkkpoh.supabase.co';
 const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNoYWloYWxleG9sb2NqamtrcG9oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwMDA2ODUsImV4cCI6MjA5MDU3NjY4NX0.TfMwnhlu-TDZY2n_hxIhpUdXQEOdbr14SuH2e8R9cH8';
@@ -2491,7 +2521,7 @@ async function abrirAnaliseCliente(clienteId){
         // Tenta Railway primeiro, fallback para print
         imprimirAnaliseCompleta();
       }},
-      {l:'📊 Estudo Técnico + Proposta', cls:'btn primary', style:'padding:12px 22px;font-size:13px;font-weight:700;background:#7c3aed;border-color:#7c3aed', fn:function(){window.open(RW+'/estudo/uc/'+_analiseAtualUC,'_blank');}},
+      {l:'📊 Estudo Técnico + Proposta', cls:'btn primary', style:'padding:12px 22px;font-size:13px;font-weight:700;background:#7c3aed;border-color:#7c3aed', fn:function(){abrirEstudoTecnico(_analiseAtualUC);}},
       {l:'📄 Contrato PDF',       cls:'btn',         style:'padding:12px 18px', fn:function(){gerarContratoPDF(cId);}},
     ].forEach(function(b){
       var el=document.createElement('button');
@@ -2846,6 +2876,65 @@ function formatCNPJ(c){ return c.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/
 function getStatusClass(s){ var m={prospecto:'info',analisando:'alerta',proposta:'info',ativo:'ok',inativo:'gray'}; return m[s]||'gray'; }
 function getStatusLabel(s){ var m={prospecto:'🔍 Prospecto',analisando:'📊 Analisando',proposta:'📧 Proposta Enviada',ativo:'✅ Ativo',inativo:'⏸️ Inativo'}; return m[s]||s; }
 function verRelatorio(clienteId){ navegar('relatorios',document.getElementById('sb-relatorios')); }
+
+// ── ESTUDO TÉCNICO (preview modal) ─────────────────────────────────────────
+async function abrirEstudoTecnico(uc){
+  if(!uc){ alert('Selecione um cliente primeiro.'); return; }
+  var modal = document.getElementById('modalEstudo');
+  var loading = document.getElementById('me-loading');
+  var iframe = document.getElementById('me-iframe');
+  var error = document.getElementById('me-error');
+  var download = document.getElementById('me-download');
+  var newtab = document.getElementById('me-newtab');
+
+  // Reset
+  loading.style.display='block';
+  iframe.style.display='none';
+  error.style.display='none';
+  download.style.display='none';
+  newtab.style.display='none';
+  modal.style.display='block';
+  document.body.style.overflow='hidden';
+
+  // Busca nome do cliente
+  var cl = D.clientes.find(function(c){return (c.ucs||[]).includes(uc);});
+  document.getElementById('me-titulo').textContent='📊 Estudo Técnico — '+(cl?cl.nome.slice(0,40):'UC '+uc);
+  document.getElementById('me-sub').textContent='Gerando PDF com dados reais...';
+
+  var url = RW+'/estudo/uc/'+uc;
+
+  try{
+    var resp = await fetch(url, {signal:AbortSignal.timeout(30000)});
+    if(!resp.ok){
+      var err = await resp.json().catch(function(){return {error:'Erro '+resp.status};});
+      throw new Error(err.error||'Erro '+resp.status);
+    }
+
+    var blob = await resp.blob();
+    if(blob.size < 100){
+      throw new Error('PDF vazio retornado pelo servidor');
+    }
+
+    var blobUrl = URL.createObjectURL(blob);
+
+    // Mostra preview
+    loading.style.display='none';
+    iframe.src = blobUrl;
+    iframe.style.display='block';
+    download.href = blobUrl;
+    download.download = 'Estudo_Tecnico_'+(cl?cl.nome.replace(/\s/g,'_').slice(0,25):'UC_'+uc)+'.pdf';
+    download.style.display='inline-block';
+    newtab.href = blobUrl;
+    newtab.style.display='inline-block';
+    document.getElementById('me-sub').textContent='PDF gerado com sucesso — '+Math.round(blob.size/1024)+' KB';
+
+  } catch(e){
+    loading.style.display='none';
+    error.style.display='block';
+    document.getElementById('me-error-msg').textContent = e.message||'Erro ao gerar PDF';
+    document.getElementById('me-sub').textContent='Erro na geração';
+  }
+}
 
 // ── INIT ─────────────────────────────────────────────────────────────────────
 carregarDados();

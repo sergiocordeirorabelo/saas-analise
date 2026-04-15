@@ -189,6 +189,13 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
       <div style="font-size:9px;color:rgba(255,255,255,.6)">Cadastrar e extrair faturas</div>
     </div>
   </div>
+  <div onclick="abrirModalNovoCliente();setTimeout(function(){trocarAbaNC('pdf')},50)" style="margin:0 10px 4px;padding:9px 14px;background:#7c3aed;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:9px;transition:opacity .15s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="1.5"><path d="M4 2h5l4 4v8a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z"/><path d="M9 2v4h4"/></svg>
+    <div>
+      <div style="font-size:12px;font-weight:700;color:#fff">📄 Cadastrar via Fatura</div>
+      <div style="font-size:9px;color:rgba(255,255,255,.6)">Enviar PDF e cadastrar</div>
+    </div>
+  </div>
 
   <div class="sb-section" style="margin-top:6px">Pipeline</div>
   <div class="sb-item active" id="sb-pipeline" onclick="navegar('pipeline',this)">
@@ -747,7 +754,7 @@ function abrirCliente(clienteId, tab){
   var nomeJ = JSON.stringify(cl.nome);
   var ucJ = JSON.stringify(uc0);
 
-  document.getElementById('mc-titulo').textContent = cl.nome.slice(0,50);
+  document.getElementById('mc-titulo').innerHTML = '<span id="mc-nome-txt">'+cl.nome.slice(0,50)+'</span><button onclick="editarNomeCliente(\''+cl.id+'\')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-left:6px;opacity:.4" title="Editar nome">✏️</button>';
   document.getElementById('mc-sub').textContent = 'UC '+ucs+(cl.subgrupo?' · '+cl.subgrupo:'')+(cl.modalidade?' · '+cl.modalidade:'');
 
   // Status badge + pipeline buttons
@@ -1379,7 +1386,7 @@ function abrirCliente(clienteId, tab){
   var nomeJ = JSON.stringify(cl.nome);
   var ucJ = JSON.stringify(uc0);
 
-  document.getElementById('mc-titulo').textContent = cl.nome.slice(0,50);
+  document.getElementById('mc-titulo').innerHTML = '<span id="mc-nome-txt">'+cl.nome.slice(0,50)+'</span><button onclick="editarNomeCliente(\''+cl.id+'\')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-left:6px;opacity:.4" title="Editar nome">✏️</button>';
   document.getElementById('mc-sub').textContent = 'UC '+ucs+(cl.subgrupo?' · '+cl.subgrupo:'')+(cl.modalidade?' · '+cl.modalidade:'');
 
   // Status badge + pipeline buttons
@@ -2200,6 +2207,58 @@ function limparPdf(){
   document.getElementById('pdf-file').value='';
 }
 
+async function salvarNomeDiag(clienteId,faturaId){
+  var nome=document.getElementById('diag-nome').value.trim();
+  if(!nome){alert('Digite o nome do cliente');return;}
+  try{
+    if(clienteId){
+      await SB.from('clientes').update({nome:nome}).eq('id',clienteId);
+    }
+    if(faturaId){
+      await SB.from('faturas_parsed').update({cliente_nome:nome}).eq('id',faturaId);
+    }
+    document.getElementById('diag-nome-ok').style.display='inline';
+    setTimeout(function(){document.getElementById('diag-nome-ok').style.display='none';},3000);
+    await carregarDados();
+  }catch(e){alert('Erro ao salvar: '+e.message);}
+}
+
+function editarNomeCliente(clienteId){
+  var cl=D.clientes.find(function(x){return x.id===clienteId;});
+  if(!cl)return;
+  var titulo=document.getElementById('mc-titulo');
+  titulo.innerHTML='<input id="mc-nome-input" type="text" value="'+cl.nome.replace(/"/g,'&quot;')+'" style="font-size:16px;font-weight:700;padding:4px 8px;border:2px solid var(--blue);border-radius:6px;width:320px">'
+    +'<button onclick="salvarNomeCliente(\''+clienteId+'\')" style="margin-left:6px;padding:4px 12px;background:var(--green);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">💾 Salvar</button>'
+    +'<button onclick="cancelarEditNome(\''+clienteId+'\')" style="margin-left:4px;padding:4px 10px;background:transparent;border:1px solid var(--border2);border-radius:6px;cursor:pointer;font-size:12px">✕</button>';
+  document.getElementById('mc-nome-input').focus();
+  document.getElementById('mc-nome-input').select();
+}
+
+async function salvarNomeCliente(clienteId){
+  var input=document.getElementById('mc-nome-input');
+  if(!input)return;
+  var nome=input.value.trim();
+  if(!nome){alert('Digite o nome');return;}
+  try{
+    await SB.from('clientes').update({nome:nome}).eq('id',clienteId);
+    // Também atualiza nas faturas
+    var cl=D.clientes.find(function(x){return x.id===clienteId;});
+    if(cl&&cl.ucs){
+      for(var i=0;i<cl.ucs.length;i++){
+        await SB.from('faturas_parsed').update({cliente_nome:nome}).eq('uc',cl.ucs[i]);
+      }
+    }
+    await carregarDados();
+    document.getElementById('mc-titulo').innerHTML='<span>'+nome.slice(0,50)+'</span><button onclick="editarNomeCliente(\''+clienteId+'\')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-left:6px;opacity:.4" title="Editar nome">✏️</button>';
+  }catch(e){alert('Erro: '+e.message);}
+}
+
+function cancelarEditNome(clienteId){
+  var cl=D.clientes.find(function(x){return x.id===clienteId;});
+  if(!cl)return;
+  document.getElementById('mc-titulo').innerHTML='<span>'+cl.nome.slice(0,50)+'</span><button onclick="editarNomeCliente(\''+clienteId+'\')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-left:6px;opacity:.4" title="Editar nome">✏️</button>';
+}
+
 async function enviarFaturaPdf(){
   if(!_pdfFile){document.getElementById('pdf-error').textContent='Selecione um PDF.';document.getElementById('pdf-error').style.display='block';return;}
   var btn=document.getElementById('pdf-btn');
@@ -2240,6 +2299,15 @@ async function enviarFaturaPdf(){
     extSet('✅','Análise concluída!',
       (dados.cliente_nome||'Cliente')+' — UC '+(dados.uc||'?')+
       ' — R$ '+parseFloat(dados.total_a_pagar||0).toLocaleString('pt-BR',{minimumFractionDigits:0})+'/mês');
+
+    // Campo editável do nome
+    var logEl=document.getElementById('ext-log');
+    logEl.innerHTML+='<div style="margin-top:12px;padding:12px;background:#fff;border:1px solid var(--border);border-radius:8px">'
+      +'<label style="font-size:10px;font-weight:700;color:var(--hint);text-transform:uppercase;display:block;margin-bottom:4px">Nome do Cliente (editável)</label>'
+      +'<input id="diag-nome" type="text" value="'+(dados.cliente_nome||'').replace(/"/g,'&quot;')+'" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:6px;font-size:13px;font-weight:600;box-sizing:border-box">'
+      +'<button onclick="salvarNomeDiag(\''+((dados._saved&&dados._saved.cliente_id)||'')+'\',\''+((dados._saved&&dados._saved.fatura_id)||'')+'\')" style="margin-top:8px;padding:6px 16px;background:var(--blue);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">💾 Salvar nome</button>'
+      +'<span id="diag-nome-ok" style="display:none;margin-left:8px;color:var(--green);font-size:12px;font-weight:600">✅ Salvo!</span>'
+      +'</div>';
 
     await carregarDados();
     document.getElementById('ext-btn-ver').style.display='block';

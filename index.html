@@ -2247,14 +2247,10 @@ async function salvarNomeDiag(clienteId,faturaId){
   var nome=document.getElementById('diag-nome').value.trim();
   if(!nome){alert('Digite o nome do cliente');return;}
   try{
-    if(clienteId){
-      await SB.from('clientes').update({nome:nome}).eq('id',clienteId);
-    }
-    if(faturaId){
-      await SB.from('faturas_parsed').update({cliente_nome:nome}).eq('id',faturaId);
-    }
-    document.getElementById('diag-nome-ok').style.display='inline';
-    setTimeout(function(){document.getElementById('diag-nome-ok').style.display='none';},3000);
+    if(clienteId) await sbPatch('clientes?id=eq.'+clienteId,{nome:nome});
+    if(faturaId) await sbPatch('faturas_parsed?id=eq.'+faturaId,{cliente_nome:nome});
+    var ok=document.getElementById('diag-nome-ok');
+    if(ok){ok.style.display='inline';setTimeout(function(){ok.style.display='none';},3000);}
     await carregarDados();
   }catch(e){alert('Erro ao salvar: '+e.message);}
 }
@@ -2266,8 +2262,8 @@ async function editarNomeCliente(clienteId){
   if(!cl)return;
   var novo=prompt('Nome do cliente:',cl.nome);
   if(!novo||novo===cl.nome)return;
-  await SB.from('clientes').update({nome:novo}).eq('id',clienteId);
-  if(cl.ucs){for(var i=0;i<cl.ucs.length;i++){await SB.from('faturas_parsed').update({cliente_nome:novo}).eq('uc',cl.ucs[i]);}}
+  await sbPatch('clientes?id=eq.'+clienteId,{nome:novo});
+  if(cl.ucs){for(var i=0;i<cl.ucs.length;i++){await sbPatch('faturas_parsed?uc=eq.'+cl.ucs[i],{cliente_nome:novo});}}
   await carregarDados();
   document.getElementById('mc-titulo').textContent=novo.slice(0,50);
   alert('✅ Nome atualizado!');
@@ -2291,13 +2287,13 @@ async function editarDadosCliente(clienteId){
   var tel=prompt('Telefone:',cl.telefone||'');
   if(tel===null)return;
   try{
-    await SB.from('clientes').update({
+    await sbPatch('clientes?id=eq.'+clienteId,{
       nome:nome||cl.nome, cnpj:cnpj||null, subgrupo:sub||null,
       modalidade:mod||null, demanda_kw:parseFloat(dem)||null,
       email_contato:email||null, telefone:tel||null
-    }).eq('id',clienteId);
+    });
     if(cl.ucs&&nome&&nome!==cl.nome){
-      for(var i=0;i<cl.ucs.length;i++) await SB.from('faturas_parsed').update({cliente_nome:nome}).eq('uc',cl.ucs[i]);
+      for(var i=0;i<cl.ucs.length;i++) await sbPatch('faturas_parsed?uc=eq.'+cl.ucs[i],{cliente_nome:nome});
     }
     alert('✅ Dados atualizados!');
     await carregarDados();
@@ -2308,7 +2304,7 @@ async function editarDadosCliente(clienteId){
 async function editarAnalise(uc){
   var txt=document.getElementById('mc-analise-txt');
   if(!txt)return;
-  await SB.from('faturas_analise').update({analise_claude:txt.value}).eq('uc',uc);
+  await sbPatch('faturas_analise?uc=eq.'+uc,{analise_claude:txt.value});
   alert('✅ Análise salva!');
   await carregarDados();
 }
@@ -2317,9 +2313,9 @@ async function salvarAnaliseTexto(uc){
   var txt=document.getElementById('mc-analise-txt');
   if(!txt)return;
   try{
-    var r=await SB.from('faturas_analise').update({analise_claude:txt.value}).eq('uc',uc);
-    document.getElementById('mc-analise-ok').style.display='inline';
-    setTimeout(function(){var el=document.getElementById('mc-analise-ok');if(el)el.style.display='none';},3000);
+    await sbPatch('faturas_analise?uc=eq.'+uc,{analise_claude:txt.value});
+    var ok=document.getElementById('mc-analise-ok');
+    if(ok){ok.style.display='inline';setTimeout(function(){ok.style.display='none';},3000);}
     await carregarDados();
   }catch(e){alert('Erro: '+e.message);}
 }
@@ -2342,7 +2338,7 @@ async function salvarDadosCliente(clienteId){
       email_contato:(document.getElementById('ed-email')||{}).value||null,
       telefone:(document.getElementById('ed-telefone')||{}).value||null,
     };
-    await SB.from('clientes').update(data).eq('id',clienteId);
+    await sbPatch('clientes?id=eq.'+clienteId,data);
     var ok=document.getElementById('ed-dados-ok');
     if(ok){ok.style.display='inline';setTimeout(function(){ok.style.display='none';},3000);}
     await carregarDados();

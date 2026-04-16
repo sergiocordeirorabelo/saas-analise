@@ -422,23 +422,39 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
     </div>
     <!-- ABA 2: UPLOAD PDF (novo) -->
     <div id="form-upload-pdf" class="modal-body" style="display:none">
-      <div style="background:var(--bg3);border-radius:10px;padding:20px;text-align:center;margin-bottom:18px;border:2px dashed var(--border2);cursor:pointer;transition:all .2s" id="drop-zone" onclick="document.getElementById('pdf-file').click()" ondragover="event.preventDefault();this.style.borderColor='var(--blue)';this.style.background='var(--blue-bg)'" ondragleave="this.style.borderColor='var(--border2)';this.style.background='var(--bg3)'" ondrop="event.preventDefault();this.style.borderColor='var(--border2)';this.style.background='var(--bg3)';handlePdfDrop(event)">
-        <div id="pdf-icon" style="font-size:40px;margin-bottom:8px">📄</div>
-        <div id="pdf-label" style="font-size:14px;font-weight:600;color:var(--text)">Arraste a fatura PDF aqui</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">ou clique para selecionar</div>
-        <input type="file" id="pdf-file" accept=".pdf" style="display:none" onchange="handlePdfSelect(this)">
-      </div>
-      <div id="pdf-info" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px 14px;margin-bottom:14px">
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:20px">✅</span>
+      <!-- Dados do cliente -->
+      <div style="display:grid;gap:10px;margin-bottom:16px">
+        <div>
+          <label style="font-size:11px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px">NOME DA EMPRESA *</label>
+          <input id="pdf-nc-nome" class="form-input" type="text" placeholder="Razão social do cliente">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           <div>
-            <div id="pdf-nome" style="font-size:13px;font-weight:600;color:#166534"></div>
-            <div id="pdf-tam" style="font-size:11px;color:var(--muted)"></div>
+            <label style="font-size:11px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px">CNPJ</label>
+            <input id="pdf-nc-cnpj" class="form-input" type="text" placeholder="00.000.000/0001-00">
           </div>
+          <div>
+            <label style="font-size:11px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px">E-MAIL DE CONTATO</label>
+            <input id="pdf-nc-email" class="form-input" type="email" placeholder="email@empresa.com">
+          </div>
+        </div>
+      </div>
+      <!-- Drop zone multiplos PDFs -->
+      <div style="background:var(--bg3);border-radius:10px;padding:20px;text-align:center;margin-bottom:12px;border:2px dashed var(--border2);cursor:pointer;transition:all .2s" id="drop-zone" onclick="document.getElementById('pdf-file').click()" ondragover="event.preventDefault();this.style.borderColor='var(--blue)';this.style.background='var(--blue-bg)'" ondragleave="this.style.borderColor='var(--border2)';this.style.background='var(--bg3)'" ondrop="event.preventDefault();this.style.borderColor='var(--border2)';this.style.background='var(--bg3)';handlePdfDrop(event)">
+        <div id="pdf-icon" style="font-size:40px;margin-bottom:8px">📄</div>
+        <div id="pdf-label" style="font-size:14px;font-weight:600;color:var(--text)">Arraste até 12 faturas PDF aqui</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">ou clique para selecionar (múltiplos arquivos)</div>
+        <input type="file" id="pdf-file" accept=".pdf" multiple style="display:none" onchange="handlePdfSelect(this)">
+      </div>
+      <div id="pdf-lista" style="display:none;margin-bottom:12px;max-height:140px;overflow-y:auto;display:flex;flex-direction:column;gap:6px"></div>
+      <div id="pdf-info" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:18px">✅</span>
+          <div id="pdf-nome" style="font-size:13px;font-weight:600;color:#166534"></div>
           <button onclick="limparPdf()" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:16px;color:var(--muted)">✕</button>
         </div>
       </div>
-      <div id="pdf-error" style="display:none;background:var(--red-bg);border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin-bottom:14px;color:var(--red);font-size:12px"></div>
+      <div id="pdf-error" style="display:none;background:var(--red-bg);border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin-bottom:12px;color:var(--red);font-size:12px"></div>
       <button id="pdf-btn" class="btn primary" style="width:100%;padding:13px;font-size:14px" onclick="enviarFaturaPdf()" disabled>📊 Analisar Fatura e Cadastrar Cliente</button>
     </div>
     <!-- STATUS (compartilhado) -->
@@ -2236,28 +2252,40 @@ function trocarAbaNC(aba){
 }
 
 var _pdfFile=null;
+var _pdfFiles=[];
 function handlePdfSelect(input){
-  if(input.files&&input.files[0]) setPdfFile(input.files[0]);
+  if(input.files&&input.files.length) setPdfFiles(Array.from(input.files).filter(function(f){return f.name.endsWith('.pdf');}));
 }
 function handlePdfDrop(e){
-  var files=e.dataTransfer.files;
-  if(files&&files[0]&&files[0].name.endsWith('.pdf')) setPdfFile(files[0]);
+  var files=Array.from(e.dataTransfer.files).filter(function(f){return f.name.endsWith('.pdf');});
+  if(files.length) setPdfFiles(files);
 }
-function setPdfFile(file){
-  _pdfFile=file;
+function setPdfFiles(files){
+  if(files.length>12){alert('Máximo de 12 faturas por vez.');files=files.slice(0,12);}
+  _pdfFiles=files;
+  _pdfFile=files[0]; // compatibilidade
+  // Renderiza lista
+  var lista=document.getElementById('pdf-lista');
+  lista.style.display='flex';
+  lista.innerHTML=files.map(function(f,i){
+    return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg3);border-radius:6px;font-size:12px">'
+      +'<span>📄</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+f.name+'</span>'
+      +'<span style="color:var(--muted)">'+(f.size/1024).toFixed(0)+' KB</span></div>';
+  }).join('');
   document.getElementById('pdf-info').style.display='block';
-  document.getElementById('pdf-nome').textContent=file.name;
-  document.getElementById('pdf-tam').textContent=(file.size/1024).toFixed(0)+' KB';
-  document.getElementById('pdf-icon').textContent='✅';
-  document.getElementById('pdf-label').textContent=file.name;
+  document.getElementById('pdf-nome').textContent=files.length+' fatura(s) selecionada(s)';
+  document.getElementById('pdf-icon').textContent='\u2705';
+  document.getElementById('pdf-label').textContent=files.length+' arquivo(s) pronto(s)';
   document.getElementById('pdf-btn').disabled=false;
   document.getElementById('pdf-error').style.display='none';
 }
 function limparPdf(){
-  _pdfFile=null;
+  _pdfFile=null;_pdfFiles=[];
   document.getElementById('pdf-info').style.display='none';
-  document.getElementById('pdf-icon').textContent='📄';
-  document.getElementById('pdf-label').textContent='Arraste a fatura PDF aqui';
+  document.getElementById('pdf-lista').style.display='none';
+  document.getElementById('pdf-lista').innerHTML='';
+  document.getElementById('pdf-icon').textContent='\ud83d\udcc4';
+  document.getElementById('pdf-label').textContent='Arraste at\xe9 12 faturas PDF aqui';
   document.getElementById('pdf-btn').disabled=true;
   document.getElementById('pdf-file').value='';
 }
@@ -2367,7 +2395,12 @@ async function salvarDadosCliente(clienteId){
 }
 
 async function enviarFaturaPdf(){
-  if(!_pdfFile){document.getElementById('pdf-error').textContent='Selecione um PDF.';document.getElementById('pdf-error').style.display='block';return;}
+  var _files = _pdfFiles.length ? _pdfFiles : (_pdfFile ? [_pdfFile] : []);
+  if(!_files.length){document.getElementById('pdf-error').textContent='Selecione ao menos um PDF.';document.getElementById('pdf-error').style.display='block';return;}
+  var _ncNome = (document.getElementById('pdf-nc-nome')||{}).value||'';
+  var _ncCnpj = (document.getElementById('pdf-nc-cnpj')||{}).value||'';
+  var _ncEmail = (document.getElementById('pdf-nc-email')||{}).value||'';
+  if(!_ncNome.trim()){document.getElementById('pdf-error').textContent='Preencha o nome da empresa.';document.getElementById('pdf-error').style.display='block';return;}
   var btn=document.getElementById('pdf-btn');
   btn.textContent='⏳ Analisando com IA...';btn.disabled=true;
   document.getElementById('pdf-error').style.display='none';
@@ -2382,20 +2415,30 @@ async function enviarFaturaPdf(){
   extLog('🤖 Enviando para análise com IA...');
 
   try{
-    var form=new FormData();
-    form.append('pdf',_pdfFile);
-    var resp=await fetch(RW+'/diagnostico',{method:'POST',body:form,signal:AbortSignal.timeout(60000)});
-    if(!resp.ok){var err=await resp.json().catch(function(){return{error:'Erro '+resp.status}});throw new Error(err.error);}
-    var dados=await resp.json();
-
-    extLog('✅ Parse concluído: '+(dados.source_parser||'IA'));
+    // Envia arquivos em sequência
+    var _clienteIdFinal=null, _faturaIdFinal=null, _dadosFinal=null;
+    extLog('📤 Enviando '+_files.length+' fatura(s)...');
+    for(var _fi=0; _fi<_files.length; _fi++){
+      var _f = _files[_fi];
+      extLog('📄 ['+(_fi+1)+'/'+_files.length+'] '+_f.name);
+      var form=new FormData();
+      form.append('pdf',_f);
+      if(_ncNome) form.append('cliente_nome',_ncNome);
+      if(_ncCnpj) form.append('cnpj',_ncCnpj);
+      if(_ncEmail) form.append('email_contato',_ncEmail);
+      var resp=await fetch(RW+'/diagnostico',{method:'POST',body:form,signal:AbortSignal.timeout(60000)});
+      if(!resp.ok){extLog('\u274c Erro em '+_f.name+': '+resp.status);continue;}
+    } // end for
+    var dados=_dadosFinal||{};
+    if(!dados.uc&&!dados.cliente_nome){extSet('\u274c','Nenhuma fatura processada','Verifique os PDFs e tente novamente');document.getElementById('ext-btn-ver').style.display='block';return;}
+    extLog('\u2705 Parse concluído: '+(dados.source_parser||'IA'));
     extLog('✅ UC: '+(dados.uc||'—')+' | Mês: '+(dados.mes_referencia||'—'));
     extLog('✅ Cliente: '+(dados.cliente_nome||'—'));
     extLog('✅ Total: R$ '+parseFloat(dados.total_a_pagar||0).toLocaleString('pt-BR',{minimumFractionDigits:2}));
 
     if(dados._saved){
-      if(dados._saved.cliente_id) extLog('✅ Cliente cadastrado no Kanban!');
-      if(dados._saved.fatura_id) extLog('✅ Fatura salva no banco!');
+      if(dados._saved.cliente_id||_clienteIdFinal) extLog('\u2705 Cliente cadastrado no Kanban!');
+      if(dados._saved.fatura_id||_faturaIdFinal) extLog('\u2705 Fatura(s) salva(s) no banco!');
     }
 
     if(dados.analise&&dados.analise.alertas){
@@ -2412,7 +2455,7 @@ async function enviarFaturaPdf(){
     logEl.innerHTML+='<div style="margin-top:12px;padding:12px;background:#fff;border:1px solid var(--border);border-radius:8px">'
       +'<label style="font-size:10px;font-weight:700;color:var(--hint);text-transform:uppercase;display:block;margin-bottom:4px">Nome do Cliente (editável)</label>'
       +'<input id="diag-nome" type="text" value="'+(dados.cliente_nome||'').replace(/"/g,'&quot;')+'" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:6px;font-size:13px;font-weight:600;box-sizing:border-box">'
-      +'<button onclick="salvarNomeDiag(\''+((dados._saved&&dados._saved.cliente_id)||'')+'\',\''+((dados._saved&&dados._saved.fatura_id)||'')+'\')" style="margin-top:8px;padding:6px 16px;background:var(--blue);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">💾 Salvar nome</button>'
+      +'<button onclick="salvarNomeDiag(\''+(_clienteIdFinal||(dados._saved&&dados._saved.cliente_id)||'')+'\',\''+(_faturaIdFinal||(dados._saved&&dados._saved.fatura_id)||'')+'\')" style="margin-top:8px;padding:6px 16px;background:var(--blue);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">💾 Salvar nome</button>'
       +'<span id="diag-nome-ok" style="display:none;margin-left:8px;color:var(--green);font-size:12px;font-weight:600">✅ Salvo!</span>'
       +'</div>';
 

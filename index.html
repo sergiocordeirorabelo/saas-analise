@@ -1409,6 +1409,188 @@ async function fecharContrato(clienteId){
 }
 
 // ── MODAL CLIENTE (detalhes) ──────────────────────────────────────────────────
+function abrirCliente(clienteId, tab){
+  var cl = D.clientes.find(function(x){return x.id===clienteId;});
+  if(!cl) return;
+  var fat = D.faturas.filter(function(f){return (cl.ucs||[]).includes(f.uc);});
+  var alertas = D.alertas.filter(function(a){return (cl.ucs||[]).includes(a.uc)&&!a.resolvido;});
+  var analises = D.analises.filter(function(a){return (cl.ucs||[]).includes(a.uc);});
+  var custo = parseFloat(cl.custo_medio)||0;
+  var eco = analises.reduce(function(s,a){return s+parseFloat(a.potencial_economia_anual||0);},0);
+  var ucs = (cl.ucs||[]).join(', ');
+  var uc0 = (cl.ucs||[])[0]||'';
+  var idJ = JSON.stringify(cl.id);
+  var nomeJ = JSON.stringify(cl.nome);
+  var ucJ = JSON.stringify(uc0);
+
+  document.getElementById('mc-titulo').innerHTML = '<span id="mc-nome-txt">'+cl.nome.slice(0,50)+'</span><button onclick="editarNomeCliente(\''+cl.id+'\')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-left:6px;opacity:.4" title="Editar nome">✏️</button>';
+  document.getElementById('mc-sub').textContent = 'UC '+ucs+(cl.subgrupo?' · '+cl.subgrupo:'')+(cl.modalidade?' · '+cl.modalidade:'');
+
+  // Status badge + pipeline buttons
+  var statusLabel = getStatusLabel(cl.status);
+  var pipelineBtns = '';
+  if(cl.status==='prospecto')
+    pipelineBtns = '<button class="btn amber" onclick="mudarStatus('+idJ+',\'analisando\');fecharModal(\'modalCliente\')">📊 Mover para Analisando</button>';
+  if(cl.status==='analisando')
+    pipelineBtns = '<button class="btn primary" onclick="mudarStatus('+idJ+',\'proposta\');fecharModal(\'modalCliente\')">📧 Proposta Enviada</button>';
+
+
+  // KPI bar
+  var kpis = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px">'
+    +'<div class="metric-card" style="padding:12px"><div class="metric-label">Custo Médio</div><div style="font-size:18px;font-weight:700">R$ '+custo.toLocaleString('pt-BR',{minimumFractionDigits:0})+'</div><div class="metric-sub">/mês</div></div>'
+    +'<div class="metric-card" style="padding:12px"><div class="metric-label">Faturas</div><div style="font-size:18px;font-weight:700">'+fat.length+'</div></div>'
+    +'<div class="metric-card" style="padding:12px"><div class="metric-label">Economia Potencial</div><div style="font-size:18px;font-weight:700;color:var(--green)">R$ '+eco.toLocaleString('pt-BR',{minimumFractionDigits:0})+'</div><div class="metric-sub">/ano</div></div>'
+    +'<div class="metric-card" style="padding:12px"><div class="metric-label">Alertas</div><div style="font-size:18px;font-weight:700;color:'+(alertas.length>0?'var(--red)':'var(--green)')+'">'+alertas.length+'</div></div>'
+    +'</div>';
+
+  // Alertas list
+  var alertasHtml = alertas.length>0
+    ? alertas.slice(0,4).map(function(a){
+        return '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px">'
+          +'<span class="badge '+(a.severidade==='critico'?'critico':'alerta')+'">'+a.severidade+'</span>'
+          +'<span>'+a.titulo+'</span>'
+          +(a.valor_r?'<span style="margin-left:auto;color:var(--red);font-weight:600">R$ '+parseFloat(a.valor_r).toLocaleString('pt-BR',{minimumFractionDigits:2})+'</span>':'')
+          +'</div>';
+      }).join('')
+    : '<div style="font-size:12px;color:var(--hint)">Nenhum alerta crítico ✅</div>';
+
+  // Análise section — mostra salva se existir, senão botão Gerar
+  var _anTxt='';var _anScore=null;
+  analises.forEach(function(a){ if(a.analise_claude&&a.analise_claude.length>10) _anTxt=a.analise_claude; if(a.score_eficiencia) _anScore=a.score_eficiencia; });
+  fat.forEach(function(f){ if(f._a&&f._a.analise_claude&&f._a.analise_claude.length>10&&!_anTxt) _anTxt=f._a.analise_claude; if(f._a&&f._a.score_eficiencia&&!_anScore) _anScore=f._a.score_eficiencia; });
+  var analiseSection;
+  if(_anTxt){
+    analiseSection='<div id="mc-analise-area"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+      +'<div style="font-size:13px;font-weight:700;color:#0d2137;display:flex;align-items:center;gap:8px"><span style="font-size:18px">🤖</span> Análise IA'+(_anScore?' <span style="background:var(--blue);color:#fff;padding:2px 8px;border-radius:10px;font-size:11px">Score: '+_anScore+'/100</span>':'')+'</div>'
+      +'<button class="btn" style="padding:5px 12px;font-size:11px" onclick="carregarAnaliseNoModal('+ucJ+','+nomeJ+','+idJ+')">🔄 Regenerar</button>'
+      +'</div>'
+      +'<textarea id="mc-analise-txt" style="width:100%;min-height:120px;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:12px;line-height:1.6;resize:vertical;box-sizing:border-box;font-family:inherit">'+_anTxt.replace(/</g,"&lt;")+'</textarea>'
+      +'<div style="display:flex;gap:8px;margin-top:8px">'
+      +'<button onclick="salvarAnaliseTexto(\''+uc0+'\')" class="btn primary" style="padding:6px 16px;font-size:12px">💾 Salvar</button>'
+      +'<button onclick="document.getElementById(\'mc-analise-txt\').value=\'\';" class="btn" style="padding:6px 12px;font-size:12px">🗑 Limpar</button>'
+      +'<span id="mc-analise-ok" style="display:none;color:var(--green);font-size:12px;font-weight:600;padding:6px">✅ Salvo!</span>'
+      +'</div></div>';
+  } else {
+    analiseSection='<div id="mc-analise-area"><div style="text-align:center;padding:30px">'
+      +'<div style="font-size:40px;margin-bottom:10px">🔍</div>'
+      +'<div style="font-size:14px;font-weight:600;margin-bottom:6px">Diagnóstico Executivo</div>'
+      +'<div style="font-size:12px;color:var(--muted);margin-bottom:16px">Análise IA ainda não gerada</div>'
+      +'<button class="btn primary" style="padding:12px 28px;font-size:14px;font-weight:700" onclick="carregarAnaliseNoModal('+ucJ+','+nomeJ+','+idJ+')">⚡ Gerar Análise Completa</button>'
+      +'</div></div>';
+  }
+
+  // Comercial section
+  var comercialSection = '<div style="background:linear-gradient(135deg,#f0fdf4,#eff6ff);border-radius:10px;padding:16px;border:1px solid #bbf7d0">'
+    +'<div style="font-size:13px;font-weight:700;color:#0d2137;margin-bottom:12px">💼 Ações Comerciais</div>'
+    +'<div style="display:flex;gap:10px;flex-wrap:wrap">'
+    +'<button class="btn primary" style="padding:11px 20px;font-size:13px;font-weight:600" onclick="gerarProposta('+idJ+')">📧 Gerar Proposta PDF</button>'
+    +'<button class="btn green" style="padding:11px 20px;font-size:13px;font-weight:600" onclick="fecharModal(\'modalCliente\');fecharContrato('+idJ+')">🎯 Fechar Contrato</button>'
+    +'<button class="btn" style="padding:11px 16px" onclick="gerarContratoPDF('+idJ+')">📄 Ver Contrato</button>'
+    +'</div>'
+    +'</div>';
+
+  document.getElementById('mc-body').innerHTML =
+    // Status
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap">'
+    +'<span class="badge '+getStatusClass(cl.status)+'">'+statusLabel+'</span>'
+    +(pipelineBtns?pipelineBtns:'')
+    +'</div>'
+    // KPIs
+    + kpis
+    // 2 colunas: dados + alertas
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">'
+    +'<div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Dados da UC</div>'
+    +'<div style="font-size:12px;line-height:1.9" id="mc-dados-'+cl.id+'">'
+    +(cl.cnpj?'CNPJ: <b>'+formatCNPJ(cl.cnpj)+'</b><br>':'')
+    +'UC: <b>'+ucs+'</b><br>'
+    +'Subgrupo: <b>'+(cl.subgrupo||'—')+'</b> · Modalidade: <b>'+(cl.modalidade||'—')+'</b>'
+    +(cl.demanda_kw?'<br>Demanda: <b>'+cl.demanda_kw+' kW</b>':'')
+    +(cl.email_contato?'<br>Email: <b>'+cl.email_contato+'</b>':'')
+    +(cl.telefone?'<br>Tel: <b>'+cl.telefone+'</b>':'')
+    +'<br><button class="btn" style="margin-top:6px;padding:4px 12px;font-size:11px" onclick="editarDadosCliente(\''+cl.id+'\')" >✏️ Editar dados</button>'
+    +'</div></div>'
+    +'<div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Alertas Ativos</div>'+alertasHtml+'</div>'
+    +'</div>'
+    // Análise
+    + analiseSection
+    +'<div style="margin-top:16px"></div>'
+    // Comercial
+    + comercialSection;
+
+  document.getElementById('modalCliente').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+
+async function carregarAnaliseNoModal(uc, nome, clienteId){
+  var area = document.getElementById('mc-analise-area');
+  if(!area) return;
+  area.innerHTML = '<div style="text-align:center;padding:30px"><div class="spinner"></div><div style="font-size:13px;color:var(--muted)">Gerando diagnóstico...</div></div>';
+
+  // Tenta Railway, fallback Supabase
+  try{
+    var resp = await fetch(RW+'/analise/uc/'+uc, {signal: AbortSignal.timeout(12000)});
+    if(!resp.ok) throw new Error('offline');
+    var data = await resp.json();
+    if(data.error) throw new Error(data.error);
+    _analiseCache[uc] = data.analise;
+  } catch(e){
+    // Fallback local
+    if(!_analiseCache[uc]) gerarAnaliseFallback(uc, nome);
+  }
+
+  if(!_analiseCache[uc]){
+    area.innerHTML = '<div style="color:var(--red);padding:16px;font-size:13px">Erro ao gerar análise. Tente novamente.</div>';
+    return;
+  }
+
+  var idJ = JSON.stringify(clienteId||'');
+  var md = _analiseCache[uc];
+  var html = md
+    .replace(/^## (.+)$/gm, function(m,t){
+      var icones = {'Diagn':'🔍','Oportunidad':'⚡','Ações':'🚨','Urgentes':'🚨','Mercado':'🏭','Escopo':'📋','Estimativa':'💰','Próximos':'📅','Adequa':'🏭','Gestão':'⚡','Auditoria':'🔎','Revisão':'🔧','Vistoria':'🏗','Recomend':'✅','Resumo':'💰'};
+      var ico = '●';
+      Object.keys(icones).forEach(function(k){ if(t.indexOf(k)>=0) ico=icones[k]; });
+      return '<div style="display:flex;align-items:center;gap:8px;margin:18px 0 8px;padding-bottom:6px;border-bottom:2px solid #e2e8f0"><span style="font-size:16px">'+ico+'</span><h2 style="font-size:14px;font-weight:700;color:#0d2137;margin:0">'+t+'</h2></div>';
+    })
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/^- (.+)$/gm,'<div style="display:flex;gap:8px;padding:6px 8px;background:#f8fafc;border-radius:5px;border-left:3px solid #059669;margin-bottom:4px;font-size:12px"><span style="color:#059669;flex-shrink:0">→</span><span>$1</span></div>')
+    .replace(/^(\d+)\. (.+)$/gm,'<div style="display:flex;gap:8px;margin-bottom:5px;align-items:flex-start"><span style="min-width:20px;height:20px;background:#0d2137;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">$1</span><span style="font-size:12px;line-height:1.5">$2</span></div>')
+    .replace(/\n\n/g,'<br>').replace(/\n/g,' ');
+
+  // Header com métricas
+  var fat = D.faturas.filter(function(f){return f.uc===uc;});
+  var an = D.analises.filter(function(a){return a.uc===uc;});
+  var custo = fat.slice(0,12).reduce(function(s,f){return s+parseFloat(f.total_a_pagar||0);},0)/Math.max(fat.length,1);
+  var eco = an[0] ? parseFloat(an[0].potencial_economia_anual||0) : 0;
+  var score = an[0] ? an[0].score_eficiencia : null;
+  var sc = !score?'#94a3b8':score>=85?'#6ee7b7':score>=70?'#fcd34d':'#fca5a5';
+  var f0 = fat[0]||{};
+
+  area.innerHTML =
+    '<div style="background:linear-gradient(135deg,#0d2137,#1e3a5f);border-radius:10px;padding:16px 20px;margin-bottom:16px">'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">'
+    +'<div><div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.07em">Diagnóstico Executivo · IA</div>'
+    +'<div style="font-size:16px;font-weight:700;color:#fff;margin:3px 0">'+nome.slice(0,50)+'</div>'
+    +'<div style="font-size:11px;color:rgba(255,255,255,.45)">UC '+uc+(f0.subgrupo?' · '+f0.subgrupo:'')+'</div></div>'
+    +(score!==null?'<div style="text-align:center;background:rgba(255,255,255,.1);border-radius:8px;padding:8px 14px"><div style="font-size:22px;font-weight:700;color:'+sc+'">'+score+'</div><div style="font-size:9px;color:rgba(255,255,255,.4)">Score</div></div>':'')
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px">'
+    +'<div style="background:rgba(255,255,255,.08);border-radius:7px;padding:8px;text-align:center"><div style="font-size:13px;font-weight:700;color:#fff">R$ '+custo.toLocaleString('pt-BR',{minimumFractionDigits:0})+'</div><div style="font-size:9px;color:rgba(255,255,255,.35)">Custo/mês</div></div>'
+    +'<div style="background:rgba(255,255,255,.08);border-radius:7px;padding:8px;text-align:center"><div style="font-size:13px;font-weight:700;color:#6ee7b7">R$ '+eco.toLocaleString('pt-BR',{minimumFractionDigits:0})+'</div><div style="font-size:9px;color:rgba(255,255,255,.35)">Economia/ano</div></div>'
+    +'<div style="background:rgba(255,255,255,.08);border-radius:7px;padding:8px;text-align:center"><div style="font-size:13px;font-weight:700;color:#fff">'+fat.length+'</div><div style="font-size:9px;color:rgba(255,255,255,.35)">Faturas</div></div>'
+    +'</div></div>'
+    +'<div style="font-size:13px;line-height:1.8;color:#374151;max-height:400px;overflow-y:auto;padding-right:4px">'+html+'</div>'
+    +'<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap">'
+    +(clienteId?'<button class="btn green" style="padding:10px 18px;font-size:13px;font-weight:700" onclick="fecharModal(\'modalCliente\');gerarProposta('+idJ+')">📧 Gerar Proposta PDF</button>':'')
+    +'<button class="btn" onclick="imprimirAnaliseModal()">🖨 Imprimir</button>'
+    +'</div>';
+
+  if(clienteId){
+    var cl2 = D.clientes.find(function(x){return x.id===clienteId;});
+    if(cl2 && cl2.status==='prospecto') mudarStatus(clienteId,'analisando');
+  }
+}
+
 function gerarAnaliseFallback(uc, nome){
   var fat = D.faturas.filter(function(f){return f.uc===uc;});
   var analises = D.analises.filter(function(a){return a.uc===uc;});

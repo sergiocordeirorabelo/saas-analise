@@ -785,15 +785,30 @@ function abrirCliente(clienteId, tab){
       }).join('')
     : '<div style="font-size:12px;color:var(--hint)">Nenhum alerta crítico ✅</div>';
 
-  // Análise section — loads when tab is clicked
-  var analiseSection = '<div id="mc-analise-area">'
-    +'<div style="text-align:center;padding:30px">'
-    +'<div style="font-size:40px;margin-bottom:10px">🔍</div>'
-    +'<div style="font-size:14px;font-weight:600;margin-bottom:6px">Diagnóstico Executivo</div>'
-    +'<div style="font-size:12px;color:var(--muted);margin-bottom:16px">Análise estruturada pelos serviços do contrato Trianon</div>'
-    +'<button class="btn primary" style="padding:12px 28px;font-size:14px;font-weight:700" onclick="carregarAnaliseNoModal('+ucJ+','+nomeJ+','+idJ+')">⚡ Gerar Análise Completa</button>'
-    +'</div>'
-    +'</div>';
+  // Análise section — mostra salva se existir, senão botão Gerar
+  var _anTxt='';var _anScore=null;
+  analises.forEach(function(a){ if(a.analise_claude&&a.analise_claude.length>10) _anTxt=a.analise_claude; if(a.score_eficiencia) _anScore=a.score_eficiencia; });
+  fat.forEach(function(f){ if(f._a&&f._a.analise_claude&&f._a.analise_claude.length>10&&!_anTxt) _anTxt=f._a.analise_claude; if(f._a&&f._a.score_eficiencia&&!_anScore) _anScore=f._a.score_eficiencia; });
+  var analiseSection;
+  if(_anTxt){
+    analiseSection='<div id="mc-analise-area"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+      +'<div style="font-size:13px;font-weight:700;color:#0d2137;display:flex;align-items:center;gap:8px"><span style="font-size:18px">🤖</span> Análise IA'+(_anScore?' <span style="background:var(--blue);color:#fff;padding:2px 8px;border-radius:10px;font-size:11px">Score: '+_anScore+'/100</span>':'')+'</div>'
+      +'<button class="btn" style="padding:5px 12px;font-size:11px" onclick="carregarAnaliseNoModal('+ucJ+','+nomeJ+','+idJ+')">🔄 Regenerar</button>'
+      +'</div>'
+      +'<textarea id="mc-analise-txt" style="width:100%;min-height:120px;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:12px;line-height:1.6;resize:vertical;box-sizing:border-box;font-family:inherit">'+_anTxt.replace(/</g,"&lt;")+'</textarea>'
+      +'<div style="display:flex;gap:8px;margin-top:8px">'
+      +'<button onclick="salvarAnaliseTexto(\''+uc0+'\')" class="btn primary" style="padding:6px 16px;font-size:12px">💾 Salvar</button>'
+      +'<button onclick="document.getElementById(\'mc-analise-txt\').value=\'\';" class="btn" style="padding:6px 12px;font-size:12px">🗑 Limpar</button>'
+      +'<span id="mc-analise-ok" style="display:none;color:var(--green);font-size:12px;font-weight:600;padding:6px">✅ Salvo!</span>'
+      +'</div></div>';
+  } else {
+    analiseSection='<div id="mc-analise-area"><div style="text-align:center;padding:30px">'
+      +'<div style="font-size:40px;margin-bottom:10px">🔍</div>'
+      +'<div style="font-size:14px;font-weight:600;margin-bottom:6px">Diagnóstico Executivo</div>'
+      +'<div style="font-size:12px;color:var(--muted);margin-bottom:16px">Análise IA ainda não gerada</div>'
+      +'<button class="btn primary" style="padding:12px 28px;font-size:14px;font-weight:700" onclick="carregarAnaliseNoModal('+ucJ+','+nomeJ+','+idJ+')">⚡ Gerar Análise Completa</button>'
+      +'</div></div>';
+  }
 
   // Comercial section
   var comercialSection = '<div style="background:linear-gradient(135deg,#f0fdf4,#eff6ff);border-radius:10px;padding:16px;border:1px solid #bbf7d0">'
@@ -815,13 +830,23 @@ function abrirCliente(clienteId, tab){
     + kpis
     // 2 colunas: dados + alertas
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">'
-    +'<div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Dados da UC</div>'
-    +'<div style="font-size:12px;line-height:1.9">'
+    +'<div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">Dados da UC</div><button onclick="toggleEditDados(\''+cl.id+'\')" class="btn" style="padding:2px 8px;font-size:10px">✏️</button></div>'
+    +'<div id="dados-view-'+cl.id+'" style="font-size:12px;line-height:1.9">'
     +(cl.cnpj?'CNPJ: <b>'+formatCNPJ(cl.cnpj)+'</b><br>':'')
     +'UC: <b>'+ucs+'</b><br>'
-    +'Subgrupo: <b>'+cl.subgrupo+'</b> · Modalidade: <b>'+cl.modalidade+'</b>'
+    +'Subgrupo: <b>'+(cl.subgrupo||'—')+'</b> · Modalidade: <b>'+(cl.modalidade||'—')+'</b>'
     +(cl.demanda_kw?'<br>Demanda: <b>'+cl.demanda_kw+' kW</b>':'')
-    +'</div></div>'
+    +(cl.email_contato?'<br>Email: <b>'+cl.email_contato+'</b>':'')
+    +(cl.telefone?'<br>Tel: <b>'+cl.telefone+'</b>':'')
+    +'</div>'
+    +'<div id="dados-edit-'+cl.id+'" style="display:none;font-size:12px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">'
+    +'<div><label style="font-size:10px;color:var(--muted)">CNPJ</label><input id="ed-cnpj" class="form-input" style="padding:5px 8px;font-size:12px" value="'+(cl.cnpj||'')+'"></div>'
+    +'<div><label style="font-size:10px;color:var(--muted)">Subgrupo</label><input id="ed-subgrupo" class="form-input" style="padding:5px 8px;font-size:12px" value="'+(cl.subgrupo||'')+'"></div>'
+    +'<div><label style="font-size:10px;color:var(--muted)">Modalidade</label><input id="ed-modalidade" class="form-input" style="padding:5px 8px;font-size:12px" value="'+(cl.modalidade||'')+'"></div>'
+    +'<div><label style="font-size:10px;color:var(--muted)">Demanda kW</label><input id="ed-demanda" class="form-input" style="padding:5px 8px;font-size:12px" value="'+(cl.demanda_kw||'')+'"></div>'
+    +'<div><label style="font-size:10px;color:var(--muted)">Email</label><input id="ed-email" class="form-input" style="padding:5px 8px;font-size:12px" value="'+(cl.email_contato||'')+'"></div>'
+    +'<div><label style="font-size:10px;color:var(--muted)">Telefone</label><input id="ed-telefone" class="form-input" style="padding:5px 8px;font-size:12px" value="'+(cl.telefone||'')+'"></div>'
+    +'</div><button onclick="salvarDadosCliente(\''+cl.id+'\')" class="btn green" style="margin-top:8px;padding:5px 14px;font-size:11px">💾 Salvar</button><span id="ed-dados-ok" style="display:none;margin-left:8px;color:var(--green);font-size:11px">✅</span></div></div>'
     +'<div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Alertas Ativos</div>'+alertasHtml+'</div>'
     +'</div>'
     // Análise
@@ -1417,15 +1442,30 @@ function abrirCliente(clienteId, tab){
       }).join('')
     : '<div style="font-size:12px;color:var(--hint)">Nenhum alerta crítico ✅</div>';
 
-  // Análise section — loads when tab is clicked
-  var analiseSection = '<div id="mc-analise-area">'
-    +'<div style="text-align:center;padding:30px">'
-    +'<div style="font-size:40px;margin-bottom:10px">🔍</div>'
-    +'<div style="font-size:14px;font-weight:600;margin-bottom:6px">Diagnóstico Executivo</div>'
-    +'<div style="font-size:12px;color:var(--muted);margin-bottom:16px">Análise estruturada pelos serviços do contrato Trianon</div>'
-    +'<button class="btn primary" style="padding:12px 28px;font-size:14px;font-weight:700" onclick="carregarAnaliseNoModal('+ucJ+','+nomeJ+','+idJ+')">⚡ Gerar Análise Completa</button>'
-    +'</div>'
-    +'</div>';
+  // Análise section — mostra salva se existir, senão botão Gerar
+  var _anTxt='';var _anScore=null;
+  analises.forEach(function(a){ if(a.analise_claude&&a.analise_claude.length>10) _anTxt=a.analise_claude; if(a.score_eficiencia) _anScore=a.score_eficiencia; });
+  fat.forEach(function(f){ if(f._a&&f._a.analise_claude&&f._a.analise_claude.length>10&&!_anTxt) _anTxt=f._a.analise_claude; if(f._a&&f._a.score_eficiencia&&!_anScore) _anScore=f._a.score_eficiencia; });
+  var analiseSection;
+  if(_anTxt){
+    analiseSection='<div id="mc-analise-area"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+      +'<div style="font-size:13px;font-weight:700;color:#0d2137;display:flex;align-items:center;gap:8px"><span style="font-size:18px">🤖</span> Análise IA'+(_anScore?' <span style="background:var(--blue);color:#fff;padding:2px 8px;border-radius:10px;font-size:11px">Score: '+_anScore+'/100</span>':'')+'</div>'
+      +'<button class="btn" style="padding:5px 12px;font-size:11px" onclick="carregarAnaliseNoModal('+ucJ+','+nomeJ+','+idJ+')">🔄 Regenerar</button>'
+      +'</div>'
+      +'<textarea id="mc-analise-txt" style="width:100%;min-height:120px;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:12px;line-height:1.6;resize:vertical;box-sizing:border-box;font-family:inherit">'+_anTxt.replace(/</g,"&lt;")+'</textarea>'
+      +'<div style="display:flex;gap:8px;margin-top:8px">'
+      +'<button onclick="salvarAnaliseTexto(\''+uc0+'\')" class="btn primary" style="padding:6px 16px;font-size:12px">💾 Salvar</button>'
+      +'<button onclick="document.getElementById(\'mc-analise-txt\').value=\'\';" class="btn" style="padding:6px 12px;font-size:12px">🗑 Limpar</button>'
+      +'<span id="mc-analise-ok" style="display:none;color:var(--green);font-size:12px;font-weight:600;padding:6px">✅ Salvo!</span>'
+      +'</div></div>';
+  } else {
+    analiseSection='<div id="mc-analise-area"><div style="text-align:center;padding:30px">'
+      +'<div style="font-size:40px;margin-bottom:10px">🔍</div>'
+      +'<div style="font-size:14px;font-weight:600;margin-bottom:6px">Diagnóstico Executivo</div>'
+      +'<div style="font-size:12px;color:var(--muted);margin-bottom:16px">Análise IA ainda não gerada</div>'
+      +'<button class="btn primary" style="padding:12px 28px;font-size:14px;font-weight:700" onclick="carregarAnaliseNoModal('+ucJ+','+nomeJ+','+idJ+')">⚡ Gerar Análise Completa</button>'
+      +'</div></div>';
+  }
 
   // Comercial section
   var comercialSection = '<div style="background:linear-gradient(135deg,#f0fdf4,#eff6ff);border-radius:10px;padding:16px;border:1px solid #bbf7d0">'
@@ -1447,13 +1487,23 @@ function abrirCliente(clienteId, tab){
     + kpis
     // 2 colunas: dados + alertas
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">'
-    +'<div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Dados da UC</div>'
-    +'<div style="font-size:12px;line-height:1.9">'
+    +'<div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">Dados da UC</div><button onclick="toggleEditDados(\''+cl.id+'\')" class="btn" style="padding:2px 8px;font-size:10px">✏️</button></div>'
+    +'<div id="dados-view-'+cl.id+'" style="font-size:12px;line-height:1.9">'
     +(cl.cnpj?'CNPJ: <b>'+formatCNPJ(cl.cnpj)+'</b><br>':'')
     +'UC: <b>'+ucs+'</b><br>'
-    +'Subgrupo: <b>'+cl.subgrupo+'</b> · Modalidade: <b>'+cl.modalidade+'</b>'
+    +'Subgrupo: <b>'+(cl.subgrupo||'—')+'</b> · Modalidade: <b>'+(cl.modalidade||'—')+'</b>'
     +(cl.demanda_kw?'<br>Demanda: <b>'+cl.demanda_kw+' kW</b>':'')
-    +'</div></div>'
+    +(cl.email_contato?'<br>Email: <b>'+cl.email_contato+'</b>':'')
+    +(cl.telefone?'<br>Tel: <b>'+cl.telefone+'</b>':'')
+    +'</div>'
+    +'<div id="dados-edit-'+cl.id+'" style="display:none;font-size:12px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">'
+    +'<div><label style="font-size:10px;color:var(--muted)">CNPJ</label><input id="ed-cnpj" class="form-input" style="padding:5px 8px;font-size:12px" value="'+(cl.cnpj||'')+'"></div>'
+    +'<div><label style="font-size:10px;color:var(--muted)">Subgrupo</label><input id="ed-subgrupo" class="form-input" style="padding:5px 8px;font-size:12px" value="'+(cl.subgrupo||'')+'"></div>'
+    +'<div><label style="font-size:10px;color:var(--muted)">Modalidade</label><input id="ed-modalidade" class="form-input" style="padding:5px 8px;font-size:12px" value="'+(cl.modalidade||'')+'"></div>'
+    +'<div><label style="font-size:10px;color:var(--muted)">Demanda kW</label><input id="ed-demanda" class="form-input" style="padding:5px 8px;font-size:12px" value="'+(cl.demanda_kw||'')+'"></div>'
+    +'<div><label style="font-size:10px;color:var(--muted)">Email</label><input id="ed-email" class="form-input" style="padding:5px 8px;font-size:12px" value="'+(cl.email_contato||'')+'"></div>'
+    +'<div><label style="font-size:10px;color:var(--muted)">Telefone</label><input id="ed-telefone" class="form-input" style="padding:5px 8px;font-size:12px" value="'+(cl.telefone||'')+'"></div>'
+    +'</div><button onclick="salvarDadosCliente(\''+cl.id+'\')" class="btn green" style="margin-top:8px;padding:5px 14px;font-size:11px">💾 Salvar</button><span id="ed-dados-ok" style="display:none;margin-left:8px;color:var(--green);font-size:11px">✅</span></div></div>'
     +'<div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Alertas Ativos</div>'+alertasHtml+'</div>'
     +'</div>'
     // Análise
@@ -2257,6 +2307,44 @@ function cancelarEditNome(clienteId){
   var cl=D.clientes.find(function(x){return x.id===clienteId;});
   if(!cl)return;
   document.getElementById('mc-titulo').innerHTML='<span>'+cl.nome.slice(0,50)+'</span><button onclick="editarNomeCliente(\''+clienteId+'\')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-left:6px;opacity:.4" title="Editar nome">✏️</button>';
+}
+
+async function salvarAnaliseTexto(uc){
+  var txt=document.getElementById('mc-analise-txt');
+  if(!txt)return;
+  try{
+    var r=await SB.from('faturas_analise').update({analise_claude:txt.value}).eq('uc',uc);
+    document.getElementById('mc-analise-ok').style.display='inline';
+    setTimeout(function(){var el=document.getElementById('mc-analise-ok');if(el)el.style.display='none';},3000);
+    await carregarDados();
+  }catch(e){alert('Erro: '+e.message);}
+}
+
+function toggleEditDados(clienteId){
+  var v=document.getElementById('dados-view-'+clienteId);
+  var e=document.getElementById('dados-edit-'+clienteId);
+  if(!v||!e)return;
+  if(e.style.display==='none'){v.style.display='none';e.style.display='block';}
+  else{v.style.display='block';e.style.display='none';}
+}
+
+async function salvarDadosCliente(clienteId){
+  try{
+    var data={
+      cnpj:(document.getElementById('ed-cnpj')||{}).value||null,
+      subgrupo:(document.getElementById('ed-subgrupo')||{}).value||null,
+      modalidade:(document.getElementById('ed-modalidade')||{}).value||null,
+      demanda_kw:parseFloat((document.getElementById('ed-demanda')||{}).value)||null,
+      email_contato:(document.getElementById('ed-email')||{}).value||null,
+      telefone:(document.getElementById('ed-telefone')||{}).value||null,
+    };
+    await SB.from('clientes').update(data).eq('id',clienteId);
+    var ok=document.getElementById('ed-dados-ok');
+    if(ok){ok.style.display='inline';setTimeout(function(){ok.style.display='none';},3000);}
+    await carregarDados();
+    // Atualiza view
+    toggleEditDados(clienteId);
+  }catch(e){alert('Erro: '+e.message);}
 }
 
 async function enviarFaturaPdf(){

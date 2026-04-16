@@ -830,23 +830,16 @@ function abrirCliente(clienteId, tab){
     + kpis
     // 2 colunas: dados + alertas
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">'
-    +'<div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">Dados da UC</div><button onclick="toggleEditDados(\''+cl.id+'\')" class="btn" style="padding:2px 8px;font-size:10px">✏️</button></div>'
-    +'<div id="dados-view-'+cl.id+'" style="font-size:12px;line-height:1.9">'
-    +(cl.cnpj?'CNPJ: <b>'+formatCNPJ(cl.cnpj)+'</b><br>':'')
+    +'<div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Dados da UC <span onclick="editarNomeCliente(\''+cl.id+'\')" style="cursor:pointer;font-size:13px" title="Editar nome">✏️</span></div>'
+    +'<div style="font-size:12px;line-height:2.1">'
+    +'Nome: <b style="cursor:pointer" onclick="editarNomeCliente(\''+cl.id+'\')">'+cl.nome.slice(0,40)+'</b><br>'
+    +(cl.cnpj?'CNPJ: <b style="cursor:pointer" onclick="editarCampoCliente(\''+cl.id+'\',\'cnpj\',\'CNPJ\')">'+formatCNPJ(cl.cnpj)+'</b><br>':'CNPJ: <span style="cursor:pointer;color:var(--muted)" onclick="editarCampoCliente(\''+cl.id+'\',\'cnpj\',\'CNPJ\')">+ adicionar</span><br>')
     +'UC: <b>'+ucs+'</b><br>'
-    +'Subgrupo: <b>'+(cl.subgrupo||'—')+'</b> · Modalidade: <b>'+(cl.modalidade||'—')+'</b>'
-    +(cl.demanda_kw?'<br>Demanda: <b>'+cl.demanda_kw+' kW</b>':'')
-    +(cl.email_contato?'<br>Email: <b>'+cl.email_contato+'</b>':'')
-    +(cl.telefone?'<br>Tel: <b>'+cl.telefone+'</b>':'')
-    +'</div>'
-    +'<div id="dados-edit-'+cl.id+'" style="display:none;font-size:12px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">'
-    +'<div><label style="font-size:10px;color:var(--muted)">CNPJ</label><input id="ed-cnpj" class="form-input" style="padding:5px 8px;font-size:12px" value="'+(cl.cnpj||'')+'"></div>'
-    +'<div><label style="font-size:10px;color:var(--muted)">Subgrupo</label><input id="ed-subgrupo" class="form-input" style="padding:5px 8px;font-size:12px" value="'+(cl.subgrupo||'')+'"></div>'
-    +'<div><label style="font-size:10px;color:var(--muted)">Modalidade</label><input id="ed-modalidade" class="form-input" style="padding:5px 8px;font-size:12px" value="'+(cl.modalidade||'')+'"></div>'
-    +'<div><label style="font-size:10px;color:var(--muted)">Demanda kW</label><input id="ed-demanda" class="form-input" style="padding:5px 8px;font-size:12px" value="'+(cl.demanda_kw||'')+'"></div>'
-    +'<div><label style="font-size:10px;color:var(--muted)">Email</label><input id="ed-email" class="form-input" style="padding:5px 8px;font-size:12px" value="'+(cl.email_contato||'')+'"></div>'
-    +'<div><label style="font-size:10px;color:var(--muted)">Telefone</label><input id="ed-telefone" class="form-input" style="padding:5px 8px;font-size:12px" value="'+(cl.telefone||'')+'"></div>'
-    +'</div><button onclick="salvarDadosCliente(\''+cl.id+'\')" class="btn green" style="margin-top:8px;padding:5px 14px;font-size:11px">💾 Salvar</button><span id="ed-dados-ok" style="display:none;margin-left:8px;color:var(--green);font-size:11px">✅</span></div></div>'
+    +'Subgrupo: <b style="cursor:pointer" onclick="editarCampoCliente(\''+cl.id+'\',\'subgrupo\',\'Subgrupo\')">'+(cl.subgrupo||'—')+'</b> · Modalidade: <b style="cursor:pointer" onclick="editarCampoCliente(\''+cl.id+'\',\'modalidade\',\'Modalidade\')">'+(cl.modalidade||'—')+'</b><br>'
+    +'Demanda: <b style="cursor:pointer" onclick="editarCampoCliente(\''+cl.id+'\',\'demanda_kw\',\'Demanda kW\')">'+(cl.demanda_kw?cl.demanda_kw+' kW':'— ✏️')+'</b><br>'
+    +'Email: <b style="cursor:pointer" onclick="editarCampoCliente(\''+cl.id+'\',\'email_contato\',\'Email\')">'+(cl.email_contato||'— ✏️')+'</b><br>'
+    +'Tel: <b style="cursor:pointer" onclick="editarCampoCliente(\''+cl.id+'\',\'telefone\',\'Telefone\')">'+(cl.telefone||'— ✏️')+'</b>'
+    +'</div></div>'
     +'<div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Alertas Ativos</div>'+alertasHtml+'</div>'
     +'</div>'
     // Análise
@@ -1487,23 +1480,16 @@ function abrirCliente(clienteId, tab){
     + kpis
     // 2 colunas: dados + alertas
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">'
-    +'<div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">Dados da UC</div><button onclick="toggleEditDados(\''+cl.id+'\')" class="btn" style="padding:2px 8px;font-size:10px">✏️</button></div>'
-    +'<div id="dados-view-'+cl.id+'" style="font-size:12px;line-height:1.9">'
-    +(cl.cnpj?'CNPJ: <b>'+formatCNPJ(cl.cnpj)+'</b><br>':'')
+    +'<div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Dados da UC <span onclick="editarNomeCliente(\''+cl.id+'\')" style="cursor:pointer;font-size:13px" title="Editar nome">✏️</span></div>'
+    +'<div style="font-size:12px;line-height:2.1">'
+    +'Nome: <b style="cursor:pointer" onclick="editarNomeCliente(\''+cl.id+'\')">'+cl.nome.slice(0,40)+'</b><br>'
+    +(cl.cnpj?'CNPJ: <b style="cursor:pointer" onclick="editarCampoCliente(\''+cl.id+'\',\'cnpj\',\'CNPJ\')">'+formatCNPJ(cl.cnpj)+'</b><br>':'CNPJ: <span style="cursor:pointer;color:var(--muted)" onclick="editarCampoCliente(\''+cl.id+'\',\'cnpj\',\'CNPJ\')">+ adicionar</span><br>')
     +'UC: <b>'+ucs+'</b><br>'
-    +'Subgrupo: <b>'+(cl.subgrupo||'—')+'</b> · Modalidade: <b>'+(cl.modalidade||'—')+'</b>'
-    +(cl.demanda_kw?'<br>Demanda: <b>'+cl.demanda_kw+' kW</b>':'')
-    +(cl.email_contato?'<br>Email: <b>'+cl.email_contato+'</b>':'')
-    +(cl.telefone?'<br>Tel: <b>'+cl.telefone+'</b>':'')
-    +'</div>'
-    +'<div id="dados-edit-'+cl.id+'" style="display:none;font-size:12px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">'
-    +'<div><label style="font-size:10px;color:var(--muted)">CNPJ</label><input id="ed-cnpj" class="form-input" style="padding:5px 8px;font-size:12px" value="'+(cl.cnpj||'')+'"></div>'
-    +'<div><label style="font-size:10px;color:var(--muted)">Subgrupo</label><input id="ed-subgrupo" class="form-input" style="padding:5px 8px;font-size:12px" value="'+(cl.subgrupo||'')+'"></div>'
-    +'<div><label style="font-size:10px;color:var(--muted)">Modalidade</label><input id="ed-modalidade" class="form-input" style="padding:5px 8px;font-size:12px" value="'+(cl.modalidade||'')+'"></div>'
-    +'<div><label style="font-size:10px;color:var(--muted)">Demanda kW</label><input id="ed-demanda" class="form-input" style="padding:5px 8px;font-size:12px" value="'+(cl.demanda_kw||'')+'"></div>'
-    +'<div><label style="font-size:10px;color:var(--muted)">Email</label><input id="ed-email" class="form-input" style="padding:5px 8px;font-size:12px" value="'+(cl.email_contato||'')+'"></div>'
-    +'<div><label style="font-size:10px;color:var(--muted)">Telefone</label><input id="ed-telefone" class="form-input" style="padding:5px 8px;font-size:12px" value="'+(cl.telefone||'')+'"></div>'
-    +'</div><button onclick="salvarDadosCliente(\''+cl.id+'\')" class="btn green" style="margin-top:8px;padding:5px 14px;font-size:11px">💾 Salvar</button><span id="ed-dados-ok" style="display:none;margin-left:8px;color:var(--green);font-size:11px">✅</span></div></div>'
+    +'Subgrupo: <b style="cursor:pointer" onclick="editarCampoCliente(\''+cl.id+'\',\'subgrupo\',\'Subgrupo\')">'+(cl.subgrupo||'—')+'</b> · Modalidade: <b style="cursor:pointer" onclick="editarCampoCliente(\''+cl.id+'\',\'modalidade\',\'Modalidade\')">'+(cl.modalidade||'—')+'</b><br>'
+    +'Demanda: <b style="cursor:pointer" onclick="editarCampoCliente(\''+cl.id+'\',\'demanda_kw\',\'Demanda kW\')">'+(cl.demanda_kw?cl.demanda_kw+' kW':'— ✏️')+'</b><br>'
+    +'Email: <b style="cursor:pointer" onclick="editarCampoCliente(\''+cl.id+'\',\'email_contato\',\'Email\')">'+(cl.email_contato||'— ✏️')+'</b><br>'
+    +'Tel: <b style="cursor:pointer" onclick="editarCampoCliente(\''+cl.id+'\',\'telefone\',\'Telefone\')">'+(cl.telefone||'— ✏️')+'</b>'
+    +'</div></div>'
     +'<div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Alertas Ativos</div>'+alertasHtml+'</div>'
     +'</div>'
     // Análise
@@ -2273,40 +2259,38 @@ async function salvarNomeDiag(clienteId,faturaId){
   }catch(e){alert('Erro ao salvar: '+e.message);}
 }
 
-function editarNomeCliente(clienteId){
+// Funções de edição simplificadas abaixo
+
+async function editarNomeCliente(clienteId){
   var cl=D.clientes.find(function(x){return x.id===clienteId;});
   if(!cl)return;
-  var titulo=document.getElementById('mc-titulo');
-  titulo.innerHTML='<input id="mc-nome-input" type="text" value="'+cl.nome.replace(/"/g,'&quot;')+'" style="font-size:16px;font-weight:700;padding:4px 8px;border:2px solid var(--blue);border-radius:6px;width:320px">'
-    +'<button onclick="salvarNomeCliente(\''+clienteId+'\')" style="margin-left:6px;padding:4px 12px;background:var(--green);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">💾 Salvar</button>'
-    +'<button onclick="cancelarEditNome(\''+clienteId+'\')" style="margin-left:4px;padding:4px 10px;background:transparent;border:1px solid var(--border2);border-radius:6px;cursor:pointer;font-size:12px">✕</button>';
-  document.getElementById('mc-nome-input').focus();
-  document.getElementById('mc-nome-input').select();
+  var novo=prompt('Nome do cliente:',cl.nome);
+  if(!novo||novo===cl.nome)return;
+  await SB.from('clientes').update({nome:novo}).eq('id',clienteId);
+  if(cl.ucs){for(var i=0;i<cl.ucs.length;i++){await SB.from('faturas_parsed').update({cliente_nome:novo}).eq('uc',cl.ucs[i]);}}
+  await carregarDados();
+  document.getElementById('mc-titulo').textContent=novo.slice(0,50);
+  alert('✅ Nome atualizado!');
 }
 
-async function salvarNomeCliente(clienteId){
-  var input=document.getElementById('mc-nome-input');
-  if(!input)return;
-  var nome=input.value.trim();
-  if(!nome){alert('Digite o nome');return;}
-  try{
-    await SB.from('clientes').update({nome:nome}).eq('id',clienteId);
-    // Também atualiza nas faturas
-    var cl=D.clientes.find(function(x){return x.id===clienteId;});
-    if(cl&&cl.ucs){
-      for(var i=0;i<cl.ucs.length;i++){
-        await SB.from('faturas_parsed').update({cliente_nome:nome}).eq('uc',cl.ucs[i]);
-      }
-    }
-    await carregarDados();
-    document.getElementById('mc-titulo').innerHTML='<span>'+nome.slice(0,50)+'</span><button onclick="editarNomeCliente(\''+clienteId+'\')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-left:6px;opacity:.4" title="Editar nome">✏️</button>';
-  }catch(e){alert('Erro: '+e.message);}
-}
-
-function cancelarEditNome(clienteId){
+async function editarCampoCliente(clienteId,campo,label){
   var cl=D.clientes.find(function(x){return x.id===clienteId;});
   if(!cl)return;
-  document.getElementById('mc-titulo').innerHTML='<span>'+cl.nome.slice(0,50)+'</span><button onclick="editarNomeCliente(\''+clienteId+'\')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-left:6px;opacity:.4" title="Editar nome">✏️</button>';
+  var atual=cl[campo]||'';
+  var novo=prompt(label+':',atual);
+  if(novo===null)return;
+  var data={};data[campo]=novo||null;
+  await SB.from('clientes').update(data).eq('id',clienteId);
+  await carregarDados();
+  abrirModalCliente(clienteId);
+}
+
+async function editarAnalise(uc){
+  var txt=document.getElementById('mc-analise-txt');
+  if(!txt)return;
+  await SB.from('faturas_analise').update({analise_claude:txt.value}).eq('uc',uc);
+  alert('✅ Análise salva!');
+  await carregarDados();
 }
 
 async function salvarAnaliseTexto(uc){

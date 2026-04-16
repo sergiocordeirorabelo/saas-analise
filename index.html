@@ -830,15 +830,15 @@ function abrirCliente(clienteId, tab){
     + kpis
     // 2 colunas: dados + alertas
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">'
-    +'<div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Dados da UC <span onclick="editarNomeCliente(\''+cl.id+'\')" style="cursor:pointer;font-size:13px" title="Editar nome">✏️</span></div>'
-    +'<div style="font-size:12px;line-height:2.1">'
-    +'Nome: <b style="cursor:pointer" onclick="editarNomeCliente(\''+cl.id+'\')">'+cl.nome.slice(0,40)+'</b><br>'
-    +(cl.cnpj?'CNPJ: <b style="cursor:pointer" onclick="editarCampoCliente(\''+cl.id+'\',\'cnpj\',\'CNPJ\')">'+formatCNPJ(cl.cnpj)+'</b><br>':'CNPJ: <span style="cursor:pointer;color:var(--muted)" onclick="editarCampoCliente(\''+cl.id+'\',\'cnpj\',\'CNPJ\')">+ adicionar</span><br>')
+    +'<div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Dados da UC</div>'
+    +'<div style="font-size:12px;line-height:1.9" id="mc-dados-'+cl.id+'">'
+    +(cl.cnpj?'CNPJ: <b>'+formatCNPJ(cl.cnpj)+'</b><br>':'')
     +'UC: <b>'+ucs+'</b><br>'
-    +'Subgrupo: <b style="cursor:pointer" onclick="editarCampoCliente(\''+cl.id+'\',\'subgrupo\',\'Subgrupo\')">'+(cl.subgrupo||'—')+'</b> · Modalidade: <b style="cursor:pointer" onclick="editarCampoCliente(\''+cl.id+'\',\'modalidade\',\'Modalidade\')">'+(cl.modalidade||'—')+'</b><br>'
-    +'Demanda: <b style="cursor:pointer" onclick="editarCampoCliente(\''+cl.id+'\',\'demanda_kw\',\'Demanda kW\')">'+(cl.demanda_kw?cl.demanda_kw+' kW':'— ✏️')+'</b><br>'
-    +'Email: <b style="cursor:pointer" onclick="editarCampoCliente(\''+cl.id+'\',\'email_contato\',\'Email\')">'+(cl.email_contato||'— ✏️')+'</b><br>'
-    +'Tel: <b style="cursor:pointer" onclick="editarCampoCliente(\''+cl.id+'\',\'telefone\',\'Telefone\')">'+(cl.telefone||'— ✏️')+'</b>'
+    +'Subgrupo: <b>'+(cl.subgrupo||'—')+'</b> · Modalidade: <b>'+(cl.modalidade||'—')+'</b>'
+    +(cl.demanda_kw?'<br>Demanda: <b>'+cl.demanda_kw+' kW</b>':'')
+    +(cl.email_contato?'<br>Email: <b>'+cl.email_contato+'</b>':'')
+    +(cl.telefone?'<br>Tel: <b>'+cl.telefone+'</b>':'')
+    +'<br><button class="btn" style="margin-top:6px;padding:4px 12px;font-size:11px" onclick="editarDadosCliente(\''+cl.id+'\')" >✏️ Editar dados</button>'
     +'</div></div>'
     +'<div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Alertas Ativos</div>'+alertasHtml+'</div>'
     +'</div>'
@@ -1480,15 +1480,15 @@ function abrirCliente(clienteId, tab){
     + kpis
     // 2 colunas: dados + alertas
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">'
-    +'<div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Dados da UC <span onclick="editarNomeCliente(\''+cl.id+'\')" style="cursor:pointer;font-size:13px" title="Editar nome">✏️</span></div>'
-    +'<div style="font-size:12px;line-height:2.1">'
-    +'Nome: <b style="cursor:pointer" onclick="editarNomeCliente(\''+cl.id+'\')">'+cl.nome.slice(0,40)+'</b><br>'
-    +(cl.cnpj?'CNPJ: <b style="cursor:pointer" onclick="editarCampoCliente(\''+cl.id+'\',\'cnpj\',\'CNPJ\')">'+formatCNPJ(cl.cnpj)+'</b><br>':'CNPJ: <span style="cursor:pointer;color:var(--muted)" onclick="editarCampoCliente(\''+cl.id+'\',\'cnpj\',\'CNPJ\')">+ adicionar</span><br>')
+    +'<div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Dados da UC</div>'
+    +'<div style="font-size:12px;line-height:1.9" id="mc-dados-'+cl.id+'">'
+    +(cl.cnpj?'CNPJ: <b>'+formatCNPJ(cl.cnpj)+'</b><br>':'')
     +'UC: <b>'+ucs+'</b><br>'
-    +'Subgrupo: <b style="cursor:pointer" onclick="editarCampoCliente(\''+cl.id+'\',\'subgrupo\',\'Subgrupo\')">'+(cl.subgrupo||'—')+'</b> · Modalidade: <b style="cursor:pointer" onclick="editarCampoCliente(\''+cl.id+'\',\'modalidade\',\'Modalidade\')">'+(cl.modalidade||'—')+'</b><br>'
-    +'Demanda: <b style="cursor:pointer" onclick="editarCampoCliente(\''+cl.id+'\',\'demanda_kw\',\'Demanda kW\')">'+(cl.demanda_kw?cl.demanda_kw+' kW':'— ✏️')+'</b><br>'
-    +'Email: <b style="cursor:pointer" onclick="editarCampoCliente(\''+cl.id+'\',\'email_contato\',\'Email\')">'+(cl.email_contato||'— ✏️')+'</b><br>'
-    +'Tel: <b style="cursor:pointer" onclick="editarCampoCliente(\''+cl.id+'\',\'telefone\',\'Telefone\')">'+(cl.telefone||'— ✏️')+'</b>'
+    +'Subgrupo: <b>'+(cl.subgrupo||'—')+'</b> · Modalidade: <b>'+(cl.modalidade||'—')+'</b>'
+    +(cl.demanda_kw?'<br>Demanda: <b>'+cl.demanda_kw+' kW</b>':'')
+    +(cl.email_contato?'<br>Email: <b>'+cl.email_contato+'</b>':'')
+    +(cl.telefone?'<br>Tel: <b>'+cl.telefone+'</b>':'')
+    +'<br><button class="btn" style="margin-top:6px;padding:4px 12px;font-size:11px" onclick="editarDadosCliente(\''+cl.id+'\')" >✏️ Editar dados</button>'
     +'</div></div>'
     +'<div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Alertas Ativos</div>'+alertasHtml+'</div>'
     +'</div>'
@@ -2273,16 +2273,36 @@ async function editarNomeCliente(clienteId){
   alert('✅ Nome atualizado!');
 }
 
-async function editarCampoCliente(clienteId,campo,label){
+async function editarDadosCliente(clienteId){
   var cl=D.clientes.find(function(x){return x.id===clienteId;});
   if(!cl)return;
-  var atual=cl[campo]||'';
-  var novo=prompt(label+':',atual);
-  if(novo===null)return;
-  var data={};data[campo]=novo||null;
-  await SB.from('clientes').update(data).eq('id',clienteId);
-  await carregarDados();
-  abrirModalCliente(clienteId);
+  var nome=prompt('Nome do cliente:',cl.nome||'');
+  if(nome===null)return;
+  var cnpj=prompt('CNPJ:',cl.cnpj||'');
+  if(cnpj===null)return;
+  var sub=prompt('Subgrupo (ex: A4):',cl.subgrupo||'');
+  if(sub===null)return;
+  var mod=prompt('Modalidade (ex: HOROSAZONAL VERDE):',cl.modalidade||'');
+  if(mod===null)return;
+  var dem=prompt('Demanda contratada (kW):',cl.demanda_kw||'');
+  if(dem===null)return;
+  var email=prompt('Email do contato:',cl.email_contato||'');
+  if(email===null)return;
+  var tel=prompt('Telefone:',cl.telefone||'');
+  if(tel===null)return;
+  try{
+    await SB.from('clientes').update({
+      nome:nome||cl.nome, cnpj:cnpj||null, subgrupo:sub||null,
+      modalidade:mod||null, demanda_kw:parseFloat(dem)||null,
+      email_contato:email||null, telefone:tel||null
+    }).eq('id',clienteId);
+    if(cl.ucs&&nome&&nome!==cl.nome){
+      for(var i=0;i<cl.ucs.length;i++) await SB.from('faturas_parsed').update({cliente_nome:nome}).eq('uc',cl.ucs[i]);
+    }
+    alert('✅ Dados atualizados!');
+    await carregarDados();
+    abrirModalCliente(clienteId);
+  }catch(e){alert('Erro: '+e.message);}
 }
 
 async function editarAnalise(uc){

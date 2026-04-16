@@ -538,19 +538,19 @@ let _analiseCache = {};
 async function sbGet(ep){ const r=await fetch(SB+'/rest/v1/'+ep,{headers:{apikey:KEY,Authorization:'Bearer '+KEY}}); return r.json(); }
 async function sbPost(ep,body){ const r=await fetch(SB+'/rest/v1/'+ep,{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify(body)}); return r.json(); }
 async function sbPatch(ep,body){
-  // Usa Railway como proxy para PATCH (Supabase allowlist bloqueia writes do browser)
-  // ex: ep = 'clientes?id=eq.xxx'
+  // Usa Supabase Edge Function como proxy (service_role key, bypassa allowlist)
   var parts = ep.split('?');
   var table = parts[0];
   var qs = parts[1]||'';
   try{
-    var r = await fetch(RW+'/db/'+table+'?'+qs,{
+    var r = await fetch(SB+'/functions/v1/db-patch/'+table+'?'+qs,{
       method:'PATCH',
-      headers:{'Content-Type':'application/json'},
+      headers:{'Content-Type':'application/json','apikey':KEY},
       body:JSON.stringify(body),
       signal:AbortSignal.timeout(10000)
     });
-    if(!r.ok){ var e=await r.json().catch(function(){return{error:'Erro '+r.status};}); console.error('sbPatch erro:',e); }
+    var data = await r.json().catch(function(){return{};});
+    if(!r.ok) console.error('sbPatch erro:',data);
     return r.ok;
   }catch(err){
     console.error('sbPatch falhou:',err);

@@ -2297,7 +2297,7 @@ async function editarDadosCliente(clienteId){
     }
     alert('✅ Dados atualizados!');
     await carregarDados();
-    abrirModalCliente(clienteId);
+    abrirCliente(clienteId);
   }catch(e){alert('Erro: '+e.message);}
 }
 
